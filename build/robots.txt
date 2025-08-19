@@ -1,0 +1,51 @@
+# Robots.txt for Application Design Lab Software
+
+User-agent: *
+Allow: /
+
+# Allow crawling of public marketing pages
+Allow: /about
+Allow: /features
+Allow: /pricing
+Allow: /contact
+Allow: /blog
+Allow: /documentation
+
+# Disallow crawling of application areas that require authentication
+Disallow: /dashboard
+Disallow: /assessment
+Disallow: /application
+Disallow: /security
+Disallow: /infrastructure
+Disallow: /data
+Disallow: /devops
+Disallow: /business
+Disallow: /architecture
+Disallow: /cloud
+Disallow: /recommendations
+Disallow: /admin
+Disallow: /api
+Disallow: /auth
+Disallow: /profile
+Disallow: /settings
+
+# Disallow temporary and development files
+Disallow: /temp/
+Disallow: /tmp/
+Disallow: /_test/
+Disallow: /dev/
+Disallow: *.log
+Disallow: *.tmp
+
+# Allow static assets
+Allow: /static/
+Allow: /assets/
+Allow: /images/
+Allow: /css/
+Allow: /js/
+
+# Sitemap location
+Sitemap: https://app-assessment-platform.com/sitemap.xml
+
+# Crawl delay to be respectful to server resources
+Crawl-delay: 1

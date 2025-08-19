@@ -25,7 +25,7 @@ import classNames from 'classnames';
 const navigationItems = [
   {
     name: 'Dashboard',
-    href: '/dashboard',
+    href: '/app/dashboard',
     icon: Home,
     current: false
   },
@@ -35,13 +35,13 @@ const navigationItems = [
     children: [
       {
         name: 'Business Context',
-        href: '/business-context',
+        href: '/app/business-context',
         icon: Building,
         description: 'Business drivers and stakeholders'
       },
       {
         name: 'Architecture Review',
-        href: '/architecture-review',
+        href: '/app/architecture-review',
         icon: Layers,
         description: 'Application portfolio analysis'
       }
@@ -53,25 +53,25 @@ const navigationItems = [
     children: [
       {
         name: 'Infrastructure & Compute',
-        href: '/infrastructure',
+        href: '/app/infrastructure',
         icon: Cloud,
         description: 'Hosting environment and cloud readiness'
       },
       {
         name: 'Data Architecture',
-        href: '/data-architecture',
+        href: '/app/data-architecture',
         icon: Database,
         description: 'Data stores and integration patterns'
       },
       {
         name: 'DevOps & Development',
-        href: '/devops',
+        href: '/app/devops',
         icon: GitBranch,
         description: 'CI/CD pipelines and practices'
       },
       {
         name: 'Security Assessment',
-        href: '/security',
+        href: '/app/security',
         icon: Shield,
         description: 'Application and infrastructure security'
       }
@@ -83,7 +83,7 @@ const navigationItems = [
     children: [
       {
         name: 'Cloud Readiness',
-        href: '/cloud-readiness',
+        href: '/app/cloud-readiness',
         icon: Cloud,
         description: 'Migration strategies and readiness'
       }
@@ -95,7 +95,7 @@ const navigationItems = [
     children: [
       {
         name: 'Recommendations',
-        href: '/recommendations',
+        href: '/app/recommendations',
         icon: Target,
         description: 'AI-generated improvement suggestions'
       }

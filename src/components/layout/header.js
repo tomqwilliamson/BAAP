@@ -3,22 +3,33 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Bell, Search, User, Settings } from 'lucide-react';
 import { useAssessment } from '../../contexts/assessmentcontext';
+import UnifiedSignOutButton from '../auth/UnifiedSignOutButton';
 
 const pageTitle = {
-  '/dashboard': 'Dashboard Overview',
-  '/business-context': 'Business Context Analysis',
-  '/architecture-review': 'Architecture Review',
-  '/infrastructure': 'Infrastructure & Compute Design Lab',
-  '/data-architecture': 'Data Architecture Review',
-  '/devops': 'DevOps & Development Practices',
-  '/security': 'Security Design Lab',
-  '/cloud-readiness': 'Cloud Readiness Analysis',
-  '/recommendations': 'AI-Generated Recommendations'
+  '/app': 'Dashboard Overview',
+  '/app/dashboard': 'Dashboard Overview',
+  '/app/business-context': 'Business Context Analysis',
+  '/app/architecture-review': 'Architecture Review',
+  '/app/infrastructure': 'Infrastructure & Compute Design Lab',
+  '/app/data-architecture': 'Data Architecture Review',
+  '/app/devops': 'DevOps & Development Practices',
+  '/app/security': 'Security Design Lab',
+  '/app/cloud-readiness': 'Cloud Readiness Analysis',
+  '/app/recommendations': 'AI-Generated Recommendations'
 };
 
 function Header() {
   const location = useLocation();
   const { currentAssessment, loading } = useAssessment();
+  
+  // For now, use a placeholder user until auth context is resolved
+  const user = {
+    name: 'Demo User',
+    username: 'demo.user',
+    idTokenClaims: {
+      jobTitle: 'Solution Architect'
+    }
+  };
   
   const title = pageTitle[location.pathname] || 'Application Design Lab';
 
@@ -68,12 +79,17 @@ function Header() {
             {/* User Profile */}
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">John Doe</p>
-                <p className="text-xs text-gray-500">Solution Architect</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.name || user?.username || 'User'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {user?.idTokenClaims?.jobTitle || 'Solution Architect'}
+                </p>
               </div>
               <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-full transition-colors duration-200">
                 <User className="h-6 w-6" />
               </button>
+              <UnifiedSignOutButton />
             </div>
           </div>
         </div>

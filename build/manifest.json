@@ -1,0 +1,93 @@
+{
+  "short_name": "Design Lab",
+  "name": "Application Design Lab Software - AI-Powered Portfolio Analysis",
+  "description": "Comprehensive AI-driven platform for analyzing enterprise application portfolios, infrastructure assessment, and modernization recommendations",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "maskable-icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "maskable-icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2563eb",
+  "background_color": "#f8fafc",
+  "categories": ["business", "productivity", "developer", "utilities"],
+  "lang": "en",
+  "scope": "/",
+  "id": "app-design-lab-software",
+  "shortcuts": [
+    {
+      "name": "New Assessment",
+      "short_name": "New Assessment",
+      "description": "Create a new application design lab",
+      "url": "/assessment/create",
+      "icons": [{ "src": "icons/new-assessment.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View assessment dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "icons/dashboard.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Recommendations",
+      "short_name": "Recommendations",
+      "description": "View AI recommendations",
+      "url": "/recommendations",
+      "icons": [{ "src": "icons/recommendations.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/dashboard-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Application Design Lab Dashboard"
+    },
+    {
+      "src": "screenshots/mobile-view.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile Design Lab View"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "protocol_handlers": [
+    {
+      "protocol": "web+assessment",
+      "url": "/assessment?url=%s"
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}
