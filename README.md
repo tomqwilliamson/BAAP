@@ -1,6 +1,9 @@
 # Application Assessment Platform
 
-AI-Powered Enterprise Application Assessment Software built with React and .NET.
+# Application Design Lab Platform
+
+## Overview
+AI-Powered Enterprise Application Design Lab Software built with React and .NET.
 
 ## 🚀 Quick Start
 
@@ -163,4 +166,4 @@ This application demonstrates:
 - **Modern development practices**
 - **Production-ready code quality**
 
-Perfect for impressing stakeholders with a sophisticated, professional application assessment platform! 🎯
+Perfect for impressing stakeholders with a sophisticated, professional application design lab platform! 🎯

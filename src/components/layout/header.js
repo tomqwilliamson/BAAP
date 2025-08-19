@@ -8,10 +8,10 @@ const pageTitle = {
   '/dashboard': 'Dashboard Overview',
   '/business-context': 'Business Context Analysis',
   '/architecture-review': 'Architecture Review',
-  '/infrastructure': 'Infrastructure & Compute Assessment',
+  '/infrastructure': 'Infrastructure & Compute Design Lab',
   '/data-architecture': 'Data Architecture Review',
   '/devops': 'DevOps & Development Practices',
-  '/security': 'Security Assessment',
+  '/security': 'Security Design Lab',
   '/cloud-readiness': 'Cloud Readiness Analysis',
   '/recommendations': 'AI-Generated Recommendations'
 };
@@ -20,7 +20,7 @@ function Header() {
   const location = useLocation();
   const { currentAssessment, loading } = useAssessment();
   
-  const title = pageTitle[location.pathname] || 'Application Assessment';
+  const title = pageTitle[location.pathname] || 'Application Design Lab';
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -31,7 +31,7 @@ function Header() {
             <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
             {currentAssessment && (
               <p className="text-sm text-gray-500 mt-1">
-                Assessment: {currentAssessment.name}
+                Design Lab: {currentAssessment.name}
                 {loading && (
                   <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                     Processing...
@@ -50,7 +50,7 @@ function Header() {
               </div>
               <input
                 type="text"
-                placeholder="Search assessments..."
+                placeholder="Search design labs..."
                 className="block w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>

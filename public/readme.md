@@ -1,4 +1,4 @@
-# Public Assets for Application Assessment Software
+# Public Assets for Application Design Lab Software
 
 This folder contains static assets and configuration files that are served directly by the web server.
 

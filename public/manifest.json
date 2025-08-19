@@ -1,6 +1,6 @@
 {
-  "short_name": "App Assessment",
-  "name": "Application Assessment Software - AI-Powered Portfolio Analysis",
+  "short_name": "Design Lab",
+  "name": "Application Design Lab Software - AI-Powered Portfolio Analysis",
   "description": "Comprehensive AI-driven platform for analyzing enterprise application portfolios, infrastructure assessment, and modernization recommendations",
   "icons": [
     {
@@ -39,12 +39,12 @@
   "categories": ["business", "productivity", "developer", "utilities"],
   "lang": "en",
   "scope": "/",
-  "id": "app-assessment-software",
+  "id": "app-design-lab-software",
   "shortcuts": [
     {
       "name": "New Assessment",
       "short_name": "New Assessment",
-      "description": "Create a new application assessment",
+      "description": "Create a new application design lab",
       "url": "/assessment/create",
       "icons": [{ "src": "icons/new-assessment.png", "sizes": "96x96" }]
     },
@@ -69,14 +69,14 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Application Assessment Dashboard"
+      "label": "Application Design Lab Dashboard"
     },
     {
       "src": "screenshots/mobile-view.png",
       "sizes": "750x1334",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Mobile Assessment View"
+      "label": "Mobile Design Lab View"
     }
   ],
   "prefer_related_applications": false,
