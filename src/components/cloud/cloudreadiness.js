@@ -1,29 +1,533 @@
+/**
+ * Cloud Readiness Assessment Component
+ * 
+ * This component provides comprehensive cloud migration readiness assessment by:
+ * 1. Aggregating data from Security, DevOps, and Infrastructure assessment modules
+ * 2. Implementing intelligent scoring algorithms with cross-domain analysis
+ * 3. Providing manual input capability for business and organizational factors
+ * 4. Generating AI-powered strategic recommendations
+ * 
+ * CURRENT STATE: Using mock data and localStorage for persistence
+ * TO ENABLE BACKEND: Uncomment the assessmentService import and related API calls
+ */
+
 import React, { useEffect, useState } from 'react';
+import { 
+  Cloud, Shield, GitBranch, Server, Database, Zap, Activity, AlertTriangle,
+  CheckCircle, Upload, Download, Save, Brain, RefreshCw, Clock, DollarSign,
+  TrendingUp, BarChart3, Target, Edit3, Plus, Minus, Settings, Monitor
+} from 'lucide-react';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  PieChart, Pie, Cell, LineChart, Line, Area, AreaChart
+} from 'recharts';
+import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
-import { assessmentService } from '../../services/assessmentservice';
+// import { assessmentService } from '../../services/assessmentservice'; // Commented out since we're using mock data for now
 
 const CloudReadiness = () => {
   const { currentAssessment } = useAssessment();
-  const [cloudAssessment, setCloudAssessment] = useState(null);
+  const [currentView, setCurrentView] = useState('overview'); // overview, manual-input, analyze
+  const [showAnalysisResults, setShowAnalysisResults] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [dataSaved, setDataSaved] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedApplication, setSelectedApplication] = useState(null);
-  const [viewMode, setViewMode] = useState('overview'); // overview, applications, migration-paths, cost-analysis
+
+  const [cloudReadinessData, setCloudReadinessData] = useState({
+    crossDomainAnalysis: {
+      securityReadiness: 0,
+      infrastructureReadiness: 0,
+      devopsReadiness: 0,
+      dataReadiness: 0,
+      overallScore: 0
+    },
+    domainScores: {
+      security: {
+        score: 0,
+        vulnerabilities: { critical: 0, high: 0, medium: 0, low: 0 },
+        complianceScore: 0,
+        findings: []
+      },
+      infrastructure: {
+        score: 0,
+        serversAssessed: 0,
+        cloudReady: 0,
+        estimatedSavings: 0,
+        findings: []
+      },
+      devops: {
+        score: 0,
+        pipelineMaturity: 0,
+        automationLevel: 0,
+        codeQuality: 0,
+        findings: []
+      },
+      data: {
+        score: 0,
+        databasesAssessed: 0,
+        migrationComplexity: 'Medium',
+        findings: []
+      }
+    },
+    manualInputs: {
+      businessDrivers: {
+        costOptimization: 0,
+        scalabilityNeeds: 0,
+        innovationRequirements: 0,
+        complianceRequirements: 0
+      },
+      organizationalReadiness: {
+        cloudSkills: 0,
+        changeManagement: 0,
+        governanceMaturity: 0,
+        riskTolerance: 0
+      },
+      technicalGaps: {
+        networkReadiness: 0,
+        identityManagement: 0,
+        monitoringCapabilities: 0,
+        backupStrategy: 0
+      }
+    },
+    migrationStrategy: {
+      recommendedApproach: '',
+      timeline: '',
+      phases: [],
+      risks: [],
+      prerequisites: []
+    },
+    analysis: {
+      strategicAnalysis: '',
+      technicalAnalysis: '',
+      riskAnalysis: '',
+      recommendationsSummary: ''
+    }
+  });
 
   useEffect(() => {
     loadCloudReadinessData();
   }, [currentAssessment]);
 
   const loadCloudReadinessData = async () => {
-    if (!currentAssessment?.id) return;
-    
     try {
       setLoading(true);
-      const data = await assessmentService.getCloudReadiness(currentAssessment.id);
-      setCloudAssessment(data);
+      
+      // Load aggregated data from all domains (using mock data for now)
+      const [securityData, infrastructureData, devopsData] = await Promise.all([
+        loadDomainData('security'),
+        loadDomainData('infrastructure'),
+        loadDomainData('devops')
+      ]);
+
+      // Calculate cross-domain readiness scores
+      const calculatedData = calculateCloudReadiness(securityData, infrastructureData, devopsData);
+      
+      // Try to load saved data from localStorage first
+      let finalData = calculatedData;
+      try {
+        const savedDataKey = currentAssessment?.id 
+          ? `cloud_readiness_assessment_${currentAssessment.id}`
+          : 'cloud_readiness_assessment';
+        const savedData = localStorage.getItem(savedDataKey);
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          // Merge saved manual inputs with calculated technical data
+          finalData = {
+            ...calculatedData,
+            manualInputs: parsedData.manualInputs || calculatedData.manualInputs,
+            analysis: parsedData.analysis || calculatedData.analysis
+          };
+        }
+      } catch (error) {
+        console.warn('Could not load saved data from localStorage:', error);
+      }
+      
+      // Use calculated data with any saved manual inputs
+      setCloudReadinessData(finalData);
+      
     } catch (error) {
       console.error('Failed to load cloud readiness data:', error);
+      // Create default data even if everything fails
+      const defaultData = calculateCloudReadiness({}, {}, {});
+      setCloudReadinessData(defaultData);
+      toast.error('Using default data - some assessment modules may not be available');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDomainData = async (domain) => {
+    try {
+      // For now, always use mock data since the backend endpoints may not be implemented
+      // In production, you would uncomment the line below:
+      // const data = await assessmentService.getAssessmentData(currentAssessment.id, domain);
+      // return data || getMockDomainData(domain);
+      
+      return getMockDomainData(domain);
+    } catch (error) {
+      console.warn(`Failed to load ${domain} data:`, error);
+      return getMockDomainData(domain);
+    }
+  };
+
+  const getMockDomainData = (domain) => {
+    switch (domain) {
+      case 'security':
+        return {
+          summary: { critical: 35, high: 67, medium: 142, low: 89, total: 333 },
+          overallScore: 68,
+          compliance: [
+            { framework: 'OWASP Top 10', score: 75 },
+            { framework: 'ISO 27001', score: 82 },
+            { framework: 'NIST Cybersecurity', score: 78 }
+          ]
+        };
+      case 'infrastructure':
+        return {
+          servers: [
+            { name: 'WEB-SRV-01', readiness: 95, complexity: 'Low' },
+            { name: 'DB-SRV-01', readiness: 78, complexity: 'Medium' },
+            { name: 'APP-SRV-01', readiness: 88, complexity: 'Low' }
+          ],
+          readiness: { ready: 45, conditional: 35, notReady: 20 },
+          costs: { current: 12450, azureEstimate: 8960, savings: 3490 }
+        };
+      case 'devops':
+        return {
+          maturity: [
+            { category: 'CI/CD Pipeline', score: 78 },
+            { category: 'Automated Testing', score: 65 },
+            { category: 'Infrastructure as Code', score: 58 }
+          ],
+          cicd: { successRate: 87, avgBuildTime: 8.5 },
+          codeQuality: { coverage: 78, maintainability: 85 }
+        };
+      default:
+        return {};
+    }
+  };
+
+  const calculateCloudReadiness = (securityData, infrastructureData, devopsData) => {
+    // Security Score Calculation
+    const securityScore = Math.max(0, Math.min(100, 
+      100 - ((securityData.summary?.critical || 0) * 3 + 
+             (securityData.summary?.high || 0) * 2 + 
+             (securityData.summary?.medium || 0) * 1) / 10
+    ));
+
+    // Infrastructure Score Calculation
+    const infrastructureScore = infrastructureData.readiness?.ready || 45;
+
+    // DevOps Score Calculation
+    const devopsScore = devopsData.maturity?.reduce((acc, item) => acc + item.score, 0) / 
+                        (devopsData.maturity?.length || 1);
+
+    // Data Score (placeholder - would be calculated from data assessment)
+    const dataScore = 70;
+
+    // Overall Score (weighted average)
+    const overallScore = Math.round(
+      (securityScore * 0.25) + 
+      (infrastructureScore * 0.35) + 
+      (devopsScore * 0.25) + 
+      (dataScore * 0.15)
+    );
+
+    return {
+      crossDomainAnalysis: {
+        securityReadiness: Math.round(securityScore),
+        infrastructureReadiness: Math.round(infrastructureScore),
+        devopsReadiness: Math.round(devopsScore),
+        dataReadiness: Math.round(dataScore),
+        overallScore
+      },
+      domainScores: {
+        security: {
+          score: Math.round(securityScore),
+          vulnerabilities: securityData.summary || { critical: 0, high: 0, medium: 0, low: 0 },
+          complianceScore: securityData.compliance?.reduce((acc, c) => acc + c.score, 0) / 
+                          (securityData.compliance?.length || 1) || 0,
+          findings: [
+            'SQL injection vulnerabilities detected',
+            'Missing security headers identified',
+            'Weak authentication mechanisms found'
+          ]
+        },
+        infrastructure: {
+          score: Math.round(infrastructureScore),
+          serversAssessed: infrastructureData.servers?.length || 0,
+          cloudReady: infrastructureData.readiness?.ready || 0,
+          estimatedSavings: infrastructureData.costs?.savings || 0,
+          findings: [
+            'Legacy OS versions require updates',
+            'Optimization opportunities identified',
+            'Network configuration modernization needed'
+          ]
+        },
+        devops: {
+          score: Math.round(devopsScore),
+          pipelineMaturity: devopsData.maturity?.find(m => m.category.includes('CI/CD'))?.score || 0,
+          automationLevel: devopsData.maturity?.find(m => m.category.includes('Infrastructure'))?.score || 0,
+          codeQuality: devopsData.codeQuality?.coverage || 0,
+          findings: [
+            'CI/CD pipeline optimization needed',
+            'Test automation coverage gaps',
+            'Infrastructure as Code adoption required'
+          ]
+        },
+        data: {
+          score: Math.round(dataScore),
+          databasesAssessed: 5,
+          migrationComplexity: 'Medium',
+          findings: [
+            'Database modernization opportunities',
+            'Data governance framework needed',
+            'Backup and disaster recovery assessment required'
+          ]
+        }
+      },
+      manualInputs: {
+        businessDrivers: {
+          costOptimization: 70,
+          scalabilityNeeds: 80,
+          innovationRequirements: 60,
+          complianceRequirements: 85
+        },
+        organizationalReadiness: {
+          cloudSkills: 50,
+          changeManagement: 60,
+          governanceMaturity: 45,
+          riskTolerance: 70
+        },
+        technicalGaps: {
+          networkReadiness: 65,
+          identityManagement: 55,
+          monitoringCapabilities: 60,
+          backupStrategy: 70
+        }
+      },
+      migrationStrategy: {
+        recommendedApproach: getRecommendedApproach(overallScore),
+        timeline: getEstimatedTimeline(overallScore),
+        phases: getMigrationPhases(overallScore),
+        risks: getIdentifiedRisks(securityScore, infrastructureScore, devopsScore),
+        prerequisites: getPrerequisites(securityScore, infrastructureScore, devopsScore)
+      },
+      analysis: {
+        strategicAnalysis: '',
+        technicalAnalysis: '',
+        riskAnalysis: '',
+        recommendationsSummary: ''
+      }
+    };
+  };
+
+  const getRecommendedApproach = (score) => {
+    if (score >= 80) return 'Lift-and-Shift with Optimization';
+    if (score >= 60) return 'Hybrid Migration with Modernization';
+    return 'Phased Approach with Significant Refactoring';
+  };
+
+  const getEstimatedTimeline = (score) => {
+    if (score >= 80) return '6-12 months';
+    if (score >= 60) return '12-18 months';
+    return '18-24 months';
+  };
+
+  const getMigrationPhases = (score) => {
+    if (score >= 80) {
+      return [
+        { phase: 'Phase 1', duration: '2-3 months', focus: 'Infrastructure Setup' },
+        { phase: 'Phase 2', duration: '3-6 months', focus: 'Application Migration' },
+        { phase: 'Phase 3', duration: '1-3 months', focus: 'Optimization & Testing' }
+      ];
+    }
+    return [
+      { phase: 'Phase 1', duration: '3-6 months', focus: 'Foundation & Security' },
+      { phase: 'Phase 2', duration: '6-9 months', focus: 'Core Application Migration' },
+      { phase: 'Phase 3', duration: '6-9 months', focus: 'Modernization & Optimization' },
+      { phase: 'Phase 4', duration: '3-6 months', focus: 'Testing & Validation' }
+    ];
+  };
+
+  const getIdentifiedRisks = (securityScore, infrastructureScore, devopsScore) => {
+    const risks = [];
+    if (securityScore < 70) risks.push('Security vulnerabilities may delay migration');
+    if (infrastructureScore < 60) risks.push('Infrastructure complexity may increase costs');
+    if (devopsScore < 60) risks.push('DevOps maturity gaps may impact delivery');
+    return risks;
+  };
+
+  const getPrerequisites = (securityScore, infrastructureScore, devopsScore) => {
+    const prerequisites = [];
+    if (securityScore < 70) prerequisites.push('Security remediation and compliance review');
+    if (infrastructureScore < 60) prerequisites.push('Infrastructure modernization planning');
+    if (devopsScore < 60) prerequisites.push('CI/CD pipeline establishment');
+    return prerequisites;
+  };
+
+  const handleManualInputChange = (category, field, value) => {
+    setCloudReadinessData(prev => ({
+      ...prev,
+      manualInputs: {
+        ...prev.manualInputs,
+        [category]: {
+          ...prev.manualInputs[category],
+          [field]: value
+        }
+      }
+    }));
+    
+    // Recalculate overall score with manual inputs
+    recalculateWithManualInputs();
+  };
+
+  const recalculateWithManualInputs = () => {
+    setCloudReadinessData(prev => {
+      const manualScore = Object.values(prev.manualInputs).reduce((total, category) => {
+        const categoryAvg = Object.values(category).reduce((sum, val) => sum + val, 0) / Object.values(category).length;
+        return total + categoryAvg;
+      }, 0) / Object.values(prev.manualInputs).length;
+
+      const technicalScore = (
+        prev.crossDomainAnalysis.securityReadiness * 0.25 +
+        prev.crossDomainAnalysis.infrastructureReadiness * 0.35 +
+        prev.crossDomainAnalysis.devopsReadiness * 0.25 +
+        prev.crossDomainAnalysis.dataReadiness * 0.15
+      );
+
+      const adjustedScore = Math.round((technicalScore * 0.7) + (manualScore * 0.3));
+
+      return {
+        ...prev,
+        crossDomainAnalysis: {
+          ...prev.crossDomainAnalysis,
+          overallScore: adjustedScore
+        }
+      };
+    });
+  };
+
+  const saveAssessment = async () => {
+    if (!currentAssessment?.id) {
+      // Save to localStorage if no current assessment
+      const dataStr = JSON.stringify(cloudReadinessData, null, 2);
+      localStorage.setItem('cloud_readiness_assessment', dataStr);
+      setDataSaved(true);
+      setLastSaveTime(new Date());
+      toast.success('Cloud Readiness assessment saved to local storage!');
+      return;
+    }
+    
+    try {
+      // For now, save to localStorage since backend may not be implemented
+      // In production, uncomment the line below:
+      // await assessmentService.updateCloudReadiness(currentAssessment.id, cloudReadinessData);
+      
+      const dataStr = JSON.stringify(cloudReadinessData, null, 2);
+      localStorage.setItem(`cloud_readiness_assessment_${currentAssessment.id}`, dataStr);
+      
+      setDataSaved(true);
+      setLastSaveTime(new Date());
+      toast.success('Cloud Readiness assessment saved successfully!');
+    } catch (error) {
+      console.error('Failed to save assessment:', error);
+      toast.error('Failed to save assessment');
+    }
+  };
+
+  const exportAssessment = () => {
+    const dataStr = JSON.stringify(cloudReadinessData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cloud-readiness-assessment-${currentAssessment?.id || 'export'}.json`;
+    link.click();
+    toast.success('Assessment exported successfully!');
+  };
+
+  const importAssessment = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          setCloudReadinessData(importedData);
+          toast.success('Assessment imported successfully!');
+        } catch (error) {
+          toast.error('Error importing file: Invalid JSON format');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const runAnalysis = async () => {
+    if (!currentAssessment?.id) return;
+    
+    setIsAnalyzing(true);
+    setShowAnalysisResults(false);
+    
+    try {
+      // Simulate AI analysis
+      setTimeout(() => {
+        const analysisResults = {
+          strategicAnalysis: `Cross-domain cloud readiness analysis reveals an overall score of ${cloudReadinessData.crossDomainAnalysis.overallScore}%:
+
+• **Security Domain**: ${cloudReadinessData.crossDomainAnalysis.securityReadiness}% readiness with ${cloudReadinessData.domainScores.security.vulnerabilities.critical} critical vulnerabilities
+• **Infrastructure**: ${cloudReadinessData.crossDomainAnalysis.infrastructureReadiness}% ready with ${cloudReadinessData.domainScores.infrastructure.serversAssessed} servers assessed
+• **DevOps Maturity**: ${cloudReadinessData.crossDomainAnalysis.devopsReadiness}% with pipeline success rate of ${cloudReadinessData.domainScores.devops.pipelineMaturity}%
+• **Organizational Readiness**: Based on manual inputs, cloud skills at ${cloudReadinessData.manualInputs.organizationalReadiness.cloudSkills}%`,
+
+          technicalAnalysis: `Technical assessment across domains identifies key migration considerations:
+
+• **Security Gaps**: ${cloudReadinessData.domainScores.security.vulnerabilities.critical + cloudReadinessData.domainScores.security.vulnerabilities.high} high-priority security issues requiring remediation
+• **Infrastructure Optimization**: Estimated savings of $${cloudReadinessData.domainScores.infrastructure.estimatedSavings?.toLocaleString() || '0'} monthly in cloud
+• **DevOps Modernization**: ${cloudReadinessData.domainScores.devops.automationLevel}% automation level needs improvement for cloud-native operations
+• **Network & Identity**: Manual assessment indicates ${cloudReadinessData.manualInputs.technicalGaps.networkReadiness}% network readiness and ${cloudReadinessData.manualInputs.technicalGaps.identityManagement}% identity management maturity`,
+
+          riskAnalysis: `Risk assessment based on cross-domain analysis identifies:
+
+• **Migration Risks**: ${cloudReadinessData.migrationStrategy.risks.length} key risks identified requiring mitigation strategies
+• **Timeline Impact**: Current readiness suggests ${cloudReadinessData.migrationStrategy.timeline} timeline with ${cloudReadinessData.migrationStrategy.phases.length} migration phases
+• **Compliance Considerations**: Average compliance score of ${Math.round(cloudReadinessData.domainScores.security.complianceScore)}% across security frameworks
+• **Change Management**: Organizational readiness score of ${Math.round(Object.values(cloudReadinessData.manualInputs.organizationalReadiness).reduce((a, b) => a + b, 0) / 4)}% indicates change management focus needed`,
+
+          recommendationsSummary: `Strategic recommendations for cloud migration success:
+
+**Immediate Actions (0-3 months)**:
+1. Address ${cloudReadinessData.domainScores.security.vulnerabilities.critical} critical security vulnerabilities
+2. Establish cloud governance framework and security baselines
+3. Begin cloud skills development program for technical teams
+
+**Short-term (3-12 months)**:
+1. Implement ${cloudReadinessData.migrationStrategy.recommendedApproach} migration strategy
+2. Modernize CI/CD pipelines for cloud-native deployment
+3. Establish monitoring and operational procedures
+
+**Long-term (12+ months)**:
+1. Complete application modernization and optimization
+2. Implement advanced cloud-native capabilities
+3. Establish continuous improvement and cost optimization processes`
+        };
+
+        setCloudReadinessData(prev => ({
+          ...prev,
+          analysis: analysisResults
+        }));
+        
+        setIsAnalyzing(false);
+        setShowAnalysisResults(true);
+        toast.success('Analysis completed successfully!');
+      }, 3000);
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      toast.error('Analysis failed');
+      setIsAnalyzing(false);
     }
   };
 
@@ -41,609 +545,554 @@ const CloudReadiness = () => {
     return 'Not Ready';
   };
 
-  const getMigrationComplexity = (complexity) => {
-    const colors = {
-      low: 'bg-green-100 text-green-800 border-green-200',
-      medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      high: 'bg-red-100 text-red-800 border-red-200'
-    };
-    return colors[complexity] || 'bg-gray-100 text-gray-800 border-gray-200';
-  };
-
-  const OverviewSection = () => (
-    <div className="space-y-6">
-      {/* Overall Readiness Score */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4">Overall Cloud Readiness</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="text-4xl font-bold text-blue-600 mb-2">
-              {cloudAssessment?.overallScore || 0}%
-            </div>
-            <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getReadinessColor(cloudAssessment?.overallScore || 0)}`}>
-              {getReadinessLabel(cloudAssessment?.overallScore || 0)}
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Applications Assessed</span>
-              <span className="font-semibold">{cloudAssessment?.totalApplications || 0}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Cloud Ready</span>
-              <span className="font-semibold text-green-600">{cloudAssessment?.readyApplications || 0}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Need Assessment</span>
-              <span className="font-semibold text-orange-600">{cloudAssessment?.needsWorkApplications || 0}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Not Ready</span>
-              <span className="font-semibold text-red-600">{cloudAssessment?.notReadyApplications || 0}</span>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Est. Migration Cost</span>
-              <span className="font-semibold">{cloudAssessment?.estimatedMigrationCost || '$0'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Est. Timeline</span>
-              <span className="font-semibold">{cloudAssessment?.estimatedTimeline || '0 months'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Annual Savings</span>
-              <span className="font-semibold text-green-600">{cloudAssessment?.projectedSavings || '$0'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">ROI Timeline</span>
-              <span className="font-semibold">{cloudAssessment?.roiTimeline || '0 months'}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Readiness by Category */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4">Readiness by Category</h3>
-        <div className="space-y-4">
-          {(cloudAssessment?.categories || []).map(category => (
-            <div key={category.name} className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="font-medium">{category.name}</span>
-                  <span className="text-sm text-gray-500">{category.score}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${category.score >= 70 ? 'bg-green-500' : category.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                    style={{ width: `${category.score}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div className="ml-4 text-sm text-gray-600">
-                {category.blockers || 0} blockers
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Migration Strategies */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4">Recommended Migration Strategies</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {(cloudAssessment?.migrationStrategies || []).map(strategy => (
-            <div key={strategy.name} className="border border-gray-200 rounded-lg p-4">
-              <h4 className="font-semibold text-gray-900 mb-2">{strategy.name}</h4>
-              <p className="text-sm text-gray-600 mb-3">{strategy.description}</p>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Applications:</span>
-                  <span className="font-medium">{strategy.applicationCount}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Effort:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${getMigrationComplexity(strategy.effort)}`}>
-                    {strategy.effort}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Timeline:</span>
-                  <span className="font-medium">{strategy.timeline}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const ApplicationsSection = () => (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-6 border-b">
-        <h3 className="text-lg font-semibold">Application Cloud Readiness</h3>
-        <p className="text-gray-600 mt-1">Individual assessment of each application's migration readiness</p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Application
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Current Environment
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Readiness Score
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Migration Strategy
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Complexity
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Key Blockers
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {(cloudAssessment?.applications || []).map(app => (
-              <tr key={app.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="text-sm font-medium text-gray-900">{app.name}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {app.currentEnvironment}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="text-sm font-medium text-gray-900">{app.readinessScore}%</div>
-                    <div className={`ml-2 px-2 py-1 rounded-full text-xs ${getReadinessColor(app.readinessScore)}`}>
-                      {getReadinessLabel(app.readinessScore)}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {app.migrationStrategy}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 rounded-full text-xs border ${getMigrationComplexity(app.migrationComplexity)}`}>
-                    {app.migrationComplexity}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                  <div className="truncate" title={app.keyBlockers?.join(', ')}>
-                    {app.keyBlockers?.slice(0, 2).join(', ')}
-                    {app.keyBlockers?.length > 2 && '...'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => setSelectedApplication(app)}
-                    className="text-blue-600 hover:text-blue-900"
-                  >
-                    View Details
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const MigrationPathsSection = () => (
-    <div className="space-y-6">
-      {/* Migration Wave Planning */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4">Migration Wave Planning</h3>
-        <div className="space-y-6">
-          {(cloudAssessment?.migrationWaves || []).map((wave, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-gray-900">Wave {index + 1}</h4>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <span>{wave.duration}</span>
-                  <span>{wave.applications?.length || 0} applications</span>
-                </div>
-              </div>
-              <p className="text-gray-600 mb-4">{wave.description}</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-700">Strategy Focus</div>
-                  <div className="text-sm text-gray-600">{wave.strategyFocus}</div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-700">Risk Level</div>
-                  <span className={`px-2 py-1 rounded-full text-xs border ${getMigrationComplexity(wave.riskLevel)}`}>
-                    {wave.riskLevel}
-                  </span>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-700">Dependencies</div>
-                  <div className="text-sm text-gray-600">{wave.dependencies || 'None'}</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {(wave.applications || []).map(app => (
-                  <div key={app.id} className="bg-gray-50 p-3 rounded border">
-                    <div className="font-medium text-sm">{app.name}</div>
-                    <div className="text-xs text-gray-500">{app.migrationStrategy}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Prerequisites and Dependencies */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4">Prerequisites and Dependencies</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Infrastructure Prerequisites</h4>
-            <ul className="space-y-2">
-              {(cloudAssessment?.infrastructurePrerequisites || []).map((prereq, index) => (
-                <li key={index} className="flex items-start">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                  <span className="text-sm text-gray-600">{prereq}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Application Dependencies</h4>
-            <ul className="space-y-2">
-              {(cloudAssessment?.applicationDependencies || []).map((dep, index) => (
-                <li key={index} className="flex items-start">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                  <span className="text-sm text-gray-600">{dep}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const CostAnalysisSection = () => (
-    <div className="space-y-6">
-      {/* Cost Summary */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4">Migration Cost Analysis</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">
-              {cloudAssessment?.costAnalysis?.totalMigrationCost || '$0'}
-            </div>
-            <div className="text-sm text-blue-700">Total Migration Cost</div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">
-              {cloudAssessment?.costAnalysis?.annualSavings || '$0'}
-            </div>
-            <div className="text-sm text-green-700">Annual Savings</div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-purple-600">
-              {cloudAssessment?.costAnalysis?.roiMonths || '0'}
-            </div>
-            <div className="text-sm text-purple-700">ROI (Months)</div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-yellow-600">
-              {cloudAssessment?.costAnalysis?.fiveYearTco || '$0'}
-            </div>
-            <div className="text-sm text-yellow-700">5-Year TCO</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Migration Costs Breakdown</h4>
-            <div className="space-y-3">
-              {(cloudAssessment?.costAnalysis?.migrationBreakdown || []).map((item, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">{item.category}</span>
-                  <span className="font-medium">{item.cost}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Ongoing Cost Comparison</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                <span className="text-sm font-medium">Current Annual Cost</span>
-                <span className="font-bold text-red-600">
-                  {cloudAssessment?.costAnalysis?.currentAnnualCost || '$0'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-green-50 rounded">
-                <span className="text-sm font-medium">Projected Cloud Cost</span>
-                <span className="font-bold text-green-600">
-                  {cloudAssessment?.costAnalysis?.projectedCloudCost || '$0'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
-                <span className="text-sm font-medium">Annual Savings</span>
-                <span className="font-bold text-blue-600">
-                  {cloudAssessment?.costAnalysis?.annualSavings || '$0'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Cost by Application */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4">Cost Analysis by Application</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Application
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Migration Cost
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Current Annual Cost
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Projected Annual Cost
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Annual Savings
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ROI (Months)
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {(cloudAssessment?.costAnalysis?.applicationCosts || []).map(app => (
-                <tr key={app.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {app.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {app.migrationCost}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {app.currentAnnualCost}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {app.projectedAnnualCost}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={app.annualSavings > 0 ? 'text-green-600' : 'text-red-600'}>
-                      {app.annualSavings > 0 ? '+' : ''}{app.annualSavingsFormatted}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {app.roiMonths}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-
-  const ApplicationDetailModal = ({ application, onClose }) => {
-    if (!application) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto m-4">
-          <div className="p-6 border-b">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold">{application.name} - Cloud Readiness Details</h3>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          
-          <div className="p-6 space-y-6">
-            {/* Assessment Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{application.readinessScore}%</div>
-                <div className="text-sm text-gray-600">Readiness Score</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-lg font-semibold">{application.migrationStrategy}</div>
-                <div className="text-sm text-gray-600">Recommended Strategy</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <span className={`px-2 py-1 rounded-full text-sm border ${getMigrationComplexity(application.migrationComplexity)}`}>
-                  {application.migrationComplexity}
-                </span>
-                <div className="text-sm text-gray-600 mt-1">Migration Complexity</div>
-              </div>
-            </div>
-
-            {/* Detailed Assessment */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Architecture Assessment</h4>
-                <div className="space-y-2">
-                  {(application.architectureAssessment || []).map((item, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span className="text-sm text-gray-600">{item.category}</span>
-                      <span className={`text-sm ${item.score >= 70 ? 'text-green-600' : item.score >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                        {item.score}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Technology Stack</h4>
-                <div className="space-y-2">
-                  {(application.technologyStack || []).map((tech, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">{tech.component}</span>
-                      <span className={`px-2 py-1 rounded-full text-xs ${tech.cloudReady ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {tech.cloudReady ? 'Compatible' : 'Needs Update'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Blockers and Requirements */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Key Blockers</h4>
-                <ul className="space-y-2">
-                  {(application.keyBlockers || []).map((blocker, index) => (
-                    <li key={index} className="flex items-start">
-                      <div className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                      <span className="text-sm text-gray-600">{blocker}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Migration Requirements</h4>
-                <ul className="space-y-2">
-                  {(application.migrationRequirements || []).map((req, index) => (
-                    <li key={index} className="flex items-start">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                      <span className="text-sm text-gray-600">{req}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Recommendations */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Recommendations</h4>
-              <div className="space-y-3">
-                {(application.recommendations || []).map((rec, index) => (
-                  <div key={index} className="bg-blue-50 p-4 rounded-lg">
-                    <div className="font-medium text-blue-900">{rec.title}</div>
-                    <div className="text-sm text-blue-700 mt-1">{rec.description}</div>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-blue-600">
-                      <span>Priority: {rec.priority}</span>
-                      <span>Effort: {rec.effort}</span>
-                      <span>Timeline: {rec.timeline}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const radarData = [
+    { domain: 'Security', score: cloudReadinessData.crossDomainAnalysis.securityReadiness, fullMark: 100 },
+    { domain: 'Infrastructure', score: cloudReadinessData.crossDomainAnalysis.infrastructureReadiness, fullMark: 100 },
+    { domain: 'DevOps', score: cloudReadinessData.crossDomainAnalysis.devopsReadiness, fullMark: 100 },
+    { domain: 'Data', score: cloudReadinessData.crossDomainAnalysis.dataReadiness, fullMark: 100 },
+    { domain: 'Business', score: Math.round(Object.values(cloudReadinessData.manualInputs.businessDrivers).reduce((a, b) => a + b, 0) / 4), fullMark: 100 },
+    { domain: 'Organization', score: Math.round(Object.values(cloudReadinessData.manualInputs.organizationalReadiness).reduce((a, b) => a + b, 0) / 4), fullMark: 100 }
+  ];
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg shadow animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="space-y-3">
-            <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Cloud Migration Readiness</h2>
-            <p className="text-gray-600 mt-1">
-              Comprehensive assessment of application portfolio readiness for cloud migration
-            </p>
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-6">
+            <div className="flex items-center">
+              <Cloud className="h-8 w-8 mr-3" />
+              <div>
+                <h1 className="text-2xl font-bold">Cloud Migration Readiness</h1>
+                <p className="text-blue-100">Comprehensive cross-domain assessment with AI-powered insights</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              {dataSaved && lastSaveTime && (
+                <div className="text-sm text-blue-200">
+                  <Clock className="h-4 w-4 inline mr-1" />
+                  Saved {new Date(lastSaveTime).toLocaleTimeString()}
+                </div>
+              )}
+              <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors">
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={importAssessment}
+                  className="hidden"
+                />
+              </label>
+              <button
+                onClick={exportAssessment}
+                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </button>
+              <button
+                onClick={saveAssessment}
+                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
+          
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 pb-4">
             <button
-              onClick={() => setViewMode('overview')}
-              className={`px-4 py-2 text-sm rounded-lg ${
-                viewMode === 'overview' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
+              onClick={() => setCurrentView('overview')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                currentView === 'overview' ? 'bg-white text-blue-800' : 'text-blue-100 hover:text-white hover:bg-blue-700'
               }`}
             >
+              <BarChart3 className="h-4 w-4 inline mr-2" />
               Overview
             </button>
             <button
-              onClick={() => setViewMode('applications')}
-              className={`px-4 py-2 text-sm rounded-lg ${
-                viewMode === 'applications' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
+              onClick={() => setCurrentView('manual-input')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                currentView === 'manual-input' ? 'bg-white text-blue-800' : 'text-blue-100 hover:text-white hover:bg-blue-700'
               }`}
             >
-              Applications
+              <Edit3 className="h-4 w-4 inline mr-2" />
+              Manual Assessment
             </button>
             <button
-              onClick={() => setViewMode('migration-paths')}
-              className={`px-4 py-2 text-sm rounded-lg ${
-                viewMode === 'migration-paths' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
+              onClick={() => setCurrentView('analyze')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                currentView === 'analyze' ? 'bg-white text-blue-800' : 'text-blue-100 hover:text-white hover:bg-blue-700'
               }`}
             >
-              Migration Paths
-            </button>
-            <button
-              onClick={() => setViewMode('cost-analysis')}
-              className={`px-4 py-2 text-sm rounded-lg ${
-                viewMode === 'cost-analysis' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
-              }`}
-            >
-              Cost Analysis
+              <Brain className="h-4 w-4 inline mr-2" />
+              AI Analysis
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      {viewMode === 'overview' && <OverviewSection />}
-      {viewMode === 'applications' && <ApplicationsSection />}
-      {viewMode === 'migration-paths' && <MigrationPathsSection />}
-      {viewMode === 'cost-analysis' && <CostAnalysisSection />}
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Overview View */}
+        {currentView === 'overview' && (
+          <div className="space-y-6">
+            {/* Overall Readiness Score */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">Overall Cloud Readiness</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-blue-600 mb-2">
+                    {cloudReadinessData.crossDomainAnalysis.overallScore}%
+                  </div>
+                  <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getReadinessColor(cloudReadinessData.crossDomainAnalysis.overallScore)}`}>
+                    {getReadinessLabel(cloudReadinessData.crossDomainAnalysis.overallScore)}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Migration Approach</span>
+                    <span className="font-semibold">{cloudReadinessData.migrationStrategy.recommendedApproach}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Estimated Timeline</span>
+                    <span className="font-semibold">{cloudReadinessData.migrationStrategy.timeline}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Migration Phases</span>
+                    <span className="font-semibold">{cloudReadinessData.migrationStrategy.phases.length}</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Servers Assessed</span>
+                    <span className="font-semibold">{cloudReadinessData.domainScores.infrastructure.serversAssessed}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Security Issues</span>
+                    <span className="font-semibold text-red-600">{cloudReadinessData.domainScores.security.vulnerabilities.critical + cloudReadinessData.domainScores.security.vulnerabilities.high}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">DevOps Maturity</span>
+                    <span className="font-semibold">{cloudReadinessData.crossDomainAnalysis.devopsReadiness}%</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Est. Monthly Savings</span>
+                    <span className="font-semibold text-green-600">${cloudReadinessData.domainScores.infrastructure.estimatedSavings?.toLocaleString() || '0'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Key Risks</span>
+                    <span className="font-semibold text-orange-600">{cloudReadinessData.migrationStrategy.risks.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Prerequisites</span>
+                    <span className="font-semibold text-blue-600">{cloudReadinessData.migrationStrategy.prerequisites.length}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      {/* Application Detail Modal */}
-      {selectedApplication && (
-        <ApplicationDetailModal
-          application={selectedApplication}
-          onClose={() => setSelectedApplication(null)}
-        />
-      )}
+            {/* Cross-Domain Readiness Radar */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Cross-Domain Readiness Assessment</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="domain" />
+                    <PolarRadiusAxis domain={[0, 100]} />
+                    <Radar
+                      name="Readiness Score"
+                      dataKey="score"
+                      stroke="#3B82F6"
+                      fill="#3B82F6"
+                      fillOpacity={0.2}
+                      strokeWidth={2}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Domain Breakdown */}
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Domain Readiness Breakdown</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Shield className="h-5 w-5 text-red-600 mr-2" />
+                      <span className="font-medium">Security</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full bg-red-500"
+                          style={{ width: `${cloudReadinessData.crossDomainAnalysis.securityReadiness}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium w-12 text-right">{cloudReadinessData.crossDomainAnalysis.securityReadiness}%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Server className="h-5 w-5 text-blue-600 mr-2" />
+                      <span className="font-medium">Infrastructure</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full bg-blue-500"
+                          style={{ width: `${cloudReadinessData.crossDomainAnalysis.infrastructureReadiness}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium w-12 text-right">{cloudReadinessData.crossDomainAnalysis.infrastructureReadiness}%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <GitBranch className="h-5 w-5 text-green-600 mr-2" />
+                      <span className="font-medium">DevOps</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full bg-green-500"
+                          style={{ width: `${cloudReadinessData.crossDomainAnalysis.devopsReadiness}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium w-12 text-right">{cloudReadinessData.crossDomainAnalysis.devopsReadiness}%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Database className="h-5 w-5 text-purple-600 mr-2" />
+                      <span className="font-medium">Data</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full bg-purple-500"
+                          style={{ width: `${cloudReadinessData.crossDomainAnalysis.dataReadiness}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium w-12 text-right">{cloudReadinessData.crossDomainAnalysis.dataReadiness}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Migration Strategy */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">Recommended Migration Strategy</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">Migration Phases</h4>
+                  <div className="space-y-3">
+                    {cloudReadinessData.migrationStrategy.phases.map((phase, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-medium text-gray-900">{phase.phase}</span>
+                          <span className="text-sm text-gray-500">{phase.duration}</span>
+                        </div>
+                        <div className="text-sm text-gray-600">{phase.focus}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">Key Risks</h4>
+                    <ul className="space-y-2">
+                      {cloudReadinessData.migrationStrategy.risks.map((risk, index) => (
+                        <li key={index} className="flex items-start">
+                          <AlertTriangle className="h-4 w-4 text-orange-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-gray-600">{risk}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">Prerequisites</h4>
+                    <ul className="space-y-2">
+                      {cloudReadinessData.migrationStrategy.prerequisites.map((prereq, index) => (
+                        <li key={index} className="flex items-start">
+                          <CheckCircle className="h-4 w-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-gray-600">{prereq}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Manual Input View */}
+        {currentView === 'manual-input' && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">Manual Assessment Inputs</h3>
+              <p className="text-gray-600 mb-6">
+                Provide additional context and manual assessments to refine your cloud readiness score.
+              </p>
+
+              {/* Business Drivers */}
+              <div className="mb-8">
+                <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+                  <Target className="h-5 w-5 text-blue-600 mr-2" />
+                  Business Drivers
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Object.entries(cloudReadinessData.manualInputs.businessDrivers).map(([key, value]) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                        {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                      </label>
+                      <div className="flex items-center space-x-4">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={value}
+                          onChange={(e) => handleManualInputChange('businessDrivers', key, parseInt(e.target.value))}
+                          className="flex-1"
+                        />
+                        <span className="w-12 text-sm font-medium">{value}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Organizational Readiness */}
+              <div className="mb-8">
+                <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+                  <Settings className="h-5 w-5 text-green-600 mr-2" />
+                  Organizational Readiness
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Object.entries(cloudReadinessData.manualInputs.organizationalReadiness).map(([key, value]) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                        {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                      </label>
+                      <div className="flex items-center space-x-4">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={value}
+                          onChange={(e) => handleManualInputChange('organizationalReadiness', key, parseInt(e.target.value))}
+                          className="flex-1"
+                        />
+                        <span className="w-12 text-sm font-medium">{value}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Technical Gaps */}
+              <div className="mb-8">
+                <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+                  <Monitor className="h-5 w-5 text-purple-600 mr-2" />
+                  Technical Gaps Assessment
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Object.entries(cloudReadinessData.manualInputs.technicalGaps).map(([key, value]) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                        {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                      </label>
+                      <div className="flex items-center space-x-4">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={value}
+                          onChange={(e) => handleManualInputChange('technicalGaps', key, parseInt(e.target.value))}
+                          className="flex-1"
+                        />
+                        <span className="w-12 text-sm font-medium">{value}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Updated Score Display */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">Updated Cloud Readiness Score</h4>
+                <div className="text-2xl font-bold text-blue-600">
+                  {cloudReadinessData.crossDomainAnalysis.overallScore}%
+                </div>
+                <p className="text-sm text-blue-700">
+                  Score updated based on technical assessment (70%) and manual inputs (30%)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analysis View */}
+        {currentView === 'analyze' && (
+          <div className="space-y-6">
+            {/* Analysis Controls */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">AI-Powered Cloud Readiness Analysis</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Generate comprehensive analysis based on cross-domain assessment and manual inputs
+                  </p>
+                </div>
+                <button
+                  onClick={runAnalysis}
+                  disabled={isAnalyzing}
+                  className={`inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                    isAnalyzing 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                  }`}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <RefreshCw className="animate-spin -ml-1 mr-3 h-4 w-4" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="h-4 w-4 mr-2" />
+                      Run Analysis
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Analysis Results */}
+            {showAnalysisResults && (
+              <div className="space-y-6">
+                {/* Strategic Analysis */}
+                <div className="bg-white rounded-lg shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <Target className="h-5 w-5 mr-2 text-blue-600" />
+                      Strategic Analysis
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose max-w-none text-gray-700">
+                      {cloudReadinessData.analysis?.strategicAnalysis?.split('\n').map((line, index) => (
+                        <p key={index} className="mb-2">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Technical Analysis */}
+                <div className="bg-white rounded-lg shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <Settings className="h-5 w-5 mr-2 text-green-600" />
+                      Technical Analysis
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose max-w-none text-gray-700">
+                      {cloudReadinessData.analysis?.technicalAnalysis?.split('\n').map((line, index) => (
+                        <p key={index} className="mb-2">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Risk Analysis */}
+                <div className="bg-white rounded-lg shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
+                      Risk Analysis
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose max-w-none text-gray-700">
+                      {cloudReadinessData.analysis?.riskAnalysis?.split('\n').map((line, index) => (
+                        <p key={index} className="mb-2">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recommendations Summary */}
+                <div className="bg-white rounded-lg shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <CheckCircle className="h-5 w-5 mr-2 text-purple-600" />
+                      Strategic Recommendations
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose max-w-none text-gray-700">
+                      {cloudReadinessData.analysis?.recommendationsSummary?.split('\n').map((line, index) => (
+                        <p key={index} className="mb-2">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* No Analysis Yet */}
+            {!showAnalysisResults && !isAnalyzing && (
+              <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+                <Brain className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Ready for Analysis</h3>
+                <p className="text-gray-600 mb-6">
+                  Your cross-domain assessment data is ready. Run AI analysis to generate comprehensive insights and strategic recommendations.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
+                  <div className="bg-blue-50 p-3 rounded">
+                    <div className="font-medium text-blue-900">Security</div>
+                    <div className="text-blue-600">{cloudReadinessData.crossDomainAnalysis.securityReadiness}%</div>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded">
+                    <div className="font-medium text-green-900">Infrastructure</div>
+                    <div className="text-green-600">{cloudReadinessData.crossDomainAnalysis.infrastructureReadiness}%</div>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded">
+                    <div className="font-medium text-yellow-900">DevOps</div>
+                    <div className="text-yellow-600">{cloudReadinessData.crossDomainAnalysis.devopsReadiness}%</div>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded">
+                    <div className="font-medium text-purple-900">Overall</div>
+                    <div className="text-purple-600">{cloudReadinessData.crossDomainAnalysis.overallScore}%</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

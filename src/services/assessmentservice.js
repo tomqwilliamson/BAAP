@@ -93,5 +93,25 @@ export const assessmentService = {
   async generateRecommendations(assessmentId) {
     const response = await apiClient.post(`/recommendations/assessment/${assessmentId}/generate`);
     return response.data;
+  },
+
+  async getCloudReadiness(assessmentId) {
+    const response = await apiClient.get(`/assessments/${assessmentId}/cloud-readiness`);
+    return response.data;
+  },
+
+  async updateCloudReadiness(assessmentId, data) {
+    const response = await apiClient.put(`/assessments/${assessmentId}/cloud-readiness`, data);
+    return response.data;
+  },
+
+  async analyzeCloudReadiness(assessmentId) {
+    const response = await apiClient.post(`/assessments/${assessmentId}/cloud-readiness/analyze`);
+    return response.data;
+  },
+
+  async getAssessmentData(assessmentId, domain = 'all') {
+    const response = await apiClient.get(`/assessments/${assessmentId}/data?domain=${domain}`);
+    return response.data;
   }
 };

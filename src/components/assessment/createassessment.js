@@ -100,7 +100,7 @@ function CreateAssessment() {
     try {
       const assessment = await createAssessment(formData);
       toast.success('Assessment created successfully!');
-      navigate(`/assessments/${assessment.id}`);
+      navigate(`/app/assessments/${assessment.id}`);
     } catch (error) {
       toast.error('Failed to create assessment');
       console.error('Error creating assessment:', error);
@@ -277,7 +277,7 @@ function CreateAssessment() {
           <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/app/dashboard')}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Cancel

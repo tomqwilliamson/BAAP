@@ -57,7 +57,7 @@ function RecentActivity({ assessments }) {
                       <div>
                         <p className="text-sm text-gray-500">
                           <Link 
-                            to={`/assessments/${assessment.id}`}
+                            to={`/app/assessments/${assessment.id}`}
                             className="font-medium text-gray-900 hover:text-blue-600"
                           >
                             {assessment.name}
@@ -84,7 +84,7 @@ function RecentActivity({ assessments }) {
         </div>
         <div className="mt-6">
           <Link
-            to="/assessments"
+            to="/app/assessments"
             className="text-sm text-blue-600 hover:text-blue-500 font-medium"
           >
             View all assessments →

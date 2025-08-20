@@ -29,12 +29,15 @@ function Layout() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/assessments/new" element={<CreateAssessment />} />
               <Route path="/assessments/:id" element={<AssessmentDetail />} />
+              <Route path="/assessments" element={<Dashboard />} />
               <Route path="/applications/:id" element={<ApplicationDetail />} />
               <Route path="/security" element={<SecurityAssessment />} />
               <Route path="/infrastructure" element={<InfrastructureAssessment />} />
+              <Route path="/data" element={<DataArchitecture />} />
               <Route path="/data-architecture" element={<DataArchitecture />} />
               <Route path="/devops" element={<DevOpsAssessment />} />
               <Route path="/business-context" element={<BusinessContext />} />
+              <Route path="/architecture" element={<ArchitectureReview />} />
               <Route path="/architecture-review" element={<ArchitectureReview />} />
               <Route path="/cloud-readiness" element={<CloudReadiness />} />
               <Route path="/recommendations" element={<Recommendations />} />

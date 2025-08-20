@@ -1,7 +1,7 @@
 // src/components/Dashboard/Dashboard.js - Main dashboard component
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { assessmentService } from '../../services/assessmentservice';
+// import { assessmentService } from '../../services/assessmentservice'; // Using mock data for now
 import MetricsOverview from './metricsoverview';
 import PortfolioSummary from './portfoliosummary';
 import RecentActivity from './recentactivity';
@@ -20,10 +20,65 @@ function Dashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const data = await assessmentService.getDashboardOverview();
-      setDashboardData(data);
+      // For now, use mock data since the API endpoint may not be implemented
+      // In production, uncomment the line below:
+      // const data = await assessmentService.getDashboardOverview();
+      
+      const mockData = {
+        metrics: {
+          totalApplications: 8,
+          assessmentProgress: 75,
+          securityIssues: 142,
+          cloudReadiness: 72
+        },
+        recentAssessments: [
+          {
+            id: 1,
+            name: 'Q4 2024 Portfolio Assessment',
+            status: 'Completed',
+            applicationCount: 8,
+            createdAt: '2024-12-15T10:30:00Z'
+          },
+          {
+            id: 2,
+            name: 'Security Compliance Review',
+            status: 'InProgress',
+            applicationCount: 5,
+            createdAt: '2024-12-18T14:45:00Z'
+          },
+          {
+            id: 3,
+            name: 'Cloud Migration Readiness',
+            status: 'Analyzing',
+            applicationCount: 12,
+            createdAt: '2024-12-20T09:15:00Z'
+          },
+          {
+            id: 4,
+            name: 'Legacy System Assessment',
+            status: 'Completed',
+            applicationCount: 3,
+            createdAt: '2024-12-10T16:20:00Z'
+          },
+          {
+            id: 5,
+            name: 'DevOps Maturity Evaluation',
+            status: 'Failed',
+            applicationCount: 6,
+            createdAt: '2024-12-08T11:10:00Z'
+          }
+        ]
+      };
+      
+      setDashboardData(mockData);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      // Fallback to mock data even if there's an error
+      const fallbackData = {
+        metrics: { totalApplications: 0, assessmentProgress: 0, securityIssues: 0, cloudReadiness: 0 },
+        recentAssessments: []
+      };
+      setDashboardData(fallbackData);
     } finally {
       setLoading(false);
     }
@@ -77,9 +132,9 @@ function Dashboard() {
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
-            to="/assessments/new"
+            to="/app/assessments/new"
             className="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200"
           >
             <div className="text-blue-600 font-medium">Start New Assessment</div>
@@ -89,22 +144,72 @@ function Dashboard() {
           </Link>
           
           <Link
-            to="/recommendations"
-            className="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200"
+            to="/app/security"
+            className="block p-4 border border-gray-200 rounded-lg hover:border-red-300 hover:shadow-md transition-all duration-200"
           >
-            <div className="text-blue-600 font-medium">View Recommendations</div>
+            <div className="text-red-600 font-medium">Security Assessment</div>
             <div className="text-gray-500 text-sm mt-1">
-              Review AI-generated improvement suggestions
+              Analyze security posture and vulnerabilities
             </div>
           </Link>
           
           <Link
-            to="/security"
+            to="/app/infrastructure"
+            className="block p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:shadow-md transition-all duration-200"
+          >
+            <div className="text-green-600 font-medium">Infrastructure Assessment</div>
+            <div className="text-gray-500 text-sm mt-1">
+              Evaluate server readiness and cloud migration potential
+            </div>
+          </Link>
+          
+          <Link
+            to="/app/devops"
+            className="block p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:shadow-md transition-all duration-200"
+          >
+            <div className="text-purple-600 font-medium">DevOps Assessment</div>
+            <div className="text-gray-500 text-sm mt-1">
+              Assess CI/CD pipeline maturity and automation
+            </div>
+          </Link>
+          
+          <Link
+            to="/app/cloud-readiness"
+            className="block p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all duration-200"
+          >
+            <div className="text-indigo-600 font-medium">Cloud Readiness</div>
+            <div className="text-gray-500 text-sm mt-1">
+              Comprehensive cloud migration readiness analysis
+            </div>
+          </Link>
+          
+          <Link
+            to="/app/data"
+            className="block p-4 border border-gray-200 rounded-lg hover:border-yellow-300 hover:shadow-md transition-all duration-200"
+          >
+            <div className="text-yellow-600 font-medium">Data Assessment</div>
+            <div className="text-gray-500 text-sm mt-1">
+              Analyze data architecture and migration strategy
+            </div>
+          </Link>
+          
+          <Link
+            to="/app/architecture"
+            className="block p-4 border border-gray-200 rounded-lg hover:border-pink-300 hover:shadow-md transition-all duration-200"
+          >
+            <div className="text-pink-600 font-medium">Architecture Review</div>
+            <div className="text-gray-500 text-sm mt-1">
+              Review application architecture and dependencies
+            </div>
+          </Link>
+          
+          <Link
+            to="/app/recommendations"
             className="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200"
           >
-            <div className="text-blue-600 font-medium">Security Assessment</div>
+            <div className="text-blue-600 font-medium">Results & Insights</div>
             <div className="text-gray-500 text-sm mt-1">
-              Analyze security posture and vulnerabilities
+              View comprehensive recommendations and business case
             </div>
           </Link>
         </div>

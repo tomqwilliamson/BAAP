@@ -259,21 +259,49 @@ function BusinessContext() {
       // Simulate LLM analysis - in real implementation, this would call your LLM service
       await new Promise(resolve => setTimeout(resolve, 3000));
       
+      // Generate analysis based on available data
+      const hasDrivers = businessData.businessDrivers.length > 0;
+      const hasStakeholders = businessData.stakeholderGroups.length > 0;
+      const hasTimeline = businessData.projectTimeline.length > 0;
+      const hasRisks = businessData.riskAssessment.length > 0;
+      const hasProject = businessData.projectInfo.name;
+      
       const mockAnalysis = {
-        driversAnalysis: `Based on the business drivers identified, the organization is primarily focused on digital transformation and operational efficiency. The high impact and urgency scores for security compliance and digital transformation indicate these should be top priorities. Consider addressing these drivers in parallel to maximize business value delivery.`,
+        driversAnalysis: hasDrivers 
+          ? `Analysis of ${businessData.businessDrivers.length} business driver(s) shows clear organizational focus areas. ${businessData.businessDrivers.filter(d => d.priority === 'Critical' || d.priority === 'High').length > 0 ? 'High-priority drivers indicate urgent business needs that should be addressed immediately.' : 'The balanced priority distribution suggests a well-planned transformation approach.'} Average impact score: ${Math.round(businessData.businessDrivers.reduce((sum, d) => sum + d.impact, 0) / businessData.businessDrivers.length)}% with urgency at ${Math.round(businessData.businessDrivers.reduce((sum, d) => sum + d.urgency, 0) / businessData.businessDrivers.length)}%.`
+          : `Business drivers analysis framework: Organizations typically focus on cost optimization (40%), digital transformation (30%), security compliance (20%), and operational efficiency (10%). Consider identifying your primary drivers in areas such as competitive advantage, regulatory compliance, scalability needs, and innovation requirements.`,
         
-        stakeholderAnalysis: `The stakeholder matrix shows strong executive support with high influence stakeholders engaged. IT leadership involvement is crucial for success. Consider establishing a steering committee with C-level executives and key IT leaders to ensure alignment and decision-making velocity.`,
+        stakeholderAnalysis: hasStakeholders 
+          ? `Stakeholder analysis reveals ${businessData.stakeholderGroups.length} key stakeholder group(s) identified. ${businessData.stakeholderGroups.filter(s => s.influence === 'High').length} high-influence stakeholders require special attention for project success. The current stakeholder matrix shows ${businessData.stakeholderGroups.filter(s => s.interest === 'High').length} highly interested parties, which indicates ${businessData.stakeholderGroups.filter(s => s.interest === 'High').length > businessData.stakeholderGroups.length / 2 ? 'strong organizational support' : 'need for increased engagement strategies'}.`
+          : `Stakeholder management framework: Identify key stakeholders across executive leadership (C-level), operational management (directors/VPs), technical teams (architects/leads), and end users. Map each by influence level (high/medium/low) and interest (high/medium/low) to develop targeted engagement strategies.`,
         
-        timelineAnalysis: `The project timeline appears aggressive but achievable with proper resource allocation. Consider implementing a phased approach with early wins in the first 6 months to maintain stakeholder engagement and demonstrate value. Dependencies between phases should be carefully managed.`,
+        timelineAnalysis: hasTimeline 
+          ? `Project timeline consists of ${businessData.projectTimeline.length} planned phase(s). ${hasProject ? `For the "${businessData.projectInfo.name}" project, ` : ''}the phased approach ${businessData.projectTimeline.length > 3 ? 'appears comprehensive with multiple delivery milestones' : 'follows a streamlined delivery model'}. Timeline dependencies should be carefully managed to ensure sequential delivery success.`
+          : `Timeline planning framework: Consider a phased approach with (1) Discovery & Planning (2-3 months), (2) Foundation & Architecture (3-6 months), (3) Implementation & Integration (6-12 months), and (4) Testing & Deployment (2-4 months). Adjust timelines based on organizational complexity and resource availability.`,
         
-        riskAnalysis: `The identified risks are typical for transformation projects. Resource availability risk requires immediate attention through cross-training and potentially augmenting the team. Budget constraints can be mitigated through a phased implementation approach, focusing on high-value, low-effort initiatives first.`,
+        riskAnalysis: hasRisks 
+          ? `Risk assessment identifies ${businessData.riskAssessment.length} key risk(s). Risk distribution: ${businessData.riskAssessment.filter(r => r.probability === 'High').length} high-probability, ${businessData.riskAssessment.filter(r => r.impact === 'High').length} high-impact risks require immediate mitigation strategies. Categories include: ${[...new Set(businessData.riskAssessment.map(r => r.category))].join(', ')}.`
+          : `Risk management framework: Common transformation risks include technical complexity (40% probability), resource constraints (60% probability), stakeholder resistance (30% probability), and budget overruns (25% probability). Develop mitigation strategies for each category with defined ownership and monitoring processes.`,
         
-        recommendations: `1. Prioritize security compliance and digital transformation initiatives
-2. Establish a project steering committee with key stakeholders
-3. Implement a phased approach with quarterly milestones
-4. Invest in team cross-training to mitigate resource risks
-5. Consider external expertise for specialized domains
-6. Implement regular stakeholder communication cadence`
+        recommendations: hasDrivers || hasStakeholders || hasTimeline || hasRisks
+          ? `Strategic Recommendations based on current context:
+
+1. ${hasDrivers ? `Address ${businessData.businessDrivers.filter(d => d.priority === 'Critical').length > 0 ? 'critical business drivers first' : 'high-impact drivers systematically'}` : 'Define and prioritize business drivers'}
+2. ${hasStakeholders ? `Leverage ${businessData.stakeholderGroups.filter(s => s.influence === 'High').length} high-influence stakeholder(s) as project champions` : 'Establish stakeholder governance structure'}
+3. ${hasTimeline ? `Execute ${businessData.projectTimeline.length}-phase delivery plan with milestone reviews` : 'Develop detailed project timeline with dependencies'}
+4. ${hasRisks ? `Implement mitigation for ${businessData.riskAssessment.filter(r => r.impact === 'High').length} high-impact risks` : 'Conduct comprehensive risk assessment'}
+5. Establish change management and communication plans
+6. Define success metrics and regular review cadences`
+          : `Strategic Recommendations for Project Success:
+
+1. Conduct comprehensive business context workshop to identify drivers
+2. Map stakeholder influence and develop engagement strategies  
+3. Create detailed project timeline with dependencies and milestones
+4. Perform risk assessment with mitigation strategies
+5. Establish governance structure and communication plans
+6. Define success criteria and measurement frameworks
+7. Plan for change management and organizational readiness
+8. Consider pilot approaches for risk mitigation`
       };
       
       setBusinessData(prev => ({
@@ -282,7 +310,7 @@ function BusinessContext() {
       }));
       
       setShowAnalysisResults(true);
-      toast.success('Analysis completed successfully');
+      toast.success('Analysis completed successfully!');
     } catch (error) {
       console.error('Error running analysis:', error);
       toast.error('Error running analysis');
@@ -1154,13 +1182,12 @@ function BusinessContext() {
                 </button>
                 <button
                   onClick={runLLMAnalysis}
-                  disabled={isAnalyzing || businessData.businessDrivers.length === 0 || !dataSaved}
+                  disabled={isAnalyzing}
                   className={`flex items-center px-4 py-2 text-white rounded-md transition-colors ${
-                    isAnalyzing || businessData.businessDrivers.length === 0 || !dataSaved
+                    isAnalyzing
                       ? 'bg-gray-300 cursor-not-allowed'
                       : 'bg-purple-600 hover:bg-purple-700 hover:shadow-lg'
                   }`}
-                  title={`Debug: analyzing=${isAnalyzing}, drivers=${businessData.businessDrivers.length}, saved=${dataSaved}`}
                 >
                   {isAnalyzing ? (
                     <>
@@ -1177,15 +1204,10 @@ function BusinessContext() {
               </div>
             </div>
 
-            {(businessData.businessDrivers.length === 0 || !dataSaved) && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-yellow-800 text-sm">
-                  {businessData.businessDrivers.length === 0 
-                    ? 'Add business context data in the "Workshop Data" section before running analysis.'
-                    : !dataSaved
-                    ? 'Please save your business context data before running analysis.'
-                    : 'Add business context data and save before running analysis.'
-                  }
+            {businessData.businessDrivers.length === 0 && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-blue-800 text-sm">
+                  <strong>Tip:</strong> For best results, add business context data in the "Workshop Data" section before running analysis. The analysis will work with any available data or provide a general assessment framework.
                 </p>
               </div>
             )}

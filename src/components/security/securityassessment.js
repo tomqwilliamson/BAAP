@@ -1,29 +1,101 @@
 // src/components/Security/SecurityAssessment.js - Security assessment view
 import React, { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, Lock, Key, Eye, UserCheck } from 'lucide-react';
-import { useAssessment } from '../../contexts/assessmentcontext';
-import { assessmentService } from '../../services/assessmentservice';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { 
+  Shield, AlertTriangle, CheckCircle, Upload, Download, Save, FileText, Image,
+  Brain, RefreshCw, Clock, Activity, Database, Server, Wifi, Monitor
+} from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import toast from 'react-hot-toast';
 
 function SecurityAssessment() {
-  const { currentAssessment } = useAssessment();
+  const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
+  const [showAnalysisResults, setShowAnalysisResults] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [dataSaved, setDataSaved] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState(null);
+  
   const [securityData, setSecurityData] = useState({
+    crossAssessment: {
+      infrastructureRisks: [],
+      databaseVulnerabilities: [],
+      devopsSecurityGaps: [],
+      overallSecurityScore: 0
+    },
+    securityLogs: {
+      vulnerabilityScans: [],
+      siemAlerts: [],
+      accessLogs: [],
+      networkTraffic: [],
+      endpointEvents: []
+    },
     findings: [],
     summary: {},
     owasp: [],
-    compliance: []
+    compliance: [],
+    uploadedFiles: [],
+    analysis: {
+      securityPostureAnalysis: '',
+      threatAnalysis: '',
+      complianceAnalysis: '',
+      recommendationsAnalysis: ''
+    }
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadSecurityData();
-  }, [currentAssessment]);
+  }, []);
 
   const loadSecurityData = async () => {
     try {
       setLoading(true);
-      // Mock security assessment data
+      // Mock comprehensive security assessment data
       const mockData = {
+        crossAssessment: {
+          infrastructureRisks: [
+            { source: 'Azure Migrate', risk: 'Unencrypted data migration', severity: 'High', count: 3 },
+            { source: 'Network Assessment', risk: 'Open firewall ports', severity: 'Critical', count: 2 },
+            { source: 'Server Analysis', risk: 'Unpatched vulnerabilities', severity: 'High', count: 8 }
+          ],
+          databaseVulnerabilities: [
+            { source: 'DMA Assessment', risk: 'SQL injection points', severity: 'Critical', count: 4 },
+            { source: 'Database Audit', risk: 'Weak authentication', severity: 'High', count: 6 },
+            { source: 'Access Review', risk: 'Excessive privileges', severity: 'Medium', count: 12 }
+          ],
+          devopsSecurityGaps: [
+            { source: 'GitHub Analysis', risk: 'Secrets in code', severity: 'Critical', count: 2 },
+            { source: 'Pipeline Review', risk: 'Insecure CI/CD', severity: 'High', count: 5 },
+            { source: 'Container Scan', risk: 'Vulnerable images', severity: 'Medium', count: 9 }
+          ],
+          overallSecurityScore: 68
+        },
+        securityLogs: {
+          vulnerabilityScans: [
+            { scanner: 'Nessus', lastScan: '2024-01-15', critical: 12, high: 28, medium: 45 },
+            { scanner: 'OpenVAS', lastScan: '2024-01-14', critical: 8, high: 22, medium: 38 },
+            { scanner: 'Qualys', lastScan: '2024-01-13', critical: 15, high: 31, medium: 52 }
+          ],
+          siemAlerts: [
+            { source: 'Splunk', type: 'Suspicious Login', count: 23, severity: 'High' },
+            { source: 'QRadar', type: 'Malware Detection', count: 8, severity: 'Critical' },
+            { source: 'Sentinel', type: 'Data Exfiltration', count: 4, severity: 'Critical' }
+          ],
+          accessLogs: [
+            { system: 'Active Directory', events: 1247, anomalies: 23, lastUpdate: '2024-01-15' },
+            { system: 'VPN Access', events: 892, anomalies: 12, lastUpdate: '2024-01-15' },
+            { system: 'Database Access', events: 2156, anomalies: 45, lastUpdate: '2024-01-15' }
+          ],
+          networkTraffic: [
+            { source: 'Firewall Logs', blocked: 1247, allowed: 8956, suspicious: 34 },
+            { source: 'IDS/IPS', detections: 89, blocked: 67, investigated: 22 },
+            { source: 'DNS Logs', queries: 12456, malicious: 23, blocked: 18 }
+          ],
+          endpointEvents: [
+            { agent: 'CrowdStrike', endpoints: 245, threats: 12, quarantined: 8 },
+            { agent: 'Windows Defender', endpoints: 189, threats: 23, quarantined: 19 },
+            { agent: 'Carbon Black', endpoints: 156, threats: 8, quarantined: 6 }
+          ]
+        },
         findings: [
           {
             id: 1,
@@ -57,24 +129,29 @@ function SecurityAssessment() {
           }
         ],
         summary: {
-          critical: 1,
-          high: 1,
-          medium: 2,
-          low: 4,
-          total: 8
+          critical: 35,
+          high: 67,
+          medium: 142,
+          low: 89,
+          total: 333
         },
         owasp: [
-          { name: 'Injection', count: 1, severity: 'Critical' },
-          { name: 'Broken Authentication', count: 1, severity: 'High' },
-          { name: 'Security Misconfiguration', count: 2, severity: 'Medium' },
-          { name: 'Cross-Site Scripting', count: 1, severity: 'Medium' },
-          { name: 'Insecure Deserialization', count: 1, severity: 'Low' }
+          { name: 'Injection', count: 8, severity: 'Critical' },
+          { name: 'Broken Authentication', count: 12, severity: 'High' },
+          { name: 'Security Misconfiguration', count: 28, severity: 'Medium' },
+          { name: 'Cross-Site Scripting', count: 15, severity: 'Medium' },
+          { name: 'Insecure Deserialization', count: 9, severity: 'Low' }
         ],
         compliance: [
           { framework: 'OWASP Top 10', score: 75, status: 'Partial' },
           { framework: 'ISO 27001', score: 82, status: 'Good' },
           { framework: 'NIST Cybersecurity', score: 78, status: 'Good' },
           { framework: 'GDPR', score: 85, status: 'Good' }
+        ],
+        uploadedFiles: [
+          { name: 'vulnerability-scan-results.xml', type: 'vulnerability-scan', size: '8.7 MB', uploadDate: '2024-01-15', status: 'Processed' },
+          { name: 'siem-alerts-export.json', type: 'siem', size: '12.3 MB', uploadDate: '2024-01-14', status: 'Processed' },
+          { name: 'firewall-logs.txt', type: 'firewall', size: '45.2 MB', uploadDate: '2024-01-13', status: 'Processed' }
         ]
       };
       setSecurityData(mockData);
@@ -85,12 +162,138 @@ function SecurityAssessment() {
     }
   };
 
+  const handleFileUpload = (event, fileType) => {
+    const files = Array.from(event.target.files);
+    files.forEach(file => {
+      const newFile = {
+        name: file.name,
+        type: fileType,
+        size: formatFileSize(file.size),
+        uploadDate: new Date().toISOString().split('T')[0],
+        status: 'Processing'
+      };
+      
+      setSecurityData(prev => ({
+        ...prev,
+        uploadedFiles: [...prev.uploadedFiles, newFile]
+      }));
+
+      // Simulate processing
+      setTimeout(() => {
+        setSecurityData(prev => ({
+          ...prev,
+          uploadedFiles: prev.uploadedFiles.map(f => 
+            f.name === file.name ? { ...f, status: 'Processed' } : f
+          )
+        }));
+      }, 2000);
+    });
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const exportAssessment = () => {
+    const dataStr = JSON.stringify(securityData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'security-assessment.json';
+    link.click();
+  };
+
+  const importAssessment = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          setSecurityData(importedData);
+        } catch (error) {
+          alert('Error importing file: Invalid JSON format');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const saveAssessment = () => {
+    setDataSaved(true);
+    setLastSaveTime(new Date());
+    const dataStr = JSON.stringify(securityData, null, 2);
+    localStorage.setItem('security_assessment', dataStr);
+    toast.success('Assessment data saved successfully!');
+  };
+
+  const runAnalysis = async () => {
+    setIsAnalyzing(true);
+    setShowAnalysisResults(false);
+    
+    // Simulate analysis processing
+    setTimeout(() => {
+      const analysisResults = {
+        securityPostureAnalysis: `Cross-assessment security analysis reveals significant vulnerabilities across all technology domains:
+
+• Total security findings: ${securityData.summary?.total || 333} across infrastructure, databases, and DevOps pipelines
+• Critical vulnerabilities: ${securityData.summary?.critical || 35} requiring immediate attention
+• Overall security score: ${securityData.crossAssessment?.overallSecurityScore || 68}% - needs improvement
+• SIEM alerts show ${securityData.securityLogs?.siemAlerts?.reduce((sum, alert) => sum + alert.count, 0) || 35} security incidents requiring investigation`,
+
+        threatAnalysis: `Threat landscape analysis from security logs and vulnerability scans:
+
+• Vulnerability scanners detected ${securityData.securityLogs?.vulnerabilityScans?.reduce((sum, scan) => sum + scan.critical, 0) || 35} critical vulnerabilities
+• Network traffic analysis shows ${securityData.securityLogs?.networkTraffic?.reduce((sum, traffic) => sum + traffic.suspicious, 0) || 79} suspicious activities
+• Endpoint protection quarantined ${securityData.securityLogs?.endpointEvents?.reduce((sum, event) => sum + event.threats, 0) || 43} threats
+• Access log anomalies detected across ${securityData.securityLogs?.accessLogs?.length || 3} critical systems`,
+
+        complianceAnalysis: `Compliance framework assessment shows mixed readiness:
+
+• OWASP Top 10: ${securityData.compliance?.find(c => c.framework === 'OWASP Top 10')?.score || 75}% compliance with ${securityData.owasp?.length || 5} vulnerability categories identified
+• ISO 27001: ${securityData.compliance?.find(c => c.framework === 'ISO 27001')?.score || 82}% compliance - good security management practices
+• NIST Cybersecurity Framework: ${securityData.compliance?.find(c => c.framework === 'NIST Cybersecurity')?.score || 78}% compliance
+• GDPR: ${securityData.compliance?.find(c => c.framework === 'GDPR')?.score || 85}% compliance - strong data protection measures`,
+
+        recommendationsAnalysis: `Priority security recommendations based on cross-domain analysis:
+
+1. **Immediate (Critical)**: Address SQL injection vulnerabilities and patch unencrypted data migration paths
+2. **Short-term (High)**: Implement comprehensive access controls and strengthen CI/CD pipeline security
+3. **Medium-term**: Deploy advanced threat detection and response capabilities across all domains
+4. **Long-term**: Establish continuous security monitoring and automated compliance reporting`
+      };
+
+      setSecurityData(prev => ({
+        ...prev,
+        analysis: analysisResults
+      }));
+      
+      setIsAnalyzing(false);
+      setShowAnalysisResults(true);
+      toast.success('Analysis completed successfully!');
+    }, 3000);
+  };
+
   const severityColors = {
     Critical: '#EF4444',
     High: '#F97316',
     Medium: '#EAB308',
     Low: '#3B82F6'
   };
+
+  const crossAssessmentData = [
+    { domain: 'Infrastructure', score: 72, fullMark: 100 },
+    { domain: 'Database', score: 65, fullMark: 100 },
+    { domain: 'DevOps', score: 71, fullMark: 100 },
+    { domain: 'Network', score: 58, fullMark: 100 },
+    { domain: 'Endpoint', score: 76, fullMark: 100 },
+    { domain: 'Application', score: 63, fullMark: 100 }
+  ];
 
   const pieData = [
     { name: 'Critical', value: securityData.summary.critical, color: '#EF4444' },
@@ -127,188 +330,704 @@ function SecurityAssessment() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Security Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
-          <div className="flex items-center">
-            <AlertTriangle className="h-8 w-8 text-red-600 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">Critical Issues</p>
-              <p className="text-2xl font-bold text-gray-900">{securityData.summary.critical}</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header with tabs */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-6">
+            <div className="flex items-center">
+              <Shield className="h-8 w-8 mr-3" />
+              <div>
+                <h1 className="text-2xl font-bold">Security Assessment</h1>
+                <p className="text-blue-100">AI-powered security analysis across all infrastructure domains</p>
+              </div>
             </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
-          <div className="flex items-center">
-            <Shield className="h-8 w-8 text-orange-600 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">High Priority</p>
-              <p className="text-2xl font-bold text-gray-900">{securityData.summary.high}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
-          <div className="flex items-center">
-            <Eye className="h-8 w-8 text-yellow-600 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">Medium Risk</p>
-              <p className="text-2xl font-bold text-gray-900">{securityData.summary.medium}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-          <div className="flex items-center">
-            <CheckCircle className="h-8 w-8 text-green-600 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Findings</p>
-              <p className="text-2xl font-bold text-gray-900">{securityData.summary.total}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Vulnerability Distribution */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Vulnerability Distribution</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="value"
-                label={({ name, value }) => `${name}: ${value}`}
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* OWASP Top 10 */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">OWASP Top 10 Analysis</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={securityData.owasp}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#3B82F6" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Security Findings */}
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Security Findings</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Finding
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Severity
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Affected Apps
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  CWE
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {securityData.findings.map((finding) => (
-                <tr key={finding.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{finding.title}</div>
-                      <div className="text-sm text-gray-500">{finding.description}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(finding.severity)}`}>
-                      {finding.severity}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {finding.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {finding.affected}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(finding.status)}`}>
-                      {finding.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {finding.cwe}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Compliance Framework */}
-      <div className="bg-white shadow-lg rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Compliance Assessment</h3>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {securityData.compliance.map((framework, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">{framework.framework}</h4>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    framework.status === 'Good' ? 'bg-green-100 text-green-800' :
-                    framework.status === 'Partial' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {framework.status}
-                  </span>
+            <div className="flex items-center space-x-4">
+              {dataSaved && lastSaveTime && (
+                <div className="text-sm text-blue-200">
+                  <Clock className="h-4 w-4 inline mr-1" />
+                  Saved {new Date(lastSaveTime).toLocaleTimeString()}
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 bg-gray-200 rounded-full h-2 mr-3">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        framework.score >= 80 ? 'bg-green-500' :
-                        framework.score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${framework.score}%` }}
-                    ></div>
+              )}
+              <button
+                onClick={saveAssessment}
+                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </button>
+            </div>
+          </div>
+          
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 pb-4">
+            <button
+              onClick={() => setCurrentView('overview')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                currentView === 'overview' 
+                  ? 'bg-white text-blue-800' 
+                  : 'text-blue-100 hover:text-white hover:bg-blue-700'
+              }`}
+            >
+              <Shield className="h-4 w-4 inline mr-2" />
+              Overview
+            </button>
+            <button
+              onClick={() => setCurrentView('repo')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                currentView === 'repo' 
+                  ? 'bg-white text-blue-800' 
+                  : 'text-blue-100 hover:text-white hover:bg-blue-700'
+              }`}
+            >
+              <Upload className="h-4 w-4 inline mr-2" />
+              Data Sources
+            </button>
+            <button
+              onClick={() => setCurrentView('analyze')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                currentView === 'analyze' 
+                  ? 'bg-white text-blue-800' 
+                  : 'text-blue-100 hover:text-white hover:bg-blue-700'
+              }`}
+            >
+              <Brain className="h-4 w-4 inline mr-2" />
+              AI Analysis
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Overview View */}
+        {currentView === 'overview' && (
+          <div className="space-y-6">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+                <div className="flex items-center">
+                  <AlertTriangle className="h-8 w-8 text-red-600 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Critical Issues</p>
+                    <p className="text-2xl font-bold text-gray-900">{securityData.summary?.critical || 35}</p>
+                    <p className="text-xs text-gray-500">Immediate attention required</p>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">{framework.score}%</span>
                 </div>
               </div>
-            ))}
+              
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+                <div className="flex items-center">
+                  <Shield className="h-8 w-8 text-orange-600 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">High Priority</p>
+                    <p className="text-2xl font-bold text-gray-900">{securityData.summary?.high || 67}</p>
+                    <p className="text-xs text-gray-500">Needs prompt resolution</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+                <div className="flex items-center">
+                  <Activity className="h-8 w-8 text-blue-600 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Security Score</p>
+                    <p className="text-2xl font-bold text-gray-900">{securityData.crossAssessment?.overallSecurityScore || 68}%</p>
+                    <p className="text-xs text-gray-500">Cross-domain assessment</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+                <div className="flex items-center">
+                  <CheckCircle className="h-8 w-8 text-purple-600 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Findings</p>
+                    <p className="text-2xl font-bold text-gray-900">{securityData.summary?.total || 333}</p>
+                    <p className="text-xs text-gray-500">All severity levels</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Cross-Domain Security Assessment */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Cross-Domain Security Assessment</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={crossAssessmentData}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="domain" />
+                    <PolarRadiusAxis domain={[0, 100]} />
+                    <Radar
+                      name="Security Score"
+                      dataKey="score"
+                      stroke="#3B82F6"
+                      fill="#3B82F6"
+                      fillOpacity={0.1}
+                      strokeWidth={2}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Vulnerability Distribution */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Vulnerability Distribution</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Critical', value: securityData.summary?.critical || 35, color: '#EF4444' },
+                        { name: 'High', value: securityData.summary?.high || 67, color: '#F97316' },
+                        { name: 'Medium', value: securityData.summary?.medium || 142, color: '#EAB308' },
+                        { name: 'Low', value: securityData.summary?.low || 89, color: '#3B82F6' }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {[
+                        { name: 'Critical', value: securityData.summary?.critical || 35, color: '#EF4444' },
+                        { name: 'High', value: securityData.summary?.high || 67, color: '#F97316' },
+                        { name: 'Medium', value: securityData.summary?.medium || 142, color: '#EAB308' },
+                        { name: 'Low', value: securityData.summary?.low || 89, color: '#3B82F6' }
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Cross-Assessment Risk Summary */}
+            <div className="bg-white shadow-lg rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Cross-Assessment Security Risks</h3>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Infrastructure Risks */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900 flex items-center">
+                      <Server className="h-5 w-5 mr-2 text-blue-600" />
+                      Infrastructure Risks
+                    </h4>
+                    <div className="space-y-3">
+                      {securityData.crossAssessment?.infrastructureRisks?.map((risk, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-900">{risk.risk}</span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              risk.severity === 'Critical' ? 'bg-red-100 text-red-800' :
+                              risk.severity === 'High' ? 'bg-orange-100 text-orange-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {risk.severity}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {risk.source} • {risk.count} instances
+                          </div>
+                        </div>
+                      )) || []}
+                    </div>
+                  </div>
+
+                  {/* Database Vulnerabilities */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900 flex items-center">
+                      <Database className="h-5 w-5 mr-2 text-green-600" />
+                      Database Vulnerabilities
+                    </h4>
+                    <div className="space-y-3">
+                      {securityData.crossAssessment?.databaseVulnerabilities?.map((vuln, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-900">{vuln.risk}</span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              vuln.severity === 'Critical' ? 'bg-red-100 text-red-800' :
+                              vuln.severity === 'High' ? 'bg-orange-100 text-orange-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {vuln.severity}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {vuln.source} • {vuln.count} instances
+                          </div>
+                        </div>
+                      )) || []}
+                    </div>
+                  </div>
+
+                  {/* DevOps Security Gaps */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900 flex items-center">
+                      <Monitor className="h-5 w-5 mr-2 text-purple-600" />
+                      DevOps Security Gaps
+                    </h4>
+                    <div className="space-y-3">
+                      {securityData.crossAssessment?.devopsSecurityGaps?.map((gap, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-900">{gap.risk}</span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              gap.severity === 'Critical' ? 'bg-red-100 text-red-800' :
+                              gap.severity === 'High' ? 'bg-orange-100 text-orange-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {gap.severity}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {gap.source} • {gap.count} instances
+                          </div>
+                        </div>
+                      )) || []}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Security Log Analysis */}
+            <div className="bg-white shadow-lg rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Security Log Analysis Summary</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Log Source
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Events/Alerts
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Severity
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Update
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {securityData.securityLogs?.siemAlerts?.map((alert, index) => (
+                      <tr key={`siem-${index}`} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {alert.source}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          SIEM Alert
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {alert.count} ({alert.type})
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            alert.severity === 'Critical' ? 'bg-red-100 text-red-800' :
+                            alert.severity === 'High' ? 'bg-orange-100 text-orange-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {alert.severity}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          Real-time
+                        </td>
+                      </tr>
+                    )) || []}
+                    {securityData.securityLogs?.vulnerabilityScans?.map((scan, index) => (
+                      <tr key={`scan-${index}`} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {scan.scanner}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          Vulnerability Scan
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {scan.critical + scan.high + scan.medium} vulnerabilities
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            {scan.critical} Critical
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {scan.lastScan}
+                        </td>
+                      </tr>
+                    )) || []}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Data Sources (Repo) View */}
+        {currentView === 'repo' && (
+          <div className="space-y-6">
+            
+            {/* Import/Export Actions */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Data Management</h2>
+                <div className="flex space-x-3">
+                  <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import Assessment
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={importAssessment}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    onClick={exportAssessment}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Assessment
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* File Upload Section */}
+            <div className="bg-white shadow-lg rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Security Data Source Integration</h3>
+                <p className="text-sm text-gray-600">Upload security logs, vulnerability scans, SIEM exports, and other security assessment data</p>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Upload Areas Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {/* Vulnerability Scans */}
+                  <div className="border-2 border-dashed border-red-300 rounded-lg p-4 text-center bg-red-50">
+                    <Shield className="h-10 w-10 text-red-500 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Vulnerability Scans</h4>
+                    <p className="text-xs text-gray-600 mb-3">Nessus, OpenVAS, Qualys</p>
+                    <label className="cursor-pointer bg-red-600 text-white px-3 py-1.5 rounded text-xs hover:bg-red-700">
+                      Upload
+                      <input
+                        type="file"
+                        multiple
+                        accept=".xml,.json,.csv,.nessus"
+                        onChange={(e) => handleFileUpload(e, 'vulnerability-scan')}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* SIEM Exports */}
+                  <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 text-center bg-blue-50">
+                    <Monitor className="h-10 w-10 text-blue-500 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">SIEM Exports</h4>
+                    <p className="text-xs text-gray-600 mb-3">Splunk, QRadar, Sentinel</p>
+                    <label className="cursor-pointer bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-700">
+                      Upload
+                      <input
+                        type="file"
+                        multiple
+                        accept=".json,.xml,.csv,.log"
+                        onChange={(e) => handleFileUpload(e, 'siem')}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Access & Network Logs */}
+                  <div className="border-2 border-dashed border-green-300 rounded-lg p-4 text-center bg-green-50">
+                    <Wifi className="h-10 w-10 text-green-500 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Network & Access</h4>
+                    <p className="text-xs text-gray-600 mb-3">Firewall, VPN, IDS/IPS</p>
+                    <label className="cursor-pointer bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700">
+                      Upload
+                      <input
+                        type="file"
+                        multiple
+                        accept=".log,.txt,.csv,.pcap"
+                        onChange={(e) => handleFileUpload(e, 'network')}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Endpoint & Server Logs */}
+                  <div className="border-2 border-dashed border-purple-300 rounded-lg p-4 text-center bg-purple-50">
+                    <Server className="h-10 w-10 text-purple-500 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Endpoint & Server</h4>
+                    <p className="text-xs text-gray-600 mb-3">EDR, AV, System logs</p>
+                    <label className="cursor-pointer bg-purple-600 text-white px-3 py-1.5 rounded text-xs hover:bg-purple-700">
+                      Upload
+                      <input
+                        type="file"
+                        multiple
+                        accept=".log,.evtx,.txt,.json"
+                        onChange={(e) => handleFileUpload(e, 'endpoint')}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Additional Upload Categories */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Application Logs */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    <FileText className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Application & Patch Logs</h4>
+                    <p className="text-xs text-gray-600 mb-3">App logs, patch management, backup logs</p>
+                    <label className="cursor-pointer bg-gray-600 text-white px-3 py-1.5 rounded text-xs hover:bg-gray-700">
+                      Upload
+                      <input
+                        type="file"
+                        multiple
+                        accept=".log,.txt,.csv,.json"
+                        onChange={(e) => handleFileUpload(e, 'application')}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Physical Security */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    <Image className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Physical Security</h4>
+                    <p className="text-xs text-gray-600 mb-3">Badge access, camera logs, facility reports</p>
+                    <label className="cursor-pointer bg-gray-600 text-white px-3 py-1.5 rounded text-xs hover:bg-gray-700">
+                      Upload
+                      <input
+                        type="file"
+                        multiple
+                        accept=".csv,.log,.pdf,.jpg,.png"
+                        onChange={(e) => handleFileUpload(e, 'physical')}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Compliance Reports */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    <CheckCircle className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Compliance Reports</h4>
+                    <p className="text-xs text-gray-600 mb-3">Audit reports, compliance scans</p>
+                    <label className="cursor-pointer bg-gray-600 text-white px-3 py-1.5 rounded text-xs hover:bg-gray-700">
+                      Upload
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.docx,.xlsx,.json"
+                        onChange={(e) => handleFileUpload(e, 'compliance')}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Uploaded Files Table */}
+            <div className="bg-white shadow-lg rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Uploaded Security Files</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {securityData.uploadedFiles?.map((file, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {file.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                          {file.type}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {file.size}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {file.uploadDate}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            file.status === 'Processed' ? 'bg-green-100 text-green-800' :
+                            file.status === 'Processing' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {file.status === 'Processing' && <RefreshCw className="w-3 h-3 mr-1 animate-spin" />}
+                            {file.status}
+                          </span>
+                        </td>
+                      </tr>
+                    )) || []}
+                    {(!securityData.uploadedFiles || securityData.uploadedFiles.length === 0) && (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                          No security files uploaded yet. Upload your security data sources to begin comprehensive analysis.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analysis View */}
+        {currentView === 'analyze' && (
+          <div className="space-y-6">
+            
+            {/* Analysis Controls */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">AI-Powered Security Analysis</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Run comprehensive security analysis across all assessment domains and uploaded security data
+                  </p>
+                </div>
+                <button
+                  onClick={runAnalysis}
+                  disabled={isAnalyzing}
+                  className={`inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                    isAnalyzing 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                  }`}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <RefreshCw className="animate-spin -ml-1 mr-3 h-4 w-4" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="h-4 w-4 mr-2" />
+                      Run Analysis
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Analysis Results */}
+            {showAnalysisResults && (
+              <div className="space-y-6">
+                {/* Security Posture Analysis */}
+                <div className="bg-white rounded-lg shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <Shield className="h-5 w-5 mr-2 text-blue-600" />
+                      Security Posture Analysis
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose max-w-none text-gray-700">
+                      {securityData.analysis?.securityPostureAnalysis?.split('\\n').map((line, index) => (
+                        <p key={index} className="mb-2">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Threat Analysis */}
+                <div className="bg-white rounded-lg shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+                      Threat Analysis
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose max-w-none text-gray-700">
+                      {securityData.analysis?.threatAnalysis?.split('\\n').map((line, index) => (
+                        <p key={index} className="mb-2">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compliance Analysis */}
+                <div className="bg-white rounded-lg shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+                      Compliance Analysis
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose max-w-none text-gray-700">
+                      {securityData.analysis?.complianceAnalysis?.split('\\n').map((line, index) => (
+                        <p key={index} className="mb-2">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                <div className="bg-white rounded-lg shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <Activity className="h-5 w-5 mr-2 text-purple-600" />
+                      Security Recommendations
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose max-w-none text-gray-700">
+                      {securityData.analysis?.recommendationsAnalysis?.split('\\n').map((line, index) => (
+                        <p key={index} className="mb-2">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* No Analysis Yet */}
+            {!showAnalysisResults && !isAnalyzing && (
+              <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+                <Brain className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Ready for Security Analysis</h3>
+                <p className="text-gray-600 mb-6">
+                  Upload your security data sources in the Data Sources tab, then return here to run comprehensive AI-powered security analysis.
+                </p>
+                <button
+                  onClick={() => setCurrentView('repo')}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Go to Data Sources
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
