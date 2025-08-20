@@ -197,7 +197,7 @@ function Sidebar() {
           <BarChart3 className="h-8 w-8 text-blue-600" />
           <div className="ml-3">
             <h1 className="text-lg font-bold text-gray-900">Assessment</h1>
-            <p className="text-xs text-gray-500">AI-Powered Platform</p>
+            <p className="text-xs text-gray-500">AI-Powered Assessment Platform</p>
           </div>
         </div>
       </div>
@@ -228,8 +228,8 @@ function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-gray-200">
         <div className="text-xs text-gray-500">
-          <div className="font-medium">Assessment Platform v1.0</div>
-          <div>Powered by AI Analysis</div>
+          <div className="font-medium">BAAP v1.0</div>
+          <div>Powered by Quisitive</div>
         </div>
       </div>
     </div>

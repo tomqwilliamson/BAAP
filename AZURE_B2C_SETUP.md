@@ -21,7 +21,7 @@ This application now includes Azure Active Directory B2C (Azure AD B2C) authenti
 1. In your B2C tenant, go to "App registrations"
 2. Click "New registration"
 3. Configure:
-   - **Name**: BAAP Application Assessment Platform
+   - **Name**: BAAP Business Application Assessment Platform
    - **Supported account types**: Accounts in any identity provider or organizational directory
    - **Redirect URI**: `http://localhost:3000` (for development)
    - **Platform**: Single-page application (SPA)

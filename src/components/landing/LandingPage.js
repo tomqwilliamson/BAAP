@@ -13,7 +13,7 @@ const LandingPage = () => {
             <div className="flex items-center">
               <img className="h-8 w-8" src="/logo192.png" alt="BAAP" />
               <span className="ml-2 text-xl font-bold text-gray-900">BAAP</span>
-              <span className="ml-1 text-sm text-gray-500">Application Assessment Platform</span>
+              <span className="ml-1 text-sm text-gray-500">Business Application Assessment Platform</span>
             </div>
             <div className="flex items-center space-x-4">
               <UnifiedSignInButton />
@@ -33,7 +33,7 @@ const LandingPage = () => {
                 <span className="block text-blue-200">Application Portfolio</span>
               </h1>
               <p className="mt-6 text-xl text-blue-100 leading-relaxed">
-                AI-powered enterprise application assessment platform that delivers comprehensive insights, 
+                AI-powered enterprise  that delivers comprehensive insights, 
                 risk analysis, and modernization roadmaps to optimize your digital transformation journey.
               </p>
               <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
@@ -272,7 +272,7 @@ const LandingPage = () => {
               <span className="ml-2 text-xl font-bold text-white">BAAP</span>
             </div>
             <p className="text-gray-400">
-              © 2024 Business Application Assessment Platform. All rights reserved.
+              © 2025 Quisitive. All rights reserved.
             </p>
           </div>
         </div>

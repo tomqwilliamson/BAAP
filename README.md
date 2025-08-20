@@ -1,4 +1,4 @@
-# Application Assessment Platform
+# Business Application Assessment Platform
 
 # Application Design Lab Platform
 
