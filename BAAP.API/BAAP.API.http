@@ -1,0 +1,6 @@
+@BAAP.API_HostAddress = http://localhost:5079
+
+GET {{BAAP.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

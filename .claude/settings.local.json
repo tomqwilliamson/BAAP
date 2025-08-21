@@ -4,7 +4,21 @@
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
       "Bash(node:*)",
-      "Bash(npm:*)"
+      "Bash(npm:*)",
+      "Bash(dotnet --version)",
+      "Bash(mkdir:*)",
+      "Bash(dotnet new:*)",
+      "Bash(dotnet add package:*)",
+      "Bash(del WeatherForecast.cs)",
+      "Bash(del ControllersWeatherForecastController.cs)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(dotnet build)",
+      "Bash(dotnet ef database:*)",
+      "Bash(dotnet run:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(grep:*)",
+      "Bash(rm:*)",
+      "Bash(curl:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
