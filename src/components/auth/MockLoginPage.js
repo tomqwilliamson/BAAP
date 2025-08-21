@@ -18,7 +18,7 @@ const MockLoginPage = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link to="/" className="flex justify-center items-center">
           <img className="h-12 w-12" src="/logo192.png" alt="BAAP" />
-          <span className="ml-3 text-2xl font-bold text-gray-900">BAAP</span>
+          <span className="ml-3 text-2xl font-bold text-gray-900 flex items-center">BAAP</span>
         </Link>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Development Mode Login

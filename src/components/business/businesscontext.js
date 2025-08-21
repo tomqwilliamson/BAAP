@@ -9,35 +9,239 @@ import toast from 'react-hot-toast';
 
 function BusinessContext() {
   const [currentView, setCurrentView] = useState('overview'); // overview, gather, analyze
-  const [showAnalysisResults, setShowAnalysisResults] = useState(false);
+  const [showAnalysisResults, setShowAnalysisResults] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [dataSaved, setDataSaved] = useState(false);
-  const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [dataSaved, setDataSaved] = useState(true);
+  const [lastSaveTime, setLastSaveTime] = useState(new Date());
   
-  // Business context data structure
+  // Business context data structure with mock data
   const [businessData, setBusinessData] = useState({
     projectInfo: {
-      name: '',
-      description: '',
-      duration: '',
-      totalBudget: ''
+      name: 'Enterprise Application Modernization Initiative',
+      description: 'Comprehensive assessment and modernization of legacy applications to support digital transformation and improve operational efficiency',
+      duration: '18 months',
+      totalBudget: '$3,200,000'
     },
-    businessDrivers: [],
-    stakeholderGroups: [],
+    businessDrivers: [
+      {
+        id: 1,
+        name: 'Digital Transformation Acceleration',
+        description: 'Modernize core business applications to support digital-first customer experiences and streamline operations',
+        priority: 'Critical',
+        impact: 95,
+        urgency: 88,
+        businessValue: 'Competitive advantage and customer satisfaction'
+      },
+      {
+        id: 2,
+        name: 'Cost Optimization',
+        description: 'Reduce operational costs through cloud migration and infrastructure optimization',
+        priority: 'High',
+        impact: 82,
+        urgency: 75,
+        businessValue: 'Annual savings of $800K+ on infrastructure'
+      },
+      {
+        id: 3,
+        name: 'Security & Compliance Enhancement',
+        description: 'Address security vulnerabilities and ensure regulatory compliance across all systems',
+        priority: 'Critical',
+        impact: 98,
+        urgency: 92,
+        businessValue: 'Risk mitigation and regulatory adherence'
+      },
+      {
+        id: 4,
+        name: 'Developer Productivity',
+        description: 'Improve developer experience and accelerate time-to-market for new features',
+        priority: 'Medium',
+        impact: 76,
+        urgency: 65,
+        businessValue: 'Faster feature delivery and reduced development costs'
+      }
+    ],
+    stakeholderGroups: [
+      {
+        id: 1,
+        role: 'Chief Technology Officer',
+        name: 'Sarah Chen',
+        influence: 'High',
+        interest: 'High',
+        involvement: 'Executive sponsor and strategic decision maker',
+        contact: 'sarah.chen@company.com',
+        expectations: 'Successful digital transformation with minimal business disruption'
+      },
+      {
+        id: 2,
+        role: 'VP of Engineering',
+        name: 'Michael Rodriguez',
+        influence: 'High',
+        interest: 'High',
+        involvement: 'Technical leadership and resource allocation',
+        contact: 'michael.rodriguez@company.com',
+        expectations: 'Modern tech stack with improved developer experience'
+      },
+      {
+        id: 3,
+        role: 'Security & Compliance Director',
+        name: 'Lisa Thompson',
+        influence: 'High',
+        interest: 'High',
+        involvement: 'Security review and compliance oversight',
+        contact: 'lisa.thompson@company.com',
+        expectations: 'Enhanced security posture and regulatory compliance'
+      },
+      {
+        id: 4,
+        role: 'Business Operations Manager',
+        name: 'David Kim',
+        influence: 'Medium',
+        interest: 'High',
+        involvement: 'Business process coordination and user acceptance',
+        contact: 'david.kim@company.com',
+        expectations: 'Minimal operational disruption during transition'
+      },
+      {
+        id: 5,
+        role: 'Development Team Lead',
+        name: 'Jennifer Walsh',
+        influence: 'Medium',
+        interest: 'High',
+        involvement: 'Technical implementation and team coordination',
+        contact: 'jennifer.walsh@company.com',
+        expectations: 'Clear technical roadmap and adequate training'
+      }
+    ],
     budgetAllocation: {
-      assessment: 0,
-      implementation: 0,
-      maintenance: 0,
-      training: 0
+      assessment: 320000,
+      implementation: 2100000,
+      maintenance: 580000,
+      training: 200000
     },
-    projectTimeline: [],
-    riskAssessment: [],
+    projectTimeline: [
+      {
+        id: 1,
+        phase: 'Discovery & Assessment',
+        description: 'Comprehensive assessment of current applications, architecture analysis, and modernization strategy development',
+        startDate: '2025-01-15',
+        duration: '8 weeks',
+        dependencies: 'Stakeholder interviews and system access',
+        deliverables: 'Assessment reports, modernization roadmap, risk analysis',
+        status: 'In Progress'
+      },
+      {
+        id: 2,
+        phase: 'Architecture Design',
+        description: 'Design target architecture, select technologies, and create detailed migration plans',
+        startDate: '2025-03-15',
+        duration: '6 weeks',
+        dependencies: 'Completion of assessment phase',
+        deliverables: 'Target architecture, technology selection, migration plans',
+        status: 'Planned'
+      },
+      {
+        id: 3,
+        phase: 'Pilot Implementation',
+        description: 'Implement and test modernization approach with 2-3 pilot applications',
+        startDate: '2025-05-01',
+        duration: '12 weeks',
+        dependencies: 'Architecture approval and resource allocation',
+        deliverables: 'Pilot applications, lessons learned, refined processes',
+        status: 'Planned'
+      },
+      {
+        id: 4,
+        phase: 'Full-Scale Migration',
+        description: 'Migrate remaining applications according to established patterns and processes',
+        startDate: '2025-08-01',
+        duration: '24 weeks',
+        dependencies: 'Successful pilot completion',
+        deliverables: 'Modernized applications, updated documentation',
+        status: 'Planned'
+      },
+      {
+        id: 5,
+        phase: 'Optimization & Closure',
+        description: 'Performance optimization, knowledge transfer, and project closure activities',
+        startDate: '2026-01-15',
+        duration: '8 weeks',
+        dependencies: 'Migration completion',
+        deliverables: 'Optimized systems, documentation, team training',
+        status: 'Planned'
+      }
+    ],
+    riskAssessment: [
+      {
+        id: 1,
+        risk: 'Legacy System Dependencies',
+        category: 'Technical',
+        probability: 'High',
+        impact: 'High',
+        mitigation: 'Detailed dependency mapping, phased migration approach, and fallback strategies',
+        owner: 'Michael Rodriguez',
+        status: 'Open'
+      },
+      {
+        id: 2,
+        risk: 'Budget Overrun',
+        category: 'Budget',
+        probability: 'Medium',
+        impact: 'High',
+        mitigation: 'Regular budget reviews, contingency planning, and scope management',
+        owner: 'Sarah Chen',
+        status: 'Open'
+      },
+      {
+        id: 3,
+        risk: 'Resource Availability',
+        category: 'Resource',
+        probability: 'Medium',
+        impact: 'Medium',
+        mitigation: 'Early resource commitment, cross-training, and external contractor backup',
+        owner: 'Jennifer Walsh',
+        status: 'Open'
+      },
+      {
+        id: 4,
+        risk: 'Security Vulnerabilities',
+        category: 'Technical',
+        probability: 'Low',
+        impact: 'High',
+        mitigation: 'Security-first design, regular penetration testing, and compliance reviews',
+        owner: 'Lisa Thompson',
+        status: 'Open'
+      },
+      {
+        id: 5,
+        risk: 'Business Process Disruption',
+        category: 'Business',
+        probability: 'Medium',
+        impact: 'Medium',
+        mitigation: 'Comprehensive change management, user training, and parallel system operation',
+        owner: 'David Kim',
+        status: 'Open'
+      }
+    ],
     analysis: {
-      driversAnalysis: '',
-      stakeholderAnalysis: '',
-      timelineAnalysis: '',
-      riskAnalysis: '',
-      recommendations: ''
+      driversAnalysis: 'Analysis of 4 business driver(s) shows clear organizational focus on digital transformation and risk mitigation. High-priority drivers indicate urgent business needs that should be addressed immediately. The critical priority on Digital Transformation Acceleration (95% impact, 88% urgency) and Security & Compliance Enhancement (98% impact, 92% urgency) demonstrates strong executive commitment to modernization. Average impact score: 88% with urgency at 80%, indicating well-balanced strategic priorities.',
+      stakeholderAnalysis: 'Stakeholder analysis reveals 5 key stakeholder groups identified. 3 high-influence stakeholders require special attention for project success. The current stakeholder matrix shows 5 highly interested parties, which indicates strong organizational support. Executive sponsorship from CTO level ensures strategic alignment, while technical leadership from VP of Engineering provides implementation support.',
+      timelineAnalysis: 'Project timeline consists of 5 planned phases. For the "Enterprise Application Modernization Initiative" project, the phased approach appears comprehensive with multiple delivery milestones. The 18-month timeline balances thorough assessment with timely delivery, including an 8-week pilot phase to validate approaches before full-scale migration.',
+      riskAnalysis: 'Risk assessment identifies 5 key risks. Risk distribution: 0 high-probability and 2 high-impact risks require immediate mitigation strategies. Categories include: Technical, Budget, Resource, Business. The focus on legacy system dependencies and budget management reflects realistic enterprise modernization challenges.',
+      recommendations: `Strategic Recommendations based on current context:
+
+1. Address critical business drivers first focusing on Digital Transformation and Security Enhancement
+2. Leverage 3 high-influence stakeholders as project champions, particularly CTO and VP Engineering
+3. Execute 5-phase delivery plan with milestone reviews and pilot validation
+4. Implement mitigation for 2 high-impact risks related to legacy dependencies and budget
+5. Establish change management and communication plans
+6. Define success metrics and regular review cadences
+
+Priority Actions:
+- Secure executive sponsorship and resource commitments
+- Complete comprehensive dependency mapping
+- Implement robust security and compliance frameworks
+- Establish regular stakeholder communication cadence
+- Plan for minimal business disruption during migrations`
     }
   });
 

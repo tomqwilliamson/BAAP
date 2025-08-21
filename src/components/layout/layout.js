@@ -15,6 +15,7 @@ import ArchitectureReview from '../architecture/architecturereview';
 import CloudReadiness from '../cloud/cloudreadiness';
 import Recommendations from '../recommendations/recommendations';
 import CreateAssessment from '../assessment/createassessment';
+import ChatAssistant from '../chat/ChatAssistant';
 
 function Layout() {
   return (
@@ -45,6 +46,7 @@ function Layout() {
           </div>
         </main>
       </div>
+      <ChatAssistant />
     </div>
   );
 }

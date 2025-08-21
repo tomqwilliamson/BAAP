@@ -12,8 +12,8 @@ const LandingPage = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <img className="h-8 w-8" src="/logo192.png" alt="BAAP" />
-              <span className="ml-2 text-xl font-bold text-gray-900">BAAP</span>
-              <span className="ml-1 text-sm text-gray-500">Business Application Assessment Platform</span>
+              <span className="ml-2 text-xl font-bold text-gray-900 flex items-center">BAAP</span>
+              <span className="ml-1 text-sm text-gray-500 flex items-center">Business Application Assessment Platform</span>
             </div>
             <div className="flex items-center space-x-4">
               <UnifiedSignInButton />
@@ -269,7 +269,7 @@ const LandingPage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <img className="h-8 w-8" src="/logo192.png" alt="BAAP" />
-              <span className="ml-2 text-xl font-bold text-white">BAAP</span>
+              <span className="ml-2 text-xl font-bold text-white flex items-center">BAAP</span>
             </div>
             <p className="text-gray-400">
               © 2025 Quisitive. All rights reserved.

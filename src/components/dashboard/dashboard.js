@@ -27,9 +27,34 @@ function Dashboard() {
       const mockData = {
         metrics: {
           totalApplications: 8,
+          averageScore: 76,
+          criticalIssues: 23,
+          potentialSavings: 1240000,
           assessmentProgress: 75,
           securityIssues: 142,
           cloudReadiness: 72
+        },
+        trends: [
+          { month: 'Jan', score: 68 },
+          { month: 'Feb', score: 72 },
+          { month: 'Mar', score: 75 },
+          { month: 'Apr', score: 78 },
+          { month: 'May', score: 74 },
+          { month: 'Jun', score: 82 },
+          { month: 'Jul', score: 85 },
+          { month: 'Aug', score: 88 },
+          { month: 'Sep', score: 84 },
+          { month: 'Oct', score: 89 },
+          { month: 'Nov', score: 91 },
+          { month: 'Dec', score: 87 }
+        ],
+        categoryScores: {
+          codeQuality: 85,
+          security: 78,
+          infrastructure: 92,
+          devOpsMaturity: 74,
+          databaseOptimization: 81,
+          documentation: 69
         },
         recentAssessments: [
           {
@@ -75,7 +100,24 @@ function Dashboard() {
       console.error('Error loading dashboard data:', error);
       // Fallback to mock data even if there's an error
       const fallbackData = {
-        metrics: { totalApplications: 0, assessmentProgress: 0, securityIssues: 0, cloudReadiness: 0 },
+        metrics: { 
+          totalApplications: 0, 
+          averageScore: 0, 
+          criticalIssues: 0, 
+          potentialSavings: 0, 
+          assessmentProgress: 0, 
+          securityIssues: 0, 
+          cloudReadiness: 0 
+        },
+        trends: [],
+        categoryScores: {
+          codeQuality: 0,
+          security: 0,
+          infrastructure: 0,
+          devOpsMaturity: 0,
+          databaseOptimization: 0,
+          documentation: 0
+        },
         recentAssessments: []
       };
       setDashboardData(fallbackData);
