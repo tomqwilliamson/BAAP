@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '../../utils/currency';
 
 function InfrastructureAssessment() {
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
@@ -180,7 +181,7 @@ function InfrastructureAssessment() {
 
         costOptimizationAnalysis: `Cost analysis reveals significant savings opportunities:
 
-• Estimated monthly savings: $${(assessmentData.azureMigrate?.costs?.savings || 3490).toLocaleString()}
+• Estimated monthly savings: ${formatCurrency(assessmentData.azureMigrate?.costs?.savings || 3490)}
 • ROI payback period: ${assessmentData.azureMigrate?.costs?.paybackMonths || 18} months
 • Overprovisioned resources detected in ${assessmentData.azureMigrate?.servers?.filter(s => s.readiness < 80).length || 2} servers
 • Cloud-native services could reduce operational overhead by 40%`,

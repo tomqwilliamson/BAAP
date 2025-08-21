@@ -196,7 +196,7 @@ function Sidebar() {
         <div className="flex items-center">
           <BarChart3 className="h-8 w-8 text-blue-600" />
           <div className="ml-3">
-            <h1 className="text-lg font-bold text-gray-900">Assessment</h1>
+            <h1 className="text-lg font-bold text-gray-900">BAAP Assessment</h1>
             <p className="text-xs text-gray-500">AI-Powered Assessment Platform</p>
           </div>
         </div>

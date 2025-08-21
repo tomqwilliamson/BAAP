@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '../../utils/currency';
 
 function BusinessContext() {
   const [currentView, setCurrentView] = useState('overview'); // overview, gather, analyze
@@ -20,7 +21,7 @@ function BusinessContext() {
       name: 'Enterprise Application Modernization Initiative',
       description: 'Comprehensive assessment and modernization of legacy applications to support digital transformation and improve operational efficiency',
       duration: '18 months',
-      totalBudget: '$3,200,000'
+      totalBudget: formatCurrency(3200000)
     },
     businessDrivers: [
       {
@@ -39,7 +40,7 @@ function BusinessContext() {
         priority: 'High',
         impact: 82,
         urgency: 75,
-        businessValue: 'Annual savings of $800K+ on infrastructure'
+        businessValue: `Annual savings of ${formatCurrency(800000)}+ on infrastructure`
       },
       {
         id: 3,
@@ -812,7 +813,7 @@ Priority Actions:
                     projectInfo: { ...prev.projectInfo, totalBudget: e.target.value }
                   }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., $2,500,000"
+                  placeholder="e.g., 2500000"
                 />
               </div>
             </div>

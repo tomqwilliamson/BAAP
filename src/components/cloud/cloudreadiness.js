@@ -24,6 +24,9 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
+import { formatCurrency } from '../../utils/currency';
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 // import { assessmentService } from '../../services/assessmentservice'; // Commented out since we're using mock data for now
 
 const CloudReadiness = () => {
@@ -438,6 +441,121 @@ const CloudReadiness = () => {
     }
   };
 
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const timestamp = new Date().toLocaleDateString();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.text('Cloud Migration Readiness Assessment', 20, 30);
+      
+      // Summary
+      doc.setFontSize(12);
+      doc.text(`Generated: ${timestamp}`, 20, 50);
+      doc.text(`Overall Score: ${cloudReadinessData.crossDomainAnalysis.overallScore}%`, 20, 60);
+      
+      // Domain Scores
+      doc.setFontSize(14);
+      doc.text('Domain Readiness Scores:', 20, 80);
+      doc.setFontSize(10);
+      doc.text(`Security: ${cloudReadinessData.crossDomainAnalysis.securityReadiness}%`, 25, 95);
+      doc.text(`Infrastructure: ${cloudReadinessData.crossDomainAnalysis.infrastructureReadiness}%`, 25, 105);
+      doc.text(`DevOps: ${cloudReadinessData.crossDomainAnalysis.devopsReadiness}%`, 25, 115);
+      doc.text(`Data: ${cloudReadinessData.crossDomainAnalysis.dataReadiness}%`, 25, 125);
+      
+      // Analysis Results (if available)
+      if (showAnalysisResults && cloudReadinessData.analysis) {
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text('Strategic Analysis', 20, 30);
+        doc.setFontSize(10);
+        const analysisText = cloudReadinessData.analysis.strategicAnalysis || 'No analysis available';
+        const splitText = doc.splitTextToSize(analysisText, 170);
+        doc.text(splitText, 20, 45);
+        
+        // Technical Analysis
+        doc.setFontSize(14);
+        doc.text('Technical Analysis', 20, 120);
+        doc.setFontSize(10);
+        const techText = cloudReadinessData.analysis.technicalAnalysis || 'No technical analysis available';
+        const splitTechText = doc.splitTextToSize(techText, 170);
+        doc.text(splitTechText, 20, 135);
+      }
+      
+      doc.save(`cloud-readiness-assessment-${timestamp.replace(/\//g, '-')}.pdf`);
+      toast.success('PDF exported successfully!');
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      toast.error('Failed to export PDF');
+    }
+  };
+
+  const exportToExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      
+      // Summary Sheet
+      const summaryData = [
+        ['Cloud Migration Readiness Assessment'],
+        ['Generated', new Date().toLocaleDateString()],
+        [''],
+        ['Overall Score', `${cloudReadinessData.crossDomainAnalysis.overallScore}%`],
+        [''],
+        ['Domain Scores'],
+        ['Security Readiness', `${cloudReadinessData.crossDomainAnalysis.securityReadiness}%`],
+        ['Infrastructure Readiness', `${cloudReadinessData.crossDomainAnalysis.infrastructureReadiness}%`],
+        ['DevOps Readiness', `${cloudReadinessData.crossDomainAnalysis.devopsReadiness}%`],
+        ['Data Readiness', `${cloudReadinessData.crossDomainAnalysis.dataReadiness}%`],
+        [''],
+        ['Manual Input Scores'],
+        ['Business Drivers'],
+        ['Cost Optimization', `${cloudReadinessData.manualInputs.businessDrivers.costOptimization}%`],
+        ['Scalability Needs', `${cloudReadinessData.manualInputs.businessDrivers.scalabilityNeeds}%`],
+        ['Innovation Requirements', `${cloudReadinessData.manualInputs.businessDrivers.innovationRequirements}%`],
+        ['Compliance Requirements', `${cloudReadinessData.manualInputs.businessDrivers.complianceRequirements}%`],
+        [''],
+        ['Organizational Readiness'],
+        ['Cloud Skills', `${cloudReadinessData.manualInputs.organizationalReadiness.cloudSkills}%`],
+        ['Change Management', `${cloudReadinessData.manualInputs.organizationalReadiness.changeManagement}%`],
+        ['Governance Maturity', `${cloudReadinessData.manualInputs.organizationalReadiness.governanceMaturity}%`],
+        ['Risk Tolerance', `${cloudReadinessData.manualInputs.organizationalReadiness.riskTolerance}%`]
+      ];
+      
+      const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+      
+      // Analysis Results Sheet (if available)
+      if (showAnalysisResults && cloudReadinessData.analysis) {
+        const analysisData = [
+          ['Analysis Results'],
+          [''],
+          ['Strategic Analysis'],
+          [cloudReadinessData.analysis.strategicAnalysis || 'No analysis available'],
+          [''],
+          ['Technical Analysis'],
+          [cloudReadinessData.analysis.technicalAnalysis || 'No technical analysis available'],
+          [''],
+          ['Risk Analysis'],
+          [cloudReadinessData.analysis.riskAnalysis || 'No risk analysis available'],
+          [''],
+          ['Recommendations Summary'],
+          [cloudReadinessData.analysis.recommendationsSummary || 'No recommendations available']
+        ];
+        
+        const analysisWs = XLSX.utils.aoa_to_sheet(analysisData);
+        XLSX.utils.book_append_sheet(wb, analysisWs, 'Analysis');
+      }
+      
+      const timestamp = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `cloud-readiness-assessment-${timestamp}.xlsx`);
+      toast.success('Excel file exported successfully!');
+    } catch (error) {
+      console.error('Excel export failed:', error);
+      toast.error('Failed to export Excel file');
+    }
+  };
+
   const exportAssessment = () => {
     const dataStr = JSON.stringify(cloudReadinessData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -446,7 +564,7 @@ const CloudReadiness = () => {
     link.href = url;
     link.download = `cloud-readiness-assessment-${currentAssessment?.id || 'export'}.json`;
     link.click();
-    toast.success('Assessment exported successfully!');
+    toast.success('JSON exported successfully!');
   };
 
   const importAssessment = (event) => {
@@ -467,8 +585,6 @@ const CloudReadiness = () => {
   };
 
   const runAnalysis = async () => {
-    if (!currentAssessment?.id) return;
-    
     setIsAnalyzing(true);
     setShowAnalysisResults(false);
     
@@ -486,7 +602,7 @@ const CloudReadiness = () => {
           technicalAnalysis: `Technical assessment across domains identifies key migration considerations:
 
 • **Security Gaps**: ${cloudReadinessData.domainScores.security.vulnerabilities.critical + cloudReadinessData.domainScores.security.vulnerabilities.high} high-priority security issues requiring remediation
-• **Infrastructure Optimization**: Estimated savings of $${cloudReadinessData.domainScores.infrastructure.estimatedSavings?.toLocaleString() || '0'} monthly in cloud
+• **Infrastructure Optimization**: Estimated savings of ${formatCurrency(cloudReadinessData.domainScores.infrastructure.estimatedSavings || 0)} monthly in cloud
 • **DevOps Modernization**: ${cloudReadinessData.domainScores.devops.automationLevel}% automation level needs improvement for cloud-native operations
 • **Network & Identity**: Manual assessment indicates ${cloudReadinessData.manualInputs.technicalGaps.networkReadiness}% network readiness and ${cloudReadinessData.manualInputs.technicalGaps.identityManagement}% identity management maturity`,
 
@@ -592,13 +708,29 @@ const CloudReadiness = () => {
                   className="hidden"
                 />
               </label>
-              <button
-                onClick={exportAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </button>
+              <div className="relative inline-block text-left">
+                <div className="inline-flex rounded-md shadow-sm">
+                  <button
+                    onClick={exportToPDF}
+                    className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-l-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export PDF
+                  </button>
+                  <button
+                    onClick={exportToExcel}
+                    className="inline-flex items-center px-4 py-2 border-t border-b border-blue-300 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+                  >
+                    Excel
+                  </button>
+                  <button
+                    onClick={exportAssessment}
+                    className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-r-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+                  >
+                    JSON
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={saveAssessment}
                 className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"

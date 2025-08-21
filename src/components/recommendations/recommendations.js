@@ -27,6 +27,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatCurrency } from '../../utils/currency';
 
 const Recommendations = () => {
   const { currentAssessment } = useAssessment();
@@ -209,7 +210,7 @@ const Recommendations = () => {
           category: 'Strategic',
           estimatedROI: '285%',
           timeline: '18 months',
-          investment: '$650K',
+          investment: formatCurrency(650000),
           benefits: [
             'Reduce operational costs by 35%',
             'Improve application performance by 60%',
@@ -232,7 +233,7 @@ const Recommendations = () => {
           category: 'Security',
           estimatedROI: '450%',
           timeline: '12 months',
-          investment: '$200K',
+          investment: formatCurrency(200000),
           benefits: [
             'Reduce security breach risk by 75%',
             'Achieve compliance certification',
@@ -257,7 +258,7 @@ const Recommendations = () => {
           category: 'DevOps',
           estimatedROI: '180%',
           timeline: '6 months',
-          investment: '$120K'
+          investment: formatCurrency(120000)
         },
         {
           id: 4,
@@ -269,7 +270,7 @@ const Recommendations = () => {
           category: 'Infrastructure',
           estimatedROI: '220%',
           timeline: '3 months',
-          investment: '$80K'
+          investment: formatCurrency(80000)
         }
       ],
       quickWins: [
@@ -281,7 +282,7 @@ const Recommendations = () => {
           effort: 'Low',
           priority: 'High',
           timeline: '2 weeks',
-          investment: '$5K'
+          investment: formatCurrency(5000)
         },
         {
           id: 6,
@@ -291,7 +292,7 @@ const Recommendations = () => {
           effort: 'Low',
           priority: 'Medium',
           timeline: '1 month',
-          investment: '$15K'
+          investment: formatCurrency(15000)
         },
         {
           id: 7,
@@ -301,7 +302,7 @@ const Recommendations = () => {
           effort: 'Low',
           priority: 'High',
           timeline: '3 weeks',
-          investment: '$10K'
+          investment: formatCurrency(10000)
         }
       ],
       aiInsights: {

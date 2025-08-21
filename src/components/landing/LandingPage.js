@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, Shield, TrendingUp, Users, ChevronRight, Star, Award, BarChart3, Clock, Zap, Globe } from 'lucide-react';
 import UnifiedSignInButton from '../auth/UnifiedSignInButton';
+import { formatCurrency } from '../../utils/currency';
 
 const LandingPage = () => {
   return (
@@ -210,7 +211,7 @@ const LandingPage = () => {
                       ))}
                     </div>
                     <p className="text-gray-700 italic">
-                      "BAAP helped us assess 150+ applications and saved $2.3M in cloud migration costs."
+                      BAAP helped us assess 150+ applications and saved {formatCurrency(2300000)} in cloud migration costs.
                     </p>
                     <footer className="mt-3 text-sm text-gray-600">
                       — CTO, Fortune 500 Financial Services

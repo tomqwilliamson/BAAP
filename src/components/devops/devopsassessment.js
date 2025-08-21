@@ -436,13 +436,16 @@ function DevOpsAssessment() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Automation Levels</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={devopsData.automation} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" domain={[0, 100]} />
-              <YAxis type="category" dataKey="process" width={100} />
-              <Tooltip />
-              <Bar dataKey="automated" stackId="a" fill="#10B981" name="Automated" />
-              <Bar dataKey="manual" stackId="a" fill="#EF4444" name="Manual" />
+            <BarChart data={devopsData.automation} layout="horizontal" margin={{ top: 5, right: 30, left: 5, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} />
+              <YAxis type="category" dataKey="process" width={150} tick={{ fontSize: 11 }} />
+              <Tooltip 
+                formatter={(value, name) => [`${value}%`, name]}
+                contentStyle={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+              />
+              <Bar dataKey="automated" stackId="a" fill="#10b981" name="Automated" radius={[0, 2, 2, 0]} />
+              <Bar dataKey="manual" stackId="a" fill="#ef4444" name="Manual" radius={[0, 2, 2, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
