@@ -22,7 +22,8 @@
       "WebFetch(domain:docs.anthropic.com)",
       "Bash(del \"C:\\Users\\twilliamson\\source\\repos\\BAAP\\test-api-integration.js\")",
       "Bash(git rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
