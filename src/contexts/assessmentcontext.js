@@ -1,6 +1,6 @@
 // src/contexts/AssessmentContext.js - Global state management
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { assessmentService } from '../services/assessmentservice';
+import { apiService } from '../services/apiService';
 
 const AssessmentContext = createContext();
 
@@ -53,7 +53,7 @@ export function AssessmentProvider({ children }) {
   const loadAssessments = async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      const assessments = await assessmentService.getAssessments();
+      const assessments = await apiService.getAssessments();
       dispatch({ type: 'SET_ASSESSMENTS', payload: assessments });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error.message });
@@ -63,9 +63,12 @@ export function AssessmentProvider({ children }) {
   const loadAssessment = async (id) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      const assessment = await assessmentService.getAssessment(id);
+      const assessment = await apiService.getAssessment(id);
       dispatch({ type: 'SET_CURRENT_ASSESSMENT', payload: assessment });
-      dispatch({ type: 'SET_APPLICATIONS', payload: assessment.applications || [] });
+      
+      // Load applications for this assessment
+      const applications = await apiService.getApplications({ assessmentId: id });
+      dispatch({ type: 'SET_APPLICATIONS', payload: applications });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error.message });
     }
@@ -74,7 +77,7 @@ export function AssessmentProvider({ children }) {
   const createAssessment = async (assessmentData) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      const newAssessment = await assessmentService.createAssessment(assessmentData);
+      const newAssessment = await apiService.createAssessment(assessmentData);
       dispatch({ type: 'ADD_ASSESSMENT', payload: newAssessment });
       return newAssessment;
     } catch (error) {
@@ -85,7 +88,7 @@ export function AssessmentProvider({ children }) {
 
   const startAssessment = async (id) => {
     try {
-      const updatedAssessment = await assessmentService.startAssessment(id);
+      const updatedAssessment = await apiService.startAssessment(id);
       dispatch({ type: 'UPDATE_ASSESSMENT', payload: updatedAssessment });
       return updatedAssessment;
     } catch (error) {

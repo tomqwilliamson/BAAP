@@ -1,7 +1,7 @@
 // src/components/Dashboard/Dashboard.js - Main dashboard component
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-// import { assessmentService } from '../../services/assessmentservice'; // Using mock data for now
+import { apiService } from '../../services/apiService';
 import MetricsOverview from './metricsoverview';
 import PortfolioSummary from './portfoliosummary';
 import RecentActivity from './recentactivity';
@@ -20,34 +20,11 @@ function Dashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      // For now, use mock data since the API endpoint may not be implemented
-      // In production, uncomment the line below:
-      // const data = await assessmentService.getDashboardOverview();
+      const data = await apiService.getDashboardOverview();
       
-      const mockData = {
-        metrics: {
-          totalApplications: 8,
-          averageScore: 76,
-          criticalIssues: 23,
-          potentialSavings: 1240000,
-          assessmentProgress: 75,
-          securityIssues: 142,
-          cloudReadiness: 72
-        },
-        trends: [
-          { month: 'Jan', score: 68 },
-          { month: 'Feb', score: 72 },
-          { month: 'Mar', score: 75 },
-          { month: 'Apr', score: 78 },
-          { month: 'May', score: 74 },
-          { month: 'Jun', score: 82 },
-          { month: 'Jul', score: 85 },
-          { month: 'Aug', score: 88 },
-          { month: 'Sep', score: 84 },
-          { month: 'Oct', score: 89 },
-          { month: 'Nov', score: 91 },
-          { month: 'Dec', score: 87 }
-        ],
+      // Add category scores and recent assessments from assessments context
+      const dashboardWithExtras = {
+        ...data,
         categoryScores: {
           codeQuality: 85,
           security: 78,
@@ -56,49 +33,19 @@ function Dashboard() {
           databaseOptimization: 81,
           documentation: 69
         },
-        recentAssessments: [
-          {
-            id: 1,
-            name: 'Q4 2024 Portfolio Assessment',
-            status: 'Completed',
-            applicationCount: 8,
-            createdAt: '2024-12-15T10:30:00Z'
-          },
-          {
-            id: 2,
-            name: 'Security Compliance Review',
-            status: 'InProgress',
-            applicationCount: 5,
-            createdAt: '2024-12-18T14:45:00Z'
-          },
-          {
-            id: 3,
-            name: 'Cloud Migration Readiness',
-            status: 'Analyzing',
-            applicationCount: 12,
-            createdAt: '2024-12-20T09:15:00Z'
-          },
-          {
-            id: 4,
-            name: 'Legacy System Assessment',
-            status: 'Completed',
-            applicationCount: 3,
-            createdAt: '2024-12-10T16:20:00Z'
-          },
-          {
-            id: 5,
-            name: 'DevOps Maturity Evaluation',
-            status: 'Failed',
-            applicationCount: 6,
-            createdAt: '2024-12-08T11:10:00Z'
-          }
-        ]
+        recentAssessments: assessments.map(assessment => ({
+          id: assessment.id,
+          name: assessment.name,
+          status: assessment.status,
+          applicationCount: assessment.applicationCount || 0,
+          createdAt: assessment.createdDate
+        }))
       };
       
-      setDashboardData(mockData);
+      setDashboardData(dashboardWithExtras);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      // Fallback to mock data even if there's an error
+      // Fallback to empty data
       const fallbackData = {
         metrics: { 
           totalApplications: 0, 

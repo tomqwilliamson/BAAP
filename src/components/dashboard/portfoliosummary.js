@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Code, ExternalLink } from 'lucide-react';
-// import { assessmentService } from '../../services/assessmentservice'; // Using mock data for now
+import { apiService } from '../../services/apiService';
 
 function PortfolioSummary() {
   const [applications, setApplications] = useState([]);
@@ -14,93 +14,49 @@ function PortfolioSummary() {
 
   const loadPortfolioData = async () => {
     try {
-      // For now, use mock data since the API endpoint may not be implemented
-      // In production, uncomment the line below:
-      // const data = await assessmentService.getPortfolioSummary();
+      const data = await apiService.getPortfolioSummary();
       
-      const mockData = [
-        {
-          id: 1,
-          name: 'Customer Portal Web App',
-          type: 'React SPA',
-          category: 'Customer-Facing',
-          score: 85,
-          grade: 'B+',
-          riskLevel: 'Low'
-        },
-        {
-          id: 2,
-          name: 'Internal ERP System',
-          type: '.NET Core API',
-          category: 'Business Critical',
-          score: 72,
-          grade: 'C+',
-          riskLevel: 'Medium'
-        },
-        {
-          id: 3,
-          name: 'Mobile Banking App',
-          type: 'React Native',
-          category: 'Customer-Facing',
-          score: 91,
-          grade: 'A-',
-          riskLevel: 'Low'
-        },
-        {
-          id: 4,
-          name: 'Legacy Payment Gateway',
-          type: 'Java Spring',
-          category: 'Business Critical',
-          score: 58,
-          grade: 'D+',
-          riskLevel: 'High'
-        },
-        {
-          id: 5,
-          name: 'Analytics Dashboard',
-          type: 'Angular',
-          category: 'Internal Tools',
-          score: 79,
-          grade: 'C+',
-          riskLevel: 'Medium'
-        },
-        {
-          id: 6,
-          name: 'Document Management System',
-          type: 'SharePoint',
-          category: 'Internal Tools',
-          score: 45,
-          grade: 'F',
-          riskLevel: 'Critical'
-        },
-        {
-          id: 7,
-          name: 'API Gateway Service',
-          type: 'Node.js Express',
-          category: 'Infrastructure',
-          score: 88,
-          grade: 'B+',
-          riskLevel: 'Low'
-        },
-        {
-          id: 8,
-          name: 'HR Management Portal',
-          type: 'PHP Laravel',
-          category: 'Internal Tools',
-          score: 66,
-          grade: 'D+',
-          riskLevel: 'Medium'
-        }
-      ];
+      // Transform API data to match component expectations
+      const transformedData = data.map(app => ({
+        id: app.id,
+        name: app.name,
+        type: app.type,
+        category: app.category,
+        score: app.cloudReadinessScore,
+        grade: calculateGrade(app.cloudReadinessScore),
+        riskLevel: calculateRiskLevel(app.criticalFindings, app.highFindings)
+      }));
       
-      setApplications(mockData);
+      setApplications(transformedData);
     } catch (error) {
       console.error('Error loading portfolio data:', error);
-      // Fallback to mock data even if there's an error
       setApplications([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateGrade = (score) => {
+    if (score >= 90) return 'A';
+    if (score >= 85) return 'A-';
+    if (score >= 80) return 'B+';
+    if (score >= 75) return 'B';
+    if (score >= 70) return 'B-';
+    if (score >= 65) return 'C+';
+    if (score >= 60) return 'C';
+    if (score >= 55) return 'C-';
+    if (score >= 50) return 'D+';
+    if (score >= 45) return 'D';
+    return 'F';
+  };
+
+  const calculateRiskLevel = (criticalFindings, highFindings) => {
+    const totalCriticalAndHigh = (criticalFindings || 0) + (highFindings || 0);
+    if (totalCriticalAndHigh === 0) return 'Low';
+    if (totalCriticalAndHigh <= 5) return 'Low';
+    if (totalCriticalAndHigh <= 10) return 'Medium';
+    if (totalCriticalAndHigh <= 20) return 'High';
+    return 'Critical';
   };
 
   const getScoreColor = (score) => {

@@ -19,7 +19,10 @@
       "Bash(grep:*)",
       "Bash(rm:*)",
       "Bash(curl:*)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(del \"C:\\Users\\twilliamson\\source\\repos\\BAAP\\test-api-integration.js\")",
+      "Bash(git rm:*)",
+      "Bash(git add:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
