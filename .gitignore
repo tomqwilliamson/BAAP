@@ -240,3 +240,5 @@ secrets.json
 # Temporary files
 *.tmp
 *.temp
+
+.fake
