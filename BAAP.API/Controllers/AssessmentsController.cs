@@ -528,9 +528,8 @@ public class AssessmentsController : ControllerBase
                     Role = s.Role,
                     Department = s.Department,
                     Email = s.Email,
-                    Phone = s.Phone,
-                    Involvement = s.Involvement,
-                    Influence = s.Influence,
+                    InfluenceLevel = s.InfluenceLevel,
+                    InterestLevel = s.InterestLevel,
                     Notes = s.Notes,
                     AssessmentId = clonedAssessment.Id
                 }).ToList();
@@ -545,12 +544,10 @@ public class AssessmentsController : ControllerBase
                 {
                     Name = bd.Name,
                     Description = bd.Description,
-                    Category = bd.Category,
                     Priority = bd.Priority,
                     Impact = bd.Impact,
-                    Timeframe = bd.Timeframe,
-                    SuccessCriteria = bd.SuccessCriteria,
-                    Notes = bd.Notes,
+                    Urgency = bd.Urgency,
+                    BusinessValue = bd.BusinessValue,
                     AssessmentId = clonedAssessment.Id
                 }).ToList();
 

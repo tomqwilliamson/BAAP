@@ -320,15 +320,16 @@ public class ReportsController : ControllerBase
                 name = s.Name,
                 role = s.Role,
                 department = s.Department,
-                involvement = s.Involvement,
-                influence = s.Influence
+                influenceLevel = s.InfluenceLevel,
+                interestLevel = s.InterestLevel
             }),
             businessDrivers = assessment.BusinessDrivers.Select(bd => new
             {
                 name = bd.Name,
-                category = bd.Category,
                 priority = bd.Priority,
                 impact = bd.Impact,
+                urgency = bd.Urgency,
+                businessValue = bd.BusinessValue,
                 description = bd.Description
             }),
             recommendations = assessment.Recommendations

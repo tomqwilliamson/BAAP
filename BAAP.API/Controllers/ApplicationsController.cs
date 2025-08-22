@@ -144,8 +144,7 @@ public class ApplicationsController : ControllerBase
                 EstimatedMigrationCost = request.EstimatedMigrationCost,
                 MonthlyCost = request.MonthlyCost,
                 AssessmentId = request.AssessmentId,
-                CreatedDate = DateTime.UtcNow,
-                LastAnalyzedDate = null
+                CreatedDate = DateTime.UtcNow
             };
 
             _context.Applications.Add(application);
@@ -212,8 +211,6 @@ public class ApplicationsController : ControllerBase
                 application.MonthlyCost = request.MonthlyCost;
             if (request.AssessmentId.HasValue)
                 application.AssessmentId = request.AssessmentId;
-
-            application.ModifiedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return NoContent();

@@ -52,7 +52,7 @@ public class StakeholdersController : ControllerBase
                 total = stakeholders.Count(),
                 byRole = stakeholders.GroupBy(s => s.role).ToDictionary(g => g.Key, g => g.Count()),
                 byDepartment = stakeholders.GroupBy(s => s.department).ToDictionary(g => g.Key, g => g.Count()),
-                highInfluence = stakeholders.Count(s => s.influence == "High")
+                highInfluence = stakeholders.Count(s => s.influenceLevel == "High")
             };
 
             return Ok(new

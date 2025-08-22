@@ -43,8 +43,7 @@ public class BusinessDriversController : ControllerBase
                 priority = bd.Priority,
                 impact = bd.Impact,
                 urgency = bd.Urgency,
-                businessValue = bd.BusinessValue,
-                notes = bd.Notes
+                businessValue = bd.BusinessValue
             });
 
             var summary = new
@@ -92,7 +91,6 @@ public class BusinessDriversController : ControllerBase
                 impact = businessDriver.Impact,
                 urgency = businessDriver.Urgency,
                 businessValue = businessDriver.BusinessValue,
-                notes = businessDriver.Notes,
                 assessment = new
                 {
                     id = businessDriver.Assessment.Id,
@@ -135,7 +133,6 @@ public class BusinessDriversController : ControllerBase
                 Impact = request.Impact ?? 50,
                 Urgency = request.Urgency ?? 50,
                 BusinessValue = request.BusinessValue ?? "",
-                Notes = request.Notes ?? "",
                 AssessmentId = request.AssessmentId
             };
 
@@ -180,8 +177,6 @@ public class BusinessDriversController : ControllerBase
                 businessDriver.Urgency = request.Urgency.Value;
             if (request.BusinessValue != null)
                 businessDriver.BusinessValue = request.BusinessValue;
-            if (request.Notes != null)
-                businessDriver.Notes = request.Notes;
 
             await _context.SaveChangesAsync();
             return NoContent();
@@ -247,12 +242,10 @@ public class BusinessDriversController : ControllerBase
                     {
                         Name = bdRequest.Name,
                         Description = bdRequest.Description ?? "",
-                        Category = bdRequest.Category ?? "General",
                         Priority = bdRequest.Priority ?? "Medium",
-                        Impact = bdRequest.Impact ?? "Medium",
-                        Timeframe = bdRequest.Timeframe ?? "",
-                        SuccessCriteria = bdRequest.SuccessCriteria ?? "",
-                        Notes = bdRequest.Notes ?? "",
+                        Impact = bdRequest.Impact ?? 50,
+                        Urgency = bdRequest.Urgency ?? 50,
+                        BusinessValue = bdRequest.BusinessValue ?? "",
                         AssessmentId = bdRequest.AssessmentId
                     };
 
@@ -349,7 +342,6 @@ public class CreateBusinessDriverRequest
     public int? Impact { get; set; } // 0-100
     public int? Urgency { get; set; } // 0-100
     public string? BusinessValue { get; set; }
-    public string? Notes { get; set; }
     public int AssessmentId { get; set; }
 }
 
@@ -361,7 +353,6 @@ public class UpdateBusinessDriverRequest
     public int? Impact { get; set; }
     public int? Urgency { get; set; }
     public string? BusinessValue { get; set; }
-    public string? Notes { get; set; }
 }
 
 public class BulkImportBusinessDriversRequest

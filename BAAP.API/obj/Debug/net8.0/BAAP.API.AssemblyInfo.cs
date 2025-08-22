@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BAAP.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+35fa0ed8976bc9b33f6f95936e4aa5c062d97201")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e4b59b68efec0cbbb33f9cc4f1228aff4159de54")]
 [assembly: System.Reflection.AssemblyProductAttribute("BAAP.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BAAP.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -35,7 +35,7 @@ public class Application
     public DateTime? LastAnalyzedDate { get; set; }
     
     // Foreign key
-    public int AssessmentId { get; set; }
+    public int? AssessmentId { get; set; }
     [ForeignKey("AssessmentId")]
     public virtual Assessment Assessment { get; set; } = null!;
     

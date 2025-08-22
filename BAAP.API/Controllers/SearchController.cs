@@ -43,7 +43,7 @@ public class SearchController : ControllerBase
                 var assessments = await _context.Assessments
                     .Where(a => a.Name.Contains(query) || 
                                a.Description.Contains(query) ||
-                               a.BusinessObjective.Contains(query))
+                               (a.BusinessObjective != null && a.BusinessObjective.Contains(query)))
                     .Select(a => new
                     {
                         type = "assessment",
@@ -106,7 +106,7 @@ public class SearchController : ControllerBase
                         role = s.Role,
                         department = s.Department,
                         email = s.Email,
-                        influence = s.Influence,
+                        influenceLevel = s.InfluenceLevel,
                         assessmentName = s.Assessment.Name,
                         url = $"/stakeholders/{s.Id}"
                     })
@@ -121,17 +121,16 @@ public class SearchController : ControllerBase
                 var businessDrivers = await _context.BusinessDrivers
                     .Include(bd => bd.Assessment)
                     .Where(bd => bd.Name.Contains(query) || 
-                                bd.Description.Contains(query) ||
-                                bd.Category.Contains(query))
+                                bd.Description.Contains(query))
                     .Select(bd => new
                     {
                         type = "businessdriver",
                         id = bd.Id,
                         title = bd.Name,
                         description = bd.Description,
-                        category = bd.Category,
                         priority = bd.Priority,
                         impact = bd.Impact,
+                        urgency = bd.Urgency,
                         assessmentName = bd.Assessment.Name,
                         url = $"/businessdrivers/{bd.Id}"
                     })
@@ -346,7 +345,6 @@ public class SearchController : ControllerBase
                     type = app.Type,
                     category = app.Category,
                     technology = app.Technology,
-                    version = app.Version,
                     linesOfCode = app.LinesOfCode,
                     complexityScore = app.ComplexityScore,
                     securityRating = app.SecurityRating,
@@ -428,7 +426,7 @@ public class SearchController : ControllerBase
                 queryable = queryable.Where(a => 
                     a.Name.Contains(query) || 
                     a.Description.Contains(query) ||
-                    a.BusinessObjective.Contains(query));
+                    (a.BusinessObjective != null && a.BusinessObjective.Contains(query)));
             }
 
             if (!string.IsNullOrEmpty(status))

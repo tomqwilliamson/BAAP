@@ -26,6 +26,13 @@ public class Assessment
     public int SecurityScore { get; set; } = 0;
     public int CloudReadinessScore { get; set; } = 0;
     
+    public string? Type { get; set; }
+    public string? Scope { get; set; }
+    public string? BusinessObjective { get; set; }
+    public string? Timeline { get; set; }
+    public decimal? Budget { get; set; }
+    public string? Notes { get; set; }
+    
     // Navigation properties
     public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
     public virtual ICollection<BusinessDriver> BusinessDrivers { get; set; } = new List<BusinessDriver>();
