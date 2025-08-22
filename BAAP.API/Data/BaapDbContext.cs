@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using BAAP.API.Models;
+using BAAP.API.Controllers;
 
 namespace BAAP.API.Data;
 
@@ -18,6 +19,7 @@ public class BaapDbContext : DbContext
     public DbSet<Recommendation> Recommendations { get; set; } = null!;
     public DbSet<CodeMetric> CodeMetrics { get; set; } = null!;
     public DbSet<DashboardMetric> DashboardMetrics { get; set; } = null!;
+    public DbSet<AssessmentFile> AssessmentFiles { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,6 +67,12 @@ public class BaapDbContext : DbContext
             .WithMany()
             .HasForeignKey(dm => dm.AssessmentId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<AssessmentFile>()
+            .HasOne(af => af.Assessment)
+            .WithMany()
+            .HasForeignKey(af => af.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Configure decimal precision for currency fields
         modelBuilder.Entity<Assessment>()

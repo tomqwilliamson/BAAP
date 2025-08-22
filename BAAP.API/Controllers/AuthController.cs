@@ -110,6 +110,33 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Logout successful" });
     }
 
+    // GET: api/auth/dev-token (Development Only)
+    [HttpGet("dev-token")]
+    public ActionResult GetDevelopmentToken()
+    {
+        if (!Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.Equals("Development", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return NotFound();
+        }
+
+        var token = GenerateJwtToken("dev@localhost.com");
+        var user = GetUserInfo("dev@localhost.com");
+
+        return Ok(new
+        {
+            token,
+            user,
+            expiresIn = _configuration.GetValue<int>("JwtSettings:ExpirationInHours") * 3600,
+            message = "Development token generated - DO NOT USE IN PRODUCTION",
+            instructions = new
+            {
+                swagger = "Copy the token and click 'Authorize' in Swagger UI, then enter: Bearer [token]",
+                postman = "Add Authorization header with value: Bearer [token]",
+                bypass = "Alternatively, add header 'X-Auth-Bypass: development' to skip authentication entirely"
+            }
+        });
+    }
+
     private bool ValidateCredentials(string email, string password)
     {
         // Development credentials - replace with real authentication in production
