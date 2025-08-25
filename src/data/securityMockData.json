@@ -1,0 +1,106 @@
+{
+  "securityAssessment": {
+    "crossAssessment": {
+      "infrastructureRisks": [
+        { "source": "Azure Migrate", "risk": "Unencrypted data migration", "severity": "High", "count": 3 },
+        { "source": "Network Assessment", "risk": "Open firewall ports", "severity": "Critical", "count": 2 },
+        { "source": "Server Analysis", "risk": "Unpatched vulnerabilities", "severity": "High", "count": 8 }
+      ],
+      "databaseVulnerabilities": [
+        { "source": "DMA Assessment", "risk": "SQL injection points", "severity": "Critical", "count": 4 },
+        { "source": "Database Audit", "risk": "Weak authentication", "severity": "High", "count": 6 },
+        { "source": "Access Review", "risk": "Excessive privileges", "severity": "Medium", "count": 12 }
+      ],
+      "devopsSecurityGaps": [
+        { "source": "GitHub Analysis", "risk": "Secrets in code", "severity": "Critical", "count": 2 },
+        { "source": "Pipeline Review", "risk": "Insecure CI/CD", "severity": "High", "count": 5 },
+        { "source": "Container Scan", "risk": "Vulnerable images", "severity": "Medium", "count": 9 }
+      ],
+      "overallSecurityScore": 68
+    },
+    "securityLogs": {
+      "vulnerabilityScans": [
+        { "scanner": "Nessus", "lastScan": "2024-01-15", "critical": 12, "high": 28, "medium": 45 },
+        { "scanner": "OpenVAS", "lastScan": "2024-01-14", "critical": 8, "high": 22, "medium": 38 },
+        { "scanner": "Qualys", "lastScan": "2024-01-13", "critical": 15, "high": 31, "medium": 52 }
+      ],
+      "siemAlerts": [
+        { "source": "Splunk", "type": "Suspicious Login", "count": 23, "severity": "High" },
+        { "source": "QRadar", "type": "Malware Detection", "count": 8, "severity": "Critical" },
+        { "source": "Sentinel", "type": "Data Exfiltration", "count": 4, "severity": "Critical" }
+      ],
+      "accessLogs": [
+        { "system": "Active Directory", "events": 1247, "anomalies": 23, "lastUpdate": "2024-01-15" },
+        { "system": "VPN Access", "events": 892, "anomalies": 12, "lastUpdate": "2024-01-15" },
+        { "system": "Database Access", "events": 2156, "anomalies": 45, "lastUpdate": "2024-01-15" }
+      ],
+      "networkTraffic": [
+        { "source": "Firewall Logs", "blocked": 1247, "allowed": 8956, "suspicious": 34 },
+        { "source": "IDS/IPS", "detections": 89, "blocked": 67, "investigated": 22 },
+        { "source": "DNS Logs", "queries": 12456, "malicious": 23, "blocked": 18 }
+      ],
+      "endpointEvents": [
+        { "agent": "CrowdStrike", "endpoints": 245, "threats": 12, "quarantined": 8 },
+        { "agent": "Windows Defender", "endpoints": 189, "threats": 23, "quarantined": 19 },
+        { "agent": "Carbon Black", "endpoints": 156, "threats": 8, "quarantined": 6 }
+      ]
+    },
+    "findings": [
+      {
+        "id": 1,
+        "title": "SQL Injection Vulnerability",
+        "severity": "Critical",
+        "category": "A03:2021 – Injection",
+        "description": "User input is not properly sanitized in database queries",
+        "affected": 3,
+        "status": "Open",
+        "cwe": "CWE-89"
+      },
+      {
+        "id": 2,
+        "title": "Missing Security Headers",
+        "severity": "Medium",
+        "category": "A05:2021 – Security Misconfiguration",
+        "description": "Essential security headers not implemented",
+        "affected": 7,
+        "status": "Open",
+        "cwe": "CWE-693"
+      },
+      {
+        "id": 3,
+        "title": "Weak Password Policy",
+        "severity": "High",
+        "category": "A07:2021 – Identification and Authentication Failures",
+        "description": "Password requirements do not meet security standards",
+        "affected": 2,
+        "status": "In Progress",
+        "cwe": "CWE-521"
+      }
+    ],
+    "summary": {
+      "critical": 35,
+      "high": 67,
+      "medium": 142,
+      "low": 89,
+      "total": 333
+    },
+    "owasp": [
+      { "name": "Injection", "count": 8, "severity": "Critical" },
+      { "name": "Broken Authentication", "count": 12, "severity": "High" },
+      { "name": "Security Misconfiguration", "count": 28, "severity": "Medium" },
+      { "name": "Cross-Site Scripting", "count": 15, "severity": "Medium" },
+      { "name": "Insecure Deserialization", "count": 9, "severity": "Low" }
+    ],
+    "compliance": [
+      { "framework": "OWASP Top 10", "score": 75, "status": "Partial" },
+      { "framework": "ISO 27001", "score": 82, "status": "Good" },
+      { "framework": "NIST Cybersecurity", "score": 78, "status": "Good" },
+      { "framework": "GDPR", "score": 85, "status": "Good" }
+    ],
+    "uploadedFiles": [
+      { "name": "vulnerability-scan-results.xml", "type": "vulnerability-scan", "size": "8.7 MB", "uploadDate": "2024-01-15", "status": "Processed" },
+      { "name": "siem-alerts-export.json", "type": "siem", "size": "12.3 MB", "uploadDate": "2024-01-14", "status": "Processed" },
+      { "name": "firewall-logs.txt", "type": "firewall", "size": "45.2 MB", "uploadDate": "2024-01-13", "status": "Processed" }
+    ]
+  }
+}

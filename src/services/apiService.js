@@ -161,24 +161,30 @@ export const apiService = {
   async getDashboardOverview() {
     if (USE_API) {
       try {
-        return await assessmentService.getDashboardOverview();
+        const data = await assessmentService.getDashboardOverview();
+        console.log('✅ Dashboard data loaded from API:', data);
+        return data;
       } catch (error) {
-        console.warn('API call failed, falling back to mock data:', error);
+        console.warn('⚠️ API call failed, falling back to mock data:', error.message);
         return mockData.dashboardOverview;
       }
     }
+    console.log('📄 Using mock dashboard data (API disabled)');
     return mockData.dashboardOverview;
   },
 
   async getPortfolioSummary(assessmentId = null) {
     if (USE_API) {
       try {
-        return await assessmentService.getPortfolioSummary(assessmentId);
+        const data = await assessmentService.getPortfolioSummary(assessmentId);
+        console.log('✅ Portfolio data loaded from API:', data);
+        return data;
       } catch (error) {
-        console.warn('API call failed, falling back to mock data:', error);
+        console.warn('⚠️ Portfolio API call failed, falling back to mock data:', error.message);
         return mockData.portfolioSummary;
       }
     }
+    console.log('📄 Using mock portfolio data (API disabled)');
     return mockData.portfolioSummary;
   },
 
@@ -186,12 +192,15 @@ export const apiService = {
   async getAssessments() {
     if (USE_API) {
       try {
-        return await assessmentService.getAssessments();
+        const data = await assessmentService.getAssessments();
+        console.log('✅ Assessments loaded from API:', data);
+        return data;
       } catch (error) {
-        console.warn('API call failed, falling back to mock data:', error);
+        console.warn('⚠️ Assessments API call failed, falling back to mock data:', error.message);
         return mockData.assessments;
       }
     }
+    console.log('📄 Using mock assessments data (API disabled)');
     return mockData.assessments;
   },
 
