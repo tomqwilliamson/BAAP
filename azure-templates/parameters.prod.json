@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "prod"
+    },
+    "appName": {
+      "value": "baap"
+    },
+    "location": {
+      "value": "East US"
+    },
+    "sqlAdminLogin": {
+      "value": "baapadmin"
+    },
+    "sqlAdminPassword": {
+      "value": "REPLACE_WITH_SECURE_PASSWORD"
+    },
+    "clientIpAddress": {
+      "value": "YOUR_IP_ADDRESS_HERE"
+    }
+  }
+}
