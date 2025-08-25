@@ -3,31 +3,54 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Code, ExternalLink } from 'lucide-react';
 import { apiService } from '../../services/apiService';
+import { useAssessment } from '../../contexts/assessmentcontext';
+import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 
 function PortfolioSummary() {
+  const { currentAssessment } = useAssessment();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadPortfolioData();
-  }, []);
+  }, [currentAssessment]);
 
   const loadPortfolioData = async () => {
     try {
-      const data = await apiService.getPortfolioSummary();
+      console.log('PORTFOLIO: Loading data for assessment:', currentAssessment?.id);
       
-      // Transform API data to match component expectations
-      const transformedData = data.map(app => ({
-        id: app.id,
-        name: app.name,
-        type: app.type,
-        category: app.category,
-        score: app.cloudReadinessScore,
-        grade: calculateGrade(app.cloudReadinessScore),
-        riskLevel: calculateRiskLevel(app.criticalFindings, app.highFindings)
-      }));
+      // Generate assessment-specific data
+      const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'portfolio');
       
-      setApplications(transformedData);
+      if (assessmentSpecificData?.applications) {
+        // Use assessment-specific portfolio data
+        const transformedData = assessmentSpecificData.applications.map((app, index) => ({
+          id: index + 1,
+          name: app.name,
+          type: 'Application',
+          category: app.criticality,
+          score: app.cloudReadiness,
+          grade: calculateGrade(app.cloudReadiness),
+          riskLevel: calculateRiskLevel(app.complexity === 'Very High' ? 5 : app.complexity === 'High' ? 3 : 1, 0)
+        }));
+        setApplications(transformedData);
+      } else {
+        // Fallback to API call
+        const data = await apiService.getPortfolioSummary();
+        
+        // Transform API data to match component expectations
+        const transformedData = data.map(app => ({
+          id: app.id,
+          name: app.name,
+          type: app.type,
+          category: app.category,
+          score: app.cloudReadinessScore,
+          grade: calculateGrade(app.cloudReadinessScore),
+          riskLevel: calculateRiskLevel(app.criticalFindings, app.highFindings)
+        }));
+        
+        setApplications(transformedData);
+      }
     } catch (error) {
       console.error('Error loading portfolio data:', error);
       setApplications([]);

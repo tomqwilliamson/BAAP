@@ -19,6 +19,12 @@ export const generateAssessmentSpecificData = (assessment, component) => {
       return generateDataArchitectureData(assessmentId, assessment);
     case 'cloudReadiness':
       return generateCloudReadinessData(assessmentId, assessment);
+    case 'architecture':
+      return generateArchitectureData(assessmentId, assessment);
+    case 'portfolio':
+      return generatePortfolioData(assessmentId, assessment);
+    case 'recommendations':
+      return generateRecommendationsData(assessmentId, assessment);
     default:
       return {};
   }
@@ -393,6 +399,330 @@ const generateCloudReadinessData = (assessmentId, assessment) => {
         readinessAnalysis: 'Excellent cloud readiness across all dimensions. Modern containerized architecture with cloud-native practices already implemented. Migration path straightforward.',
         migrationAnalysis: 'Rapid migration possible with lift-and-shift approach for containerized workloads. Minimal refactoring required.',
         costAnalysis: 'Significant cost optimization opportunities through right-sizing and managed services. Estimated 40-50% reduction in infrastructure costs.'
+      }
+    };
+  }
+};
+
+const generateArchitectureData = (assessmentId, assessment) => {
+  // E-Commerce Platform (Assessment 1)
+  if (assessmentId === 1) {
+    return {
+      applications: [
+        { name: 'E-commerce Web App', technology: '.NET Core', complexity: 'Medium', dependencies: 8, issues: 3 },
+        { name: 'Payment Gateway', technology: 'Java Spring', complexity: 'High', dependencies: 12, issues: 2 },
+        { name: 'Inventory System', technology: 'Node.js', complexity: 'Low', dependencies: 4, issues: 1 },
+        { name: 'Customer Portal', technology: 'React/Redux', complexity: 'Medium', dependencies: 6, issues: 5 }
+      ],
+      dependencies: [
+        { from: 'Web App', to: 'Payment Gateway', type: 'API', strength: 'High' },
+        { from: 'Web App', to: 'Inventory System', type: 'Database', strength: 'Medium' },
+        { from: 'Customer Portal', to: 'Web App', type: 'REST', strength: 'High' }
+      ],
+      patterns: [
+        { pattern: 'Microservices', usage: 65, maturity: 'Intermediate' },
+        { pattern: 'Event-Driven', usage: 40, maturity: 'Basic' },
+        { pattern: 'API Gateway', usage: 80, maturity: 'Advanced' },
+        { pattern: 'CQRS', usage: 25, maturity: 'Basic' }
+      ],
+      analysis: {
+        architectureAnalysis: 'E-commerce architecture shows good separation of concerns with microservices adoption. Payment and inventory systems well-isolated but customer portal needs modernization.',
+        dependencyAnalysis: 'Strong API-first design with manageable dependencies. Consider reducing coupling between web app and inventory system.',
+        modernizationAnalysis: 'Good foundation for cloud migration. Recommend containerizing services and implementing service mesh for better observability.',
+        recommendationsAnalysis: 'Focus on: 1) Customer portal modernization, 2) Event-driven patterns for inventory updates, 3) API versioning strategy, 4) Circuit breaker implementation.'
+      }
+    };
+  }
+  // Financial Services Security (Assessment 2)
+  else if (assessmentId === 2) {
+    return {
+      applications: [
+        { name: 'Core Banking System', technology: 'COBOL/Mainframe', complexity: 'Very High', dependencies: 25, issues: 8 },
+        { name: 'Online Banking', technology: '.NET Framework', complexity: 'High', dependencies: 18, issues: 12 },
+        { name: 'Mobile Banking', technology: 'Native iOS/Android', complexity: 'Medium', dependencies: 10, issues: 6 },
+        { name: 'Risk Management', technology: 'Java EE', complexity: 'High', dependencies: 15, issues: 4 }
+      ],
+      dependencies: [
+        { from: 'Online Banking', to: 'Core Banking', type: 'ESB', strength: 'Critical' },
+        { from: 'Mobile Banking', to: 'Online Banking', type: 'API', strength: 'High' },
+        { from: 'Risk Management', to: 'Core Banking', type: 'Batch', strength: 'Medium' }
+      ],
+      patterns: [
+        { pattern: 'Monolithic', usage: 70, maturity: 'Legacy' },
+        { pattern: 'SOA', usage: 50, maturity: 'Intermediate' },
+        { pattern: 'Event-Driven', usage: 20, maturity: 'Basic' },
+        { pattern: 'API Gateway', usage: 30, maturity: 'Basic' }
+      ],
+      analysis: {
+        architectureAnalysis: 'Legacy financial architecture with mainframe core creating bottlenecks. High coupling and monolithic patterns dominate. Regulatory compliance adds architectural constraints.',
+        dependencyAnalysis: 'Critical dependency on mainframe creates single point of failure. ESB layer provides some abstraction but adds latency. Batch processing creates data consistency challenges.',
+        modernizationAnalysis: 'Requires careful strangler fig pattern to modernize without disrupting core banking operations. API-first approach needed for new services.',
+        recommendationsAnalysis: 'Phased approach: 1) API gateway for external services, 2) Event sourcing for audit trails, 3) Microservices for new features, 4) Gradual mainframe decoupling.'
+      }
+    };
+  }
+  // Cloud Migration Readiness (Assessment 3)
+  else {
+    return {
+      applications: [
+        { name: 'Order Management', technology: 'Spring Boot', complexity: 'Low', dependencies: 5, issues: 1 },
+        { name: 'User Service', technology: 'Go', complexity: 'Low', dependencies: 3, issues: 0 },
+        { name: 'Notification Service', technology: 'Node.js', complexity: 'Low', dependencies: 4, issues: 2 },
+        { name: 'Analytics Engine', technology: 'Python/FastAPI', complexity: 'Medium', dependencies: 7, issues: 1 }
+      ],
+      dependencies: [
+        { from: 'Order Management', to: 'User Service', type: 'gRPC', strength: 'Medium' },
+        { from: 'Order Management', to: 'Notification Service', type: 'Event Bus', strength: 'Low' },
+        { from: 'Analytics Engine', to: 'Order Management', type: 'Kafka', strength: 'Medium' }
+      ],
+      patterns: [
+        { pattern: 'Microservices', usage: 95, maturity: 'Advanced' },
+        { pattern: 'Event-Driven', usage: 85, maturity: 'Advanced' },
+        { pattern: 'API Gateway', usage: 90, maturity: 'Advanced' },
+        { pattern: 'CQRS', usage: 60, maturity: 'Intermediate' }
+      ],
+      analysis: {
+        architectureAnalysis: 'Modern cloud-native architecture with excellent microservices implementation. Low coupling, high cohesion achieved. Event-driven patterns well adopted.',
+        dependencyAnalysis: 'Minimal dependencies with proper async communication. gRPC for synchronous calls and event bus for async operations. Good separation of concerns.',
+        modernizationAnalysis: 'Already cloud-ready with containerized services and cloud-native patterns. Focus on optimization and observability enhancements.',
+        recommendationsAnalysis: 'Optimization focus: 1) Service mesh implementation, 2) Advanced monitoring and tracing, 3) Chaos engineering, 4) Multi-region deployment strategy.'
+      }
+    };
+  }
+};
+
+const generatePortfolioData = (assessmentId, assessment) => {
+  // E-Commerce Platform (Assessment 1)
+  if (assessmentId === 1) {
+    return {
+      applications: [
+        { name: 'E-commerce Frontend', criticality: 'High', cloudReadiness: 85, complexity: 'Medium', lastUpdated: '2024-01-10' },
+        { name: 'Payment Processing', criticality: 'Critical', cloudReadiness: 72, complexity: 'High', lastUpdated: '2024-01-08' },
+        { name: 'Inventory Management', criticality: 'High', cloudReadiness: 90, complexity: 'Low', lastUpdated: '2024-01-12' },
+        { name: 'Order Management', criticality: 'High', cloudReadiness: 78, complexity: 'Medium', lastUpdated: '2024-01-09' },
+        { name: 'Customer Service Portal', criticality: 'Medium', cloudReadiness: 65, complexity: 'Medium', lastUpdated: '2024-01-07' }
+      ],
+      metrics: {
+        totalApplications: 5,
+        cloudReadyApps: 3,
+        criticalApps: 4,
+        averageComplexity: 2.2,
+        totalTechnicalDebt: 85000
+      },
+      trends: [
+        { month: 'Oct', readiness: 65, issues: 28 },
+        { month: 'Nov', readiness: 72, issues: 23 },
+        { month: 'Dec', readiness: 78, issues: 19 },
+        { month: 'Jan', readiness: 82, issues: 15 }
+      ],
+      analysis: {
+        portfolioAnalysis: 'E-commerce portfolio shows strong cloud readiness with 60% of applications ready for migration. Payment processing system requires additional security hardening.',
+        riskAnalysis: 'Medium risk profile with manageable technical debt. Critical applications have good architecture but need performance optimization.',
+        modernizationAnalysis: 'Recommend cloud-first approach for new features and gradual migration of existing services starting with inventory management.'
+      }
+    };
+  }
+  // Financial Services Security (Assessment 2)
+  else if (assessmentId === 2) {
+    return {
+      applications: [
+        { name: 'Core Banking Platform', criticality: 'Critical', cloudReadiness: 25, complexity: 'Very High', lastUpdated: '2024-01-15' },
+        { name: 'Online Banking', criticality: 'Critical', cloudReadiness: 45, complexity: 'High', lastUpdated: '2024-01-14' },
+        { name: 'Mobile Banking App', criticality: 'High', cloudReadiness: 70, complexity: 'Medium', lastUpdated: '2024-01-13' },
+        { name: 'Risk Management', criticality: 'Critical', cloudReadiness: 35, complexity: 'Very High', lastUpdated: '2024-01-12' },
+        { name: 'Customer Portal', criticality: 'Medium', cloudReadiness: 60, complexity: 'Medium', lastUpdated: '2024-01-11' },
+        { name: 'Fraud Detection', criticality: 'Critical', cloudReadiness: 40, complexity: 'High', lastUpdated: '2024-01-10' },
+        { name: 'Loan Processing', criticality: 'High', cloudReadiness: 50, complexity: 'High', lastUpdated: '2024-01-09' }
+      ],
+      metrics: {
+        totalApplications: 7,
+        cloudReadyApps: 1,
+        criticalApps: 5,
+        averageComplexity: 3.8,
+        totalTechnicalDebt: 285000
+      },
+      trends: [
+        { month: 'Oct', readiness: 38, issues: 52 },
+        { month: 'Nov', readiness: 42, issues: 48 },
+        { month: 'Dec', readiness: 45, issues: 44 },
+        { month: 'Jan', readiness: 47, issues: 41 }
+      ],
+      analysis: {
+        portfolioAnalysis: 'Financial services portfolio requires extensive modernization. Core banking system on mainframe creates significant migration challenges. High regulatory compliance requirements.',
+        riskAnalysis: 'Very high risk due to legacy systems and regulatory constraints. Technical debt of $285K needs immediate attention. Critical applications have complex interdependencies.',
+        modernizationAnalysis: 'Phased approach required: Start with peripheral systems, establish cloud security controls, then gradually modernize core systems with hybrid cloud strategy.'
+      }
+    };
+  }
+  // Cloud Migration Readiness (Assessment 3)
+  else {
+    return {
+      applications: [
+        { name: 'User Management Service', criticality: 'High', cloudReadiness: 95, complexity: 'Low', lastUpdated: '2024-01-15' },
+        { name: 'Order Processing', criticality: 'High', cloudReadiness: 92, complexity: 'Low', lastUpdated: '2024-01-14' },
+        { name: 'Payment Gateway', criticality: 'Critical', cloudReadiness: 88, complexity: 'Medium', lastUpdated: '2024-01-13' },
+        { name: 'Inventory Service', criticality: 'Medium', cloudReadiness: 94, complexity: 'Low', lastUpdated: '2024-01-12' },
+        { name: 'Notification Hub', criticality: 'Low', cloudReadiness: 96, complexity: 'Low', lastUpdated: '2024-01-11' },
+        { name: 'Analytics Platform', criticality: 'Medium', cloudReadiness: 85, complexity: 'Medium', lastUpdated: '2024-01-10' }
+      ],
+      metrics: {
+        totalApplications: 6,
+        cloudReadyApps: 6,
+        criticalApps: 3,
+        averageComplexity: 1.3,
+        totalTechnicalDebt: 12000
+      },
+      trends: [
+        { month: 'Oct', readiness: 88, issues: 8 },
+        { month: 'Nov', readiness: 90, issues: 6 },
+        { month: 'Dec', readiness: 92, issues: 5 },
+        { month: 'Jan', readiness: 95, issues: 3 }
+      ],
+      analysis: {
+        portfolioAnalysis: 'Excellent cloud-ready portfolio with modern microservices architecture. All applications containerized and following cloud-native patterns. Very low technical debt.',
+        riskAnalysis: 'Low risk profile with well-architected applications. Payment gateway needs minor security enhancements but overall architecture is solid.',
+        modernizationAnalysis: 'Portfolio already modernized and cloud-native. Focus on optimization, observability, and multi-cloud deployment strategies for resilience.'
+      }
+    };
+  }
+};
+
+const generateRecommendationsData = (assessmentId, assessment) => {
+  // E-Commerce Platform (Assessment 1)
+  if (assessmentId === 1) {
+    return {
+      priority: [
+        { 
+          title: 'Optimize Payment Processing Performance', 
+          impact: 'High', 
+          effort: 'Medium', 
+          category: 'Performance',
+          description: 'Payment processing latency causes cart abandonment. Implement caching and optimize database queries.',
+          estimatedSavings: 45000,
+          timeline: '3 months'
+        },
+        { 
+          title: 'Modernize Customer Portal UI/UX', 
+          impact: 'High', 
+          effort: 'High', 
+          category: 'User Experience',
+          description: 'Legacy customer portal affects user satisfaction. Migrate to modern React-based SPA.',
+          estimatedSavings: 85000,
+          timeline: '6 months'
+        },
+        { 
+          title: 'Implement Auto-scaling', 
+          impact: 'Medium', 
+          effort: 'Low', 
+          category: 'Scalability',
+          description: 'Handle traffic spikes during sales events with cloud auto-scaling capabilities.',
+          estimatedSavings: 25000,
+          timeline: '2 months'
+        }
+      ],
+      businessCase: {
+        totalInvestment: 180000,
+        projectedSavings: 155000,
+        roi: 86,
+        paybackPeriod: '18 months',
+        riskReduction: 'Medium'
+      },
+      analysis: {
+        executiveSummary: 'E-commerce platform modernization will improve customer experience and reduce operational costs. Focus on performance optimization and user interface updates.',
+        keyFindings: 'Payment processing bottlenecks and outdated customer portal are primary concerns. Cloud scalability will handle seasonal traffic variations.',
+        recommendations: 'Prioritize performance improvements for immediate impact, then modernize customer-facing components for long-term competitive advantage.'
+      }
+    };
+  }
+  // Financial Services Security (Assessment 2)
+  else if (assessmentId === 2) {
+    return {
+      priority: [
+        { 
+          title: 'Implement Modern Authentication', 
+          impact: 'Critical', 
+          effort: 'High', 
+          category: 'Security',
+          description: 'Replace legacy authentication with MFA and OAuth 2.0 to meet regulatory requirements.',
+          estimatedSavings: 125000,
+          timeline: '8 months'
+        },
+        { 
+          title: 'Establish API Gateway', 
+          impact: 'High', 
+          effort: 'Medium', 
+          category: 'Architecture',
+          description: 'Create secure API layer to reduce direct mainframe access and enable gradual modernization.',
+          estimatedSavings: 95000,
+          timeline: '4 months'
+        },
+        { 
+          title: 'Deploy Advanced Monitoring', 
+          impact: 'High', 
+          effort: 'Medium', 
+          category: 'Operations',
+          description: 'Implement comprehensive monitoring for regulatory compliance and fraud detection.',
+          estimatedSavings: 75000,
+          timeline: '3 months'
+        }
+      ],
+      businessCase: {
+        totalInvestment: 450000,
+        projectedSavings: 295000,
+        roi: 65,
+        paybackPeriod: '24 months',
+        riskReduction: 'High'
+      },
+      analysis: {
+        executiveSummary: 'Critical security and compliance gaps require immediate attention. Modernization strategy must balance innovation with regulatory requirements and operational stability.',
+        keyFindings: 'Legacy authentication systems pose regulatory risk. Mainframe dependency limits agility. Insufficient monitoring creates compliance blind spots.',
+        recommendations: 'Phase modernization with security first, then architectural improvements. Maintain hybrid approach to minimize disruption to core banking operations.'
+      }
+    };
+  }
+  // Cloud Migration Readiness (Assessment 3)
+  else {
+    return {
+      priority: [
+        { 
+          title: 'Implement Service Mesh', 
+          impact: 'Medium', 
+          effort: 'Medium', 
+          category: 'Architecture',
+          description: 'Deploy Istio service mesh for advanced traffic management, security, and observability.',
+          estimatedSavings: 35000,
+          timeline: '4 months'
+        },
+        { 
+          title: 'Multi-Region Deployment', 
+          impact: 'High', 
+          effort: 'High', 
+          category: 'Reliability',
+          description: 'Establish multi-region deployment for disaster recovery and global performance.',
+          estimatedSavings: 65000,
+          timeline: '6 months'
+        },
+        { 
+          title: 'Advanced Observability', 
+          impact: 'Medium', 
+          effort: 'Low', 
+          category: 'Operations',
+          description: 'Enhance monitoring with distributed tracing and advanced analytics for proactive issue resolution.',
+          estimatedSavings: 20000,
+          timeline: '2 months'
+        }
+      ],
+      businessCase: {
+        totalInvestment: 85000,
+        projectedSavings: 120000,
+        roi: 141,
+        paybackPeriod: '12 months',
+        riskReduction: 'Low'
+      },
+      analysis: {
+        executiveSummary: 'Cloud-native architecture is mature and well-implemented. Focus on optimization and resilience enhancements to maximize cloud investment.',
+        keyFindings: 'Excellent microservices implementation with low technical debt. Opportunities exist in observability and multi-region resilience.',
+        recommendations: 'Build on strong foundation with service mesh and multi-region capabilities. Implement chaos engineering for resilience testing.'
       }
     };
   }

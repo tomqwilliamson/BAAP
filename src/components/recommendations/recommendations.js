@@ -22,6 +22,7 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
+import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { useReactToPrint } from 'react-to-print';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -82,14 +83,40 @@ const Recommendations = () => {
   const loadComprehensiveAssessment = async () => {
     try {
       setLoading(true);
+      console.log('RECOMMENDATIONS: Loading data for assessment:', currentAssessment?.id);
       
-      // Aggregate data from all assessment modules
-      const aggregatedData = await aggregateAllAssessmentData();
+      // Generate assessment-specific data
+      const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'recommendations');
       
-      // Generate comprehensive analysis
-      const analysisResults = generateComprehensiveAnalysis(aggregatedData);
-      
-      setComprehensiveResults(analysisResults);
+      if (assessmentSpecificData) {
+        // Use assessment-specific recommendations data
+        const analysisResults = {
+          executiveSummary: {
+            overallReadinessScore: assessmentSpecificData.businessCase?.roi || 85,
+            totalFindings: assessmentSpecificData.priority?.length || 3,
+            criticalIssues: assessmentSpecificData.priority?.filter(p => p.impact === 'Critical').length || 1,
+            estimatedSavings: assessmentSpecificData.businessCase?.projectedSavings || 180000,
+            recommendedInvestment: assessmentSpecificData.businessCase?.totalInvestment || 150000,
+            roiProjection: assessmentSpecificData.businessCase?.roi || 120,
+            timeToValue: assessmentSpecificData.businessCase?.paybackPeriod || '18 months',
+            confidenceLevel: 'High'
+          },
+          domainAssessments: generateDomainAssessments(currentAssessment?.id),
+          priorityRecommendations: assessmentSpecificData.priority || [],
+          businessCase: assessmentSpecificData.businessCase || {},
+          analysis: assessmentSpecificData.analysis || {},
+          roadmap: generateRoadmap(assessmentSpecificData.priority || [])
+        };
+        setComprehensiveResults(analysisResults);
+      } else {
+        // Aggregate data from all assessment modules
+        const aggregatedData = await aggregateAllAssessmentData();
+        
+        // Generate comprehensive analysis
+        const analysisResults = generateComprehensiveAnalysis(aggregatedData);
+        
+        setComprehensiveResults(analysisResults);
+      }
       
     } catch (error) {
       console.error('Failed to load comprehensive assessment:', error);
@@ -98,6 +125,50 @@ const Recommendations = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateDomainAssessments = (assessmentId) => {
+    // Generate domain-specific assessment data based on assessment type
+    const baseData = [
+      { domain: 'Security', score: 72, findings: 8, status: 'Needs Improvement' },
+      { domain: 'Infrastructure', score: 85, findings: 3, status: 'Good' },
+      { domain: 'DevOps', score: 78, findings: 5, status: 'Good' },
+      { domain: 'Data Architecture', score: 82, findings: 4, status: 'Good' },
+      { domain: 'Cloud Readiness', score: 88, findings: 2, status: 'Excellent' }
+    ];
+
+    // Customize based on assessment type
+    if (assessmentId === 1) {
+      // E-commerce - focus on scalability and performance
+      baseData[0].score = 75; // Security
+      baseData[1].score = 88; // Infrastructure 
+      baseData[2].score = 82; // DevOps
+    } else if (assessmentId === 2) {
+      // Financial services - focus on security and compliance
+      baseData[0].score = 65; // Security (needs work)
+      baseData[0].findings = 12;
+      baseData[0].status = 'Critical';
+    } else if (assessmentId === 3) {
+      // Cloud migration - already optimized
+      baseData.forEach(domain => {
+        domain.score += 5; // Boost all scores
+        domain.findings = Math.max(1, domain.findings - 2);
+      });
+    }
+
+    return baseData;
+  };
+
+  const generateRoadmap = (priorityRecommendations) => {
+    return priorityRecommendations.map((rec, index) => ({
+      phase: `Phase ${index + 1}`,
+      title: rec.title,
+      duration: rec.timeline,
+      effort: rec.effort,
+      impact: rec.impact,
+      dependencies: index === 0 ? [] : [`Phase ${index}`],
+      deliverables: [`Complete ${rec.title.toLowerCase()}`, 'Documentation', 'Team training']
+    }));
   };
 
   const aggregateAllAssessmentData = async () => {

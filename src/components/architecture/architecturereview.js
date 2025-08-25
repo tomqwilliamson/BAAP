@@ -7,8 +7,11 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line } from 'recharts';
 import toast from 'react-hot-toast';
+import { useAssessment } from '../../contexts/assessmentcontext';
+import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 
 function ArchitectureReview() {
+  const { currentAssessment } = useAssessment();
   const [currentView, setCurrentView] = useState('overview'); // overview, repository, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -65,14 +68,33 @@ function ArchitectureReview() {
   // Load saved data on component mount
   useEffect(() => {
     loadArchitectureData();
-  }, []);
+  }, [currentAssessment]);
 
   const loadArchitectureData = () => {
-    const savedData = localStorage.getItem('architectureReviewData');
+    console.log('ARCHITECTURE: Loading data for assessment:', currentAssessment?.id);
+    
+    // Generate assessment-specific data
+    const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'architecture');
+    
+    // Load saved data
+    const savedDataKey = currentAssessment?.id 
+      ? `architectureReviewData_${currentAssessment.id}`
+      : 'architectureReviewData';
+    const savedData = localStorage.getItem(savedDataKey);
+    
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
-        setArchitectureData(parsed);
+        // Merge saved data with assessment-specific data
+        const mergedData = {
+          ...parsed,
+          ...assessmentSpecificData && {
+            architecturePatterns: assessmentSpecificData.patterns || parsed.architecturePatterns,
+            applications: assessmentSpecificData.applications || parsed.applications,
+            analysis: assessmentSpecificData.analysis || parsed.analysis
+          }
+        };
+        setArchitectureData(mergedData);
         if (parsed.repositoryInfo.status === 'connected') {
           setRepositoryConnected(true);
         }
@@ -82,16 +104,32 @@ function ArchitectureReview() {
         console.error('Error loading architecture data:', error);
         toast.error('Error loading saved data');
       }
+    } else if (assessmentSpecificData) {
+      // Use assessment-specific data as default
+      const defaultData = {
+        ...architectureData,
+        architecturePatterns: assessmentSpecificData.patterns || [],
+        applications: assessmentSpecificData.applications || [],
+        dependencies: assessmentSpecificData.dependencies || [],
+        analysis: assessmentSpecificData.analysis || {}
+      };
+      setArchitectureData(defaultData);
     }
   };
 
   const saveArchitectureData = () => {
     try {
-      localStorage.setItem('architectureReviewData', JSON.stringify(architectureData));
+      if (!currentAssessment?.id) {
+        toast.error('No assessment selected. Please select an assessment first.');
+        return;
+      }
+      
+      const savedDataKey = `architectureReviewData_${currentAssessment.id}`;
+      localStorage.setItem(savedDataKey, JSON.stringify(architectureData));
       setDataSaved(true);
       setLastSaveTime(new Date());
-      console.log('ARCH SAVE: dataSaved set to true, repositoryConnected:', repositoryConnected);
-      toast.success('Architecture data saved successfully');
+      console.log('ARCHITECTURE: Saving assessment data for:', currentAssessment.id, architectureData);
+      toast.success(`Architecture review saved for "${currentAssessment.name}"!`);
     } catch (error) {
       console.error('Error saving architecture data:', error);
       toast.error('Error saving data');
