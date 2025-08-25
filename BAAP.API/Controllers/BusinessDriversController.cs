@@ -278,6 +278,58 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
+    // PUT: api/businessdrivers/assessment/{assessmentId}
+    [HttpPut("assessment/{assessmentId}")]
+    public async Task<ActionResult> UpdateAssessmentBusinessDrivers(int assessmentId, [FromBody] UpdateAssessmentBusinessDriversRequest request)
+    {
+        try
+        {
+            // Validate assessment exists
+            var assessment = await _context.Assessments
+                .Include(a => a.BusinessDrivers)
+                .FirstOrDefaultAsync(a => a.Id == assessmentId);
+
+            if (assessment == null)
+            {
+                return NotFound($"Assessment with ID {assessmentId} not found");
+            }
+
+            // Remove existing business drivers for this assessment
+            _context.BusinessDrivers.RemoveRange(assessment.BusinessDrivers);
+
+            // Add new business drivers
+            if (request.BusinessDrivers != null && request.BusinessDrivers.Any())
+            {
+                var newBusinessDrivers = request.BusinessDrivers.Select(bd => new BusinessDriver
+                {
+                    Name = bd.Name,
+                    Description = bd.Description ?? "",
+                    Priority = bd.Priority ?? "Medium",
+                    Impact = bd.Impact ?? 50,
+                    Urgency = bd.Urgency ?? 50,
+                    BusinessValue = bd.BusinessValue ?? "",
+                    AssessmentId = assessmentId
+                }).ToList();
+
+                _context.BusinessDrivers.AddRange(newBusinessDrivers);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Business drivers updated successfully",
+                assessmentId = assessmentId,
+                count = request.BusinessDrivers?.Count ?? 0
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating business drivers for assessment ID {AssessmentId}", assessmentId);
+            return StatusCode(500, "An error occurred while updating business drivers");
+        }
+    }
+
     // GET: api/businessdrivers/templates
     [HttpGet("templates")]
     public ActionResult GetBusinessDriverTemplates()
@@ -358,4 +410,19 @@ public class UpdateBusinessDriverRequest
 public class BulkImportBusinessDriversRequest
 {
     public List<CreateBusinessDriverRequest> BusinessDrivers { get; set; } = new();
+}
+
+public class UpdateAssessmentBusinessDriversRequest
+{
+    public List<BusinessDriverData> BusinessDrivers { get; set; } = new();
+}
+
+public class BusinessDriverData
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Priority { get; set; }
+    public int? Impact { get; set; }
+    public int? Urgency { get; set; }
+    public string? BusinessValue { get; set; }
 }

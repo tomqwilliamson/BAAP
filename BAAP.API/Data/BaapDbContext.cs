@@ -83,6 +83,10 @@ public class BaapDbContext : DbContext
             .Property(a => a.PotentialSavings)
             .HasPrecision(18, 2);
 
+        modelBuilder.Entity<Assessment>()
+            .Property(a => a.Budget)
+            .HasPrecision(18, 2);
+
         modelBuilder.Entity<Application>()
             .Property(a => a.EstimatedMigrationCost)
             .HasPrecision(18, 2);

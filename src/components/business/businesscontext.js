@@ -7,21 +7,313 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/currency';
+import { useAssessment } from '../../contexts/assessmentcontext';
+import { apiService } from '../../services/apiService';
+
+// Generate assessment-specific mock data
+const generateMockDataForAssessment = (assessment, businessDrivers) => {
+  const assessmentId = assessment.id;
+  
+  // E-Commerce Platform (Assessment 1)
+  if (assessmentId === 1) {
+    return {
+      stakeholderGroups: [
+        {
+          id: 1,
+          name: 'Executive Leadership',
+          members: ['CEO', 'CTO', 'VP of Engineering'],
+          role: 'Strategic Decision Making',
+          influence: 'High',
+          interest: 'High',
+          notes: 'Primary sponsors and budget approvers'
+        },
+        {
+          id: 2,
+          name: 'Development Team',
+          members: ['Lead Developer', 'Frontend Team', 'Backend Team'],
+          role: 'Technical Implementation',
+          influence: 'Medium',
+          interest: 'High',
+          notes: 'Responsible for day-to-day development and migration'
+        },
+        {
+          id: 3,
+          name: 'Customer Support',
+          members: ['Support Manager', 'Customer Success Team'],
+          role: 'End User Advocacy',
+          influence: 'Medium',
+          interest: 'High',
+          notes: 'Represents customer needs and concerns'
+        }
+      ],
+      projectTimeline: [
+        {
+          id: 1,
+          phase: 'Discovery & Planning',
+          description: 'Requirements gathering, architecture design, and migration strategy',
+          startDate: '2025-01-15',
+          duration: '6 weeks',
+          dependencies: 'Business requirements approval',
+          deliverables: 'Technical architecture, migration plan, risk assessment',
+          status: 'Planned'
+        },
+        {
+          id: 2,
+          phase: 'Infrastructure Setup',
+          description: 'Cloud infrastructure provisioning and CI/CD pipeline setup',
+          startDate: '2025-03-01',
+          duration: '4 weeks',
+          dependencies: 'Architecture approval',
+          deliverables: 'Production-ready infrastructure, deployment pipelines',
+          status: 'Planned'
+        },
+        {
+          id: 3,
+          phase: 'Core Platform Migration',
+          description: 'Migrate core e-commerce functionality and payment systems',
+          startDate: '2025-04-01',
+          duration: '8 weeks',
+          dependencies: 'Infrastructure ready',
+          deliverables: 'Migrated core platform, payment integration',
+          status: 'Planned'
+        }
+      ],
+      riskAssessment: [
+        {
+          id: 1,
+          risk: 'Customer Data Migration Complexity',
+          probability: 'Medium',
+          impact: 'High',
+          category: 'Technical',
+          mitigation: 'Comprehensive testing strategy and rollback plan',
+          owner: 'Technical Lead'
+        },
+        {
+          id: 2,
+          risk: 'Performance Degradation During Migration',
+          probability: 'Medium',
+          impact: 'Medium',
+          category: 'Business',
+          mitigation: 'Gradual migration approach with load testing',
+          owner: 'DevOps Team'
+        }
+      ],
+      budgetAllocation: {
+        assessment: 85000,
+        implementation: 520000,
+        maintenance: 180000,
+        contingency: 65000
+      },
+      analysis: {
+        driversAnalysis: 'Analysis of 4 business driver(s) shows strong focus on digital transformation and customer experience. High-priority drivers indicate urgent modernization needs. Critical priority on Customer Experience Improvement (90% impact, 85% urgency) demonstrates commitment to user satisfaction.',
+        stakeholderAnalysis: 'Stakeholder analysis reveals 3 key stakeholder groups. Executive leadership provides strategic direction while development teams ensure technical feasibility. Customer support brings valuable end-user perspective.',
+        timelineAnalysis: 'Project timeline consists of 3 planned phases spanning 18 weeks. E-commerce platform migration requires careful coordination between infrastructure setup and core platform migration to minimize customer impact.',
+        riskAnalysis: 'Risk assessment identifies 2 key risks focused on technical complexity and performance. Medium-probability risks require proactive mitigation strategies including comprehensive testing and gradual rollout.',
+        recommendations: 'Strategic recommendations: 1) Prioritize customer experience features, 2) Implement comprehensive testing strategy, 3) Plan for gradual migration to minimize business impact, 4) Establish performance monitoring throughout migration.',
+        considerations: 'Key considerations: Customer impact during migration, data integrity, performance optimization, and team training on new platform.'
+      }
+    };
+  }
+  
+  // Financial Services Security (Assessment 2)
+  else if (assessmentId === 2) {
+    return {
+      stakeholderGroups: [
+        {
+          id: 1,
+          name: 'Compliance Team',
+          members: ['Chief Compliance Officer', 'Risk Manager', 'Audit Team'],
+          role: 'Regulatory Oversight',
+          influence: 'High',
+          interest: 'High',
+          notes: 'Ensures all changes meet financial regulations'
+        },
+        {
+          id: 2,
+          name: 'Security Team',
+          members: ['CISO', 'Security Architects', 'SOC Team'],
+          role: 'Security Implementation',
+          influence: 'High',
+          interest: 'High',
+          notes: 'Responsible for security controls and monitoring'
+        },
+        {
+          id: 3,
+          name: 'Banking Operations',
+          members: ['Operations Manager', 'Business Analysts'],
+          role: 'Business Requirements',
+          influence: 'Medium',
+          interest: 'High',
+          notes: 'Daily operations and customer impact assessment'
+        }
+      ],
+      projectTimeline: [
+        {
+          id: 1,
+          phase: 'Security Assessment',
+          description: 'Comprehensive security audit and vulnerability assessment',
+          startDate: '2025-02-01',
+          duration: '4 weeks',
+          dependencies: 'System access approval',
+          deliverables: 'Security assessment report, vulnerability matrix',
+          status: 'In Progress'
+        },
+        {
+          id: 2,
+          phase: 'Compliance Review',
+          description: 'Regulatory compliance gap analysis and remediation planning',
+          startDate: '2025-03-01',
+          duration: '6 weeks',
+          dependencies: 'Security assessment complete',
+          deliverables: 'Compliance gap analysis, remediation roadmap',
+          status: 'Planned'
+        },
+        {
+          id: 3,
+          phase: 'Implementation',
+          description: 'Security controls implementation and compliance remediation',
+          startDate: '2025-04-15',
+          duration: '12 weeks',
+          dependencies: 'Management approval',
+          deliverables: 'Enhanced security posture, compliance certification',
+          status: 'Planned'
+        }
+      ],
+      riskAssessment: [
+        {
+          id: 1,
+          risk: 'Regulatory Non-Compliance',
+          probability: 'High',
+          impact: 'High',
+          category: 'Compliance',
+          mitigation: 'Continuous compliance monitoring and regular audits',
+          owner: 'Compliance Officer'
+        },
+        {
+          id: 2,
+          risk: 'Data Breach During Assessment',
+          probability: 'Low',
+          impact: 'High',
+          category: 'Security',
+          mitigation: 'Strict access controls and monitoring during assessment',
+          owner: 'CISO'
+        },
+        {
+          id: 3,
+          risk: 'Business Disruption',
+          probability: 'Medium',
+          impact: 'Medium',
+          category: 'Business',
+          mitigation: 'Phased approach with minimal business impact',
+          owner: 'Operations Manager'
+        }
+      ],
+      budgetAllocation: {
+        assessment: 130000,
+        implementation: 380000,
+        maintenance: 120000,
+        contingency: 20000
+      },
+      analysis: {
+        driversAnalysis: 'Analysis of 3 business driver(s) shows critical focus on regulatory compliance and security enhancement. High-priority compliance drivers indicate urgent regulatory requirements that must be addressed to avoid penalties.',
+        stakeholderAnalysis: 'Stakeholder analysis reveals 3 key groups with compliance and security teams having highest influence. Strong regulatory oversight ensures all changes meet financial industry standards.',
+        timelineAnalysis: 'Project timeline consists of 3 phases over 22 weeks. Security-first approach with comprehensive assessment before implementation ensures thorough risk mitigation.',
+        riskAnalysis: 'Risk assessment identifies 3 key risks with regulatory non-compliance rated as high probability and high impact. Comprehensive mitigation strategies focus on continuous monitoring and compliance validation.',
+        recommendations: 'Critical recommendations: 1) Prioritize regulatory compliance remediation, 2) Implement continuous security monitoring, 3) Establish regular audit cycles, 4) Enhance incident response capabilities.',
+        considerations: 'Key considerations: Regulatory deadlines, business continuity during security updates, staff training on new compliance procedures, and ongoing monitoring requirements.'
+      }
+    };
+  }
+  
+  // Cloud Migration Readiness (Assessment 3)
+  else {
+    return {
+      stakeholderGroups: [
+        {
+          id: 1,
+          name: 'Cloud Architecture Team',
+          members: ['Cloud Architect', 'Solutions Architect', 'Platform Engineers'],
+          role: 'Technical Leadership',
+          influence: 'High',
+          interest: 'High',
+          notes: 'Designs and implements cloud migration strategy'
+        },
+        {
+          id: 2,
+          name: 'Application Teams',
+          members: ['Development Teams', 'Application Owners'],
+          role: 'Application Migration',
+          influence: 'Medium',
+          interest: 'High',
+          notes: 'Responsible for individual application migrations'
+        }
+      ],
+      projectTimeline: [
+        {
+          id: 1,
+          phase: 'Cloud Readiness Assessment',
+          description: 'Evaluate applications and infrastructure for cloud migration',
+          startDate: '2025-01-01',
+          duration: '8 weeks',
+          dependencies: 'Resource allocation',
+          deliverables: 'Migration readiness report, cloud strategy',
+          status: 'In Progress'
+        },
+        {
+          id: 2,
+          phase: 'Pilot Migration',
+          description: 'Migrate selected low-risk applications as proof of concept',
+          startDate: '2025-03-01',
+          duration: '6 weeks',
+          dependencies: 'Assessment completion',
+          deliverables: 'Pilot applications migrated, lessons learned',
+          status: 'Planned'
+        }
+      ],
+      riskAssessment: [
+        {
+          id: 1,
+          risk: 'Vendor Lock-in',
+          probability: 'Medium',
+          impact: 'Medium',
+          category: 'Strategic',
+          mitigation: 'Multi-cloud strategy and portable architecture',
+          owner: 'Cloud Architect'
+        }
+      ],
+      budgetAllocation: {
+        assessment: 180000,
+        implementation: 1200000,
+        maintenance: 450000,
+        contingency: 270000
+      },
+      analysis: {
+        driversAnalysis: 'Analysis of 1 business driver focused on innovation enablement. Cloud migration represents strategic shift toward modern, scalable infrastructure supporting future growth and innovation initiatives.',
+        stakeholderAnalysis: 'Stakeholder analysis reveals 2 key groups with cloud architecture team providing technical leadership. Strong collaboration between architects and application teams ensures successful migration.',
+        timelineAnalysis: 'Project timeline consists of 2 phases over 14 weeks. Phased approach with pilot migration reduces risk and validates cloud strategy before full-scale implementation.',
+        riskAnalysis: 'Risk assessment identifies 1 strategic risk around vendor lock-in. Mitigation through multi-cloud strategy ensures flexibility and avoids single vendor dependency.',
+        recommendations: 'Strategic recommendations: 1) Execute pilot migration for validation, 2) Implement multi-cloud architecture, 3) Establish cloud governance framework, 4) Plan for staff training and capability development.',
+        considerations: 'Key considerations: Application compatibility, data migration strategies, performance optimization in cloud environment, and ongoing cloud cost management.'
+      }
+    };
+  }
+};
 
 function BusinessContext() {
+  const { currentAssessment } = useAssessment();
   const [currentView, setCurrentView] = useState('overview'); // overview, gather, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(true);
   const [lastSaveTime, setLastSaveTime] = useState(new Date());
   
-  // Business context data structure with mock data
+  // Business context data structure - will be loaded from assessment
   const [businessData, setBusinessData] = useState({
     projectInfo: {
-      name: 'Enterprise Application Modernization Initiative',
-      description: 'Comprehensive assessment and modernization of legacy applications to support digital transformation and improve operational efficiency',
-      duration: '18 months',
-      totalBudget: formatCurrency(3200000)
+      name: '',
+      description: '',
+      duration: '',
+      totalBudget: ''
     },
     businessDrivers: [
       {
@@ -251,36 +543,157 @@ Priority Actions:
   const [editingTimelineItem, setEditingTimelineItem] = useState(null);
   const [editingRisk, setEditingRisk] = useState(null);
 
-  // Load saved data on component mount
+  // Load assessment data when currentAssessment changes
   useEffect(() => {
-    loadBusinessData();
-  }, []);
+    loadAssessmentData();
+  }, [currentAssessment]);
 
-  const loadBusinessData = () => {
-    const savedData = localStorage.getItem('businessContextData');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setBusinessData(parsed);
+  const loadAssessmentData = async () => {
+    try {
+      // If we have a current assessment, load its data from the database
+      if (currentAssessment?.id) {
+        console.log('LOADING: Assessment data for ID:', currentAssessment.id);
+        
+        // Load project information from assessment
+        const projectInfo = {
+          name: currentAssessment.type || currentAssessment.name || '',
+          description: currentAssessment.businessObjective || currentAssessment.description || '',
+          duration: currentAssessment.timeline || '',
+          totalBudget: currentAssessment.budget ? formatCurrency(currentAssessment.budget) : ''
+        };
+
+        // Load business drivers for this assessment
+        let businessDrivers = [];
+        try {
+          const driversResponse = await apiService.getBusinessDrivers(currentAssessment.id);
+          businessDrivers = driversResponse.businessDrivers || [];
+          console.log('LOADING: Business drivers loaded:', businessDrivers.length);
+        } catch (error) {
+          console.log('LOADING: No business drivers found for this assessment');
+          businessDrivers = [];
+        }
+
+        // Generate assessment-specific mock data
+        const assessmentSpecificData = generateMockDataForAssessment(currentAssessment, businessDrivers);
+        
+        // Update the business data with assessment-specific data
+        setBusinessData({
+          ...assessmentSpecificData,
+          projectInfo,
+          businessDrivers: businessDrivers // Always use the loaded drivers from database
+        });
+
         setDataSaved(true);
         setLastSaveTime(new Date());
-      } catch (error) {
-        console.error('Error loading business context data:', error);
-        toast.error('Error loading saved data');
+        console.log('LOADING: Assessment data loaded successfully');
+      } else {
+        // No assessment selected - load from localStorage as fallback or show empty
+        console.log('LOADING: No current assessment selected');
+        const savedData = localStorage.getItem('businessContextData');
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          setBusinessData(parsed);
+        } else {
+          // Set to empty/default state
+          setBusinessData({
+            projectInfo: {
+              name: '',
+              description: '',
+              duration: '',
+              totalBudget: ''
+            },
+            businessDrivers: [],
+            stakeholderGroups: [],
+            projectTimeline: [],
+            riskAssessment: [],
+            budgetAllocation: {
+              assessment: 0,
+              implementation: 0,
+              maintenance: 0,
+              contingency: 0
+            },
+            analysis: {
+              driversAnalysis: '',
+              stakeholderAnalysis: '',
+              timelineAnalysis: '',
+              riskAnalysis: '',
+              recommendations: '',
+              considerations: ''
+            }
+          });
+        }
       }
+    } catch (error) {
+      console.error('LOADING ERROR: Error loading assessment data:', error);
+      toast.error('Error loading assessment data');
     }
   };
 
-  const saveBusinessData = () => {
+  const saveBusinessData = async () => {
     try {
+      // Save to localStorage as backup
       localStorage.setItem('businessContextData', JSON.stringify(businessData));
+      
+      // Debug logging
+      console.log('BIZ SAVE: Starting save process...');
+      console.log('BIZ SAVE: Current assessment:', currentAssessment);
+      console.log('BIZ SAVE: Project info:', businessData.projectInfo);
+      
+      // Save to database if we have a current assessment
+      if (currentAssessment?.id) {
+        // Parse budget value
+        const budgetValue = businessData.projectInfo.totalBudget?.replace(/[^0-9.-]+/g, "");
+        const parsedBudget = budgetValue ? parseFloat(budgetValue) : null;
+        
+        // Save project information to assessment - using PascalCase for C# API
+        const assessmentUpdate = {
+          Id: currentAssessment.id,
+          Name: currentAssessment.name,
+          Description: businessData.projectInfo.description || currentAssessment.description,
+          Status: currentAssessment.status,
+          Type: businessData.projectInfo.name || currentAssessment.type,
+          Scope: `Project: ${businessData.projectInfo.name || 'Business Context Assessment'}`,
+          BusinessObjective: businessData.projectInfo.description || currentAssessment.businessObjective,
+          Timeline: businessData.projectInfo.duration || currentAssessment.timeline,
+          Budget: parsedBudget || currentAssessment.budget,
+          Notes: currentAssessment.notes,
+          CreatedDate: currentAssessment.createdDate,
+          StartedDate: currentAssessment.startedDate,
+          CompletedDate: currentAssessment.completedDate,
+          EstimatedCost: currentAssessment.estimatedCost,
+          PotentialSavings: currentAssessment.potentialSavings,
+          OverallScore: currentAssessment.overallScore,
+          SecurityScore: currentAssessment.securityScore,
+          CloudReadinessScore: currentAssessment.cloudReadinessScore
+        };
+
+        console.log('BIZ SAVE: Assessment update payload:', assessmentUpdate);
+        
+        const updateResult = await apiService.updateAssessment(currentAssessment.id, assessmentUpdate);
+        console.log('BIZ SAVE: Assessment update result:', updateResult);
+
+        // Save business drivers to database
+        if (businessData.businessDrivers.length > 0) {
+          const driversResult = await apiService.updateBusinessDrivers(currentAssessment.id, {
+            businessDrivers: businessData.businessDrivers
+          });
+          console.log('BIZ SAVE: Business drivers update result:', driversResult);
+        }
+
+        console.log('BIZ SAVE: Data saved to database and localStorage successfully');
+        toast.success('Business context data saved to database successfully');
+      } else {
+        console.log('BIZ SAVE: No current assessment found - currentAssessment is:', currentAssessment);
+        toast.success('Business context data saved locally (no active assessment selected)');
+      }
+
       setDataSaved(true);
       setLastSaveTime(new Date());
-      console.log('BIZ SAVE: dataSaved set to true, drivers:', businessData.businessDrivers.length);
-      toast.success('Business context data saved successfully');
     } catch (error) {
-      console.error('Error saving business context data:', error);
-      toast.error('Error saving data');
+      console.error('BIZ SAVE ERROR: Full error object:', error);
+      console.error('BIZ SAVE ERROR: Error message:', error.message);
+      console.error('BIZ SAVE ERROR: Error response:', error.response?.data);
+      toast.error(`Error saving data: ${error.message}`);
     }
   };
 
@@ -570,10 +983,17 @@ Priority Actions:
             <p className="text-blue-100 mt-1">
               Comprehensive workshop-driven business context gathering and AI-powered analysis
             </p>
+            {!currentAssessment && (
+              <div className="mt-2 p-3 bg-blue-700 rounded-md border border-blue-500">
+                <p className="text-sm text-blue-100">
+                  💡 <strong>Tip:</strong> Select an assessment from the Dashboard first to save data to the database.
+                </p>
+              </div>
+            )}
           </div>
           <Building className="h-12 w-12 text-blue-200" />
         </div>
-        
+
         {/* Navigation Tabs */}
         <div className="flex space-x-4">
           <button

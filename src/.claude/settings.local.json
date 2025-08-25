@@ -4,7 +4,11 @@
       "Bash(powershell:*)",
       "Bash(npm install)",
       "Bash(npm run build:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(dotnet ef database:*)",
+      "Bash(sqlcmd:*)",
+      "Bash(dotnet build)"
     ],
     "deny": [],
     "additionalDirectories": [

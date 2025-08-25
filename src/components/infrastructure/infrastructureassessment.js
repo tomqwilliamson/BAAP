@@ -8,8 +8,11 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/currency';
+import { useAssessment } from '../../contexts/assessmentcontext';
+import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 
 function InfrastructureAssessment() {
+  const { currentAssessment } = useAssessment();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -41,42 +44,25 @@ function InfrastructureAssessment() {
 
   useEffect(() => {
     loadAssessmentData();
-  }, []);
+  }, [currentAssessment]);
 
   const loadAssessmentData = async () => {
     try {
       setLoading(true);
-      // Mock infrastructure data
+      console.log('INFRASTRUCTURE: Loading data for assessment:', currentAssessment?.id);
+      
+      // Generate assessment-specific data
+      const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'infrastructure');
+      
       const mockData = {
         azureMigrate: {
-          servers: [
-            { name: 'WEB-SRV-01', os: 'Windows Server 2019', cpu: 4, memory: 16, storage: 500, readiness: 95, complexity: 'Low', monthlyCost: 245 },
-            { name: 'DB-SRV-01', os: 'Windows Server 2016', cpu: 8, memory: 32, storage: 1000, readiness: 78, complexity: 'Medium', monthlyCost: 485 },
-            { name: 'APP-SRV-01', os: 'RHEL 8', cpu: 6, memory: 24, storage: 750, readiness: 88, complexity: 'Low', monthlyCost: 365 },
-            { name: 'FILE-SRV-01', os: 'Windows Server 2012', cpu: 2, memory: 8, storage: 2000, readiness: 45, complexity: 'High', monthlyCost: 195 },
-            { name: 'MAIL-SRV-01', os: 'Windows Server 2019', cpu: 4, memory: 16, storage: 300, readiness: 82, complexity: 'Medium', monthlyCost: 275 }
-          ],
+          servers: assessmentSpecificData.servers || [],
           readiness: { ready: 45, conditional: 35, notReady: 20 },
           costs: { current: 12450, azureEstimate: 8960, savings: 3490, paybackMonths: 18 }
         },
-        hosting: [
-          { name: 'On-Premises', count: 12, percentage: 60 },
-          { name: 'AWS', count: 5, percentage: 25 },
-          { name: 'Azure', count: 2, percentage: 10 },
-          { name: 'Hybrid', count: 1, percentage: 5 }
-        ],
-        utilization: [
-          { name: 'CPU', current: 65, capacity: 100, status: 'Good' },
-          { name: 'Memory', current: 78, capacity: 100, status: 'Warning' },
-          { name: 'Storage', current: 45, capacity: 100, status: 'Good' },
-          { name: 'Network', current: 32, capacity: 100, status: 'Good' }
-        ],
-        cloudReadiness: [
-          { application: 'Customer Portal', readiness: 85, complexity: 'Low' },
-          { application: 'ERP System', readiness: 60, complexity: 'Medium' },
-          { application: 'Legacy Billing', readiness: 25, complexity: 'High' },
-          { application: 'Mobile API', readiness: 90, complexity: 'Low' }
-        ],
+        hosting: assessmentSpecificData.hosting || [],
+        utilization: assessmentSpecificData.utilization || [],
+        cloudReadiness: assessmentSpecificData.cloudReadiness || [],
         scalability: {
           autoScaling: 30,
           loadBalancing: 45,
@@ -86,7 +72,8 @@ function InfrastructureAssessment() {
         uploadedFiles: [
           { name: 'server-logs-web01.txt', type: 'log', size: '2.4 MB', uploadDate: '2024-01-15', status: 'Processed' },
           { name: 'performance-metrics.csv', type: 'data', size: '1.8 MB', uploadDate: '2024-01-14', status: 'Processed' }
-        ]
+        ],
+        analysis: assessmentSpecificData.analysis || {}
       };
       setAssessmentData(mockData);
     } catch (error) {

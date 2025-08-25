@@ -7,42 +7,87 @@ import PortfolioSummary from './portfoliosummary';
 import RecentActivity from './recentactivity';
 import TrendAnalysis from './trendanalysis';
 import { useAssessment } from '../../contexts/assessmentcontext';
+import toast from 'react-hot-toast';
 
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { assessments } = useAssessment();
+  const { assessments, currentAssessment, loadAssessment } = useAssessment();
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [currentAssessment]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const data = await apiService.getDashboardOverview();
       
-      // Add category scores and recent assessments from assessments context
-      const dashboardWithExtras = {
-        ...data,
-        categoryScores: {
-          codeQuality: 85,
-          security: 78,
-          infrastructure: 92,
-          devOpsMaturity: 74,
-          databaseOptimization: 81,
-          documentation: 69
-        },
-        recentAssessments: assessments.map(assessment => ({
-          id: assessment.id,
-          name: assessment.name,
-          status: assessment.status,
-          applicationCount: assessment.applicationCount || 0,
-          createdAt: assessment.createdDate
-        }))
-      };
-      
-      setDashboardData(dashboardWithExtras);
+      if (currentAssessment?.id) {
+        // Load assessment-specific data
+        console.log('DASHBOARD: Loading data for assessment ID:', currentAssessment.id);
+        
+        // Load applications for this assessment
+        const applications = await apiService.getApplications({ assessmentId: currentAssessment.id });
+        
+        // Calculate assessment-specific metrics
+        const assessmentMetrics = {
+          totalApplications: applications.length,
+          averageScore: currentAssessment.overallScore || 0,
+          criticalIssues: applications.reduce((sum, app) => sum + (app.criticalIssues || 0), 0),
+          potentialSavings: currentAssessment.potentialSavings || 0,
+          assessmentProgress: currentAssessment.status === 'Completed' ? 100 : currentAssessment.status === 'InProgress' ? 75 : 25,
+          securityIssues: applications.reduce((sum, app) => sum + (app.securityIssues || 0), 0),
+          cloudReadiness: currentAssessment.cloudReadinessScore || 0
+        };
+
+        const dashboardWithExtras = {
+          metrics: assessmentMetrics,
+          applications: applications,
+          categoryScores: {
+            codeQuality: 85,
+            security: currentAssessment.securityScore || 0,
+            infrastructure: 92,
+            devOpsMaturity: 74,
+            databaseOptimization: 81,
+            documentation: 69
+          },
+          currentAssessment: currentAssessment,
+          recentAssessments: assessments.map(assessment => ({
+            id: assessment.id,
+            name: assessment.name,
+            status: assessment.status,
+            applicationCount: assessment.applicationCount || 0,
+            createdAt: assessment.createdDate
+          }))
+        };
+        
+        setDashboardData(dashboardWithExtras);
+      } else {
+        // No assessment selected - show general overview
+        console.log('DASHBOARD: No assessment selected, showing general overview');
+        const data = await apiService.getDashboardOverview();
+        
+        const dashboardWithExtras = {
+          ...data,
+          categoryScores: {
+            codeQuality: 85,
+            security: 78,
+            infrastructure: 92,
+            devOpsMaturity: 74,
+            databaseOptimization: 81,
+            documentation: 69
+          },
+          recentAssessments: assessments.map(assessment => ({
+            id: assessment.id,
+            name: assessment.name,
+            status: assessment.status,
+            applicationCount: assessment.applicationCount || 0,
+            createdAt: assessment.createdDate
+          }))
+        };
+        
+        setDashboardData(dashboardWithExtras);
+      }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       // Fallback to empty data
@@ -83,18 +128,56 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
+      {/* Welcome Section with Assessment Selection */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-6 text-white">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold">Welcome back!</h2>
+            <h2 className="text-2xl font-bold">Dashboard Overview</h2>
             <p className="text-blue-100 mt-1">
-              Here's an overview of your application portfolio assessment progress.
+              {currentAssessment 
+                ? "Assessment-specific metrics and portfolio data" 
+                : "Select an assessment to view detailed metrics and portfolio data"
+              }
             </p>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold">{assessments.length}</div>
-            <div className="text-blue-100 text-sm">Active Assessments</div>
+            <div className="text-blue-100 text-sm">Total Assessments</div>
+          </div>
+        </div>
+
+        {/* Assessment Selection */}
+        <div className="border-t border-blue-500 pt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 max-w-md">
+              <label className="block text-sm font-medium text-blue-100 mb-2">
+                Select Assessment for Detailed View
+              </label>
+              <select
+                value={currentAssessment?.id || ''}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    loadAssessment(parseInt(e.target.value));
+                    toast.success(`Assessment "${assessments.find(a => a.id === parseInt(e.target.value))?.name}" selected`);
+                  }
+                }}
+                className="bg-white text-gray-900 px-3 py-2 rounded-md border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              >
+                <option value="">View all assessments (general overview)</option>
+                {assessments.map(assessment => (
+                  <option key={assessment.id} value={assessment.id}>
+                    {assessment.name} ({assessment.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+            {currentAssessment && (
+              <div className="text-right ml-6">
+                <p className="text-sm text-blue-100">Assessment Details:</p>
+                <p className="font-semibold text-sm">Status: {currentAssessment.status}</p>
+                <p className="text-xs text-blue-200">ID: {currentAssessment.id}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

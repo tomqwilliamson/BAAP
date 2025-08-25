@@ -37,18 +37,38 @@ function Header() {
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* Page Title and Breadcrumb */}
+          {/* Page Title */}
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-            {currentAssessment && (
-              <p className="text-sm text-gray-500 mt-1">
-                Design Lab: {currentAssessment.name}
-                {loading && (
-                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                    Processing...
-                  </span>
-                )}
-              </p>
+          </div>
+
+          {/* Center Section - Current Assessment */}
+          <div className="flex-1 flex justify-center">
+            {currentAssessment ? (
+              <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">Current Assessment</p>
+                    <p className="text-xs text-blue-700">{currentAssessment.name}</p>
+                  </div>
+                  {loading && (
+                    <span className="ml-3 inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                      Processing...
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-4 py-2">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full mr-3"></div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">No Assessment Selected</p>
+                    <p className="text-xs text-gray-500">Select from Dashboard to begin</p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 

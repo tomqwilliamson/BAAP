@@ -93,7 +93,13 @@ function DataArchitecture() {
         uploadedFiles: [
           { name: 'dma-assessment-results.json', type: 'dma', size: '3.2 MB', uploadDate: '2024-01-15', status: 'Processed' },
           { name: 'sql-server-logs.txt', type: 'log', size: '5.1 MB', uploadDate: '2024-01-14', status: 'Processed' }
-        ]
+        ],
+        analysis: assessmentSpecificData?.analysis || {
+          databaseAnalysis: '',
+          migrationAnalysis: '',
+          performanceAnalysis: '',
+          modernizationRecommendations: ''
+        }
       };
       setDataArchData(mockData);
     } catch (error) {
@@ -165,12 +171,28 @@ function DataArchitecture() {
     }
   };
 
-  const saveAssessment = () => {
-    setDataSaved(true);
-    setLastSaveTime(new Date());
-    const dataStr = JSON.stringify(dataArchData, null, 2);
-    localStorage.setItem('data_architecture_assessment', dataStr);
-    toast.success('Assessment data saved successfully!');
+  const saveAssessment = async () => {
+    try {
+      if (!currentAssessment?.id) {
+        toast.error('No assessment selected. Please select an assessment first.');
+        return;
+      }
+      
+      setDataSaved(true);
+      setLastSaveTime(new Date());
+      
+      // Save to database via API (placeholder for actual implementation)
+      console.log('DATA ARCHITECTURE: Saving assessment data for:', currentAssessment.id, dataArchData);
+      
+      // Also save to localStorage as backup
+      const dataStr = JSON.stringify(dataArchData, null, 2);
+      localStorage.setItem(`data_architecture_assessment_${currentAssessment.id}`, dataStr);
+      
+      toast.success(`Data architecture assessment saved for "${currentAssessment.name}"!`);
+    } catch (error) {
+      console.error('Error saving data architecture assessment:', error);
+      toast.error('Failed to save assessment data');
+    }
   };
 
   const runAnalysis = async () => {

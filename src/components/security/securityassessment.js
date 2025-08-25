@@ -6,8 +6,10 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
+import { useAssessment } from '../../contexts/assessmentcontext';
 
 function SecurityAssessment() {
+  const { currentAssessment } = useAssessment();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -152,7 +154,13 @@ function SecurityAssessment() {
           { name: 'vulnerability-scan-results.xml', type: 'vulnerability-scan', size: '8.7 MB', uploadDate: '2024-01-15', status: 'Processed' },
           { name: 'siem-alerts-export.json', type: 'siem', size: '12.3 MB', uploadDate: '2024-01-14', status: 'Processed' },
           { name: 'firewall-logs.txt', type: 'firewall', size: '45.2 MB', uploadDate: '2024-01-13', status: 'Processed' }
-        ]
+        ],
+        analysis: assessmentSpecificData?.analysis || {
+          securityPostureAnalysis: '',
+          threatAnalysis: '',
+          complianceAnalysis: '',
+          recommendationsAnalysis: ''
+        }
       };
       setSecurityData(mockData);
     } catch (error) {
@@ -224,12 +232,28 @@ function SecurityAssessment() {
     }
   };
 
-  const saveAssessment = () => {
-    setDataSaved(true);
-    setLastSaveTime(new Date());
-    const dataStr = JSON.stringify(securityData, null, 2);
-    localStorage.setItem('security_assessment', dataStr);
-    toast.success('Assessment data saved successfully!');
+  const saveAssessment = async () => {
+    try {
+      if (!currentAssessment?.id) {
+        toast.error('No assessment selected. Please select an assessment first.');
+        return;
+      }
+      
+      setDataSaved(true);
+      setLastSaveTime(new Date());
+      
+      // Save to database via API (placeholder for actual implementation)
+      console.log('SECURITY: Saving assessment data for:', currentAssessment.id, securityData);
+      
+      // Also save to localStorage as backup
+      const dataStr = JSON.stringify(securityData, null, 2);
+      localStorage.setItem(`security_assessment_${currentAssessment.id}`, dataStr);
+      
+      toast.success(`Security assessment data saved for "${currentAssessment.name}"!`);
+    } catch (error) {
+      console.error('Error saving security assessment:', error);
+      toast.error('Failed to save assessment data');
+    }
   };
 
   const runAnalysis = async () => {

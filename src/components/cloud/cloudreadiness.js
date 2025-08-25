@@ -25,6 +25,7 @@ import {
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { formatCurrency } from '../../utils/currency';
+import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 // import { assessmentService } from '../../services/assessmentservice'; // Commented out since we're using mock data for now
@@ -116,6 +117,10 @@ const CloudReadiness = () => {
   const loadCloudReadinessData = async () => {
     try {
       setLoading(true);
+      console.log('CLOUD READINESS: Loading data for assessment:', currentAssessment?.id);
+      
+      // Generate assessment-specific data
+      const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'cloudReadiness');
       
       // Load aggregated data from all domains (using mock data for now)
       const [securityData, infrastructureData, devopsData] = await Promise.all([
@@ -124,8 +129,8 @@ const CloudReadiness = () => {
         loadDomainData('devops')
       ]);
 
-      // Calculate cross-domain readiness scores
-      const calculatedData = calculateCloudReadiness(securityData, infrastructureData, devopsData);
+      // Calculate cross-domain readiness scores with assessment-specific data
+      const calculatedData = calculateCloudReadiness(securityData, infrastructureData, devopsData, assessmentSpecificData);
       
       // Try to load saved data from localStorage first
       let finalData = calculatedData;
@@ -212,7 +217,7 @@ const CloudReadiness = () => {
     }
   };
 
-  const calculateCloudReadiness = (securityData, infrastructureData, devopsData) => {
+  const calculateCloudReadiness = (securityData, infrastructureData, devopsData, assessmentSpecificData) => {
     // Security Score Calculation
     const securityScore = Math.max(0, Math.min(100, 
       100 - ((securityData.summary?.critical || 0) * 3 + 
@@ -230,20 +235,26 @@ const CloudReadiness = () => {
     // Data Score (placeholder - would be calculated from data assessment)
     const dataScore = 70;
 
+    // Use assessment-specific scores if available
+    const finalSecurityScore = assessmentSpecificData?.readinessScores?.security || securityScore;
+    const finalInfrastructureScore = assessmentSpecificData?.readinessScores?.infrastructure || infrastructureScore;
+    const finalDevopsScore = assessmentSpecificData?.readinessScores?.operations || devopsScore;
+    const finalDataScore = assessmentSpecificData?.readinessScores?.data || dataScore;
+    
     // Overall Score (weighted average)
     const overallScore = Math.round(
-      (securityScore * 0.25) + 
-      (infrastructureScore * 0.35) + 
-      (devopsScore * 0.25) + 
-      (dataScore * 0.15)
+      (finalSecurityScore * 0.25) + 
+      (finalInfrastructureScore * 0.35) + 
+      (finalDevopsScore * 0.25) + 
+      (finalDataScore * 0.15)
     );
 
     return {
       crossDomainAnalysis: {
-        securityReadiness: Math.round(securityScore),
-        infrastructureReadiness: Math.round(infrastructureScore),
-        devopsReadiness: Math.round(devopsScore),
-        dataReadiness: Math.round(dataScore),
+        securityReadiness: Math.round(finalSecurityScore),
+        infrastructureReadiness: Math.round(finalInfrastructureScore),
+        devopsReadiness: Math.round(finalDevopsScore),
+        dataReadiness: Math.round(finalDataScore),
         overallScore
       },
       domainScores: {
@@ -425,6 +436,8 @@ const CloudReadiness = () => {
     }
     
     try {
+      console.log('CLOUD READINESS: Saving assessment data for:', currentAssessment.id, cloudReadinessData);
+      
       // For now, save to localStorage since backend may not be implemented
       // In production, uncomment the line below:
       // await assessmentService.updateCloudReadiness(currentAssessment.id, cloudReadinessData);
@@ -434,7 +447,7 @@ const CloudReadiness = () => {
       
       setDataSaved(true);
       setLastSaveTime(new Date());
-      toast.success('Cloud Readiness assessment saved successfully!');
+      toast.success(`Cloud Readiness assessment saved for "${currentAssessment.name}"!`);
     } catch (error) {
       console.error('Failed to save assessment:', error);
       toast.error('Failed to save assessment');

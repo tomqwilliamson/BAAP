@@ -6,8 +6,11 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
+import { useAssessment } from '../../contexts/assessmentcontext';
+import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 
 function DevOpsAssessment() {
+  const { currentAssessment } = useAssessment();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -43,11 +46,16 @@ function DevOpsAssessment() {
 
   useEffect(() => {
     loadDevOpsData();
-  }, []);
+  }, [currentAssessment]);
 
   const loadDevOpsData = async () => {
     try {
       setLoading(true);
+      console.log('DEVOPS: Loading data for assessment:', currentAssessment?.id);
+      
+      // Generate assessment-specific data
+      const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'devops');
+      
       const mockData = {
         github: {
           repositories: [
@@ -131,7 +139,13 @@ function DevOpsAssessment() {
         uploadedFiles: [
           { name: 'github-export.json', type: 'github', size: '4.2 MB', uploadDate: '2024-01-15', status: 'Processed' },
           { name: 'azure-devops-data.json', type: 'azure-devops', size: '6.8 MB', uploadDate: '2024-01-14', status: 'Processed' }
-        ]
+        ],
+        analysis: assessmentSpecificData?.analysis || {
+          devopsAnalysis: '',
+          pipelineAnalysis: '',
+          qualityAnalysis: '',
+          modernizationRecommendations: ''
+        }
       };
       setDevopsData(mockData);
     } catch (error) {

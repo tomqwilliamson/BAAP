@@ -37,7 +37,7 @@ cd azure-templates
 # - Update clientIpAddress with your IP address
 
 # Deploy development environment
-.\deploy.ps1 -Environment dev -SubscriptionId "your-subscription-id"
+.\deploy.ps1 -Environment dev -SubscriptionId "cbdd0205-a985-4a0b-ad35-725446b33819"
 ```
 
 ### Production Environment
@@ -48,13 +48,13 @@ cd azure-templates
 # - Update clientIpAddress with your IP address
 
 # Deploy production environment
-.\deploy.ps1 -Environment prod -SubscriptionId "your-subscription-id" -ResourceGroupName "rg-baap-production"
+.\deploy.ps1 -Environment prod -SubscriptionId "cbdd0205-a985-4a0b-ad35-725446b33819" -ResourceGroupName "rg-baap-production"
 ```
 
 ### What-If Deployment (Preview Changes)
 ```powershell
 # Preview changes without deploying
-.\deploy.ps1 -Environment dev -SubscriptionId "your-subscription-id" -WhatIf
+.\deploy.ps1 -Environment dev -SubscriptionId "cbdd0205-a985-4a0b-ad35-725446b33819" -WhatIf
 ```
 
 ## Resource Configuration
