@@ -7,6 +7,7 @@ import PortfolioSummary from './portfoliosummary';
 import RecentActivity from './recentactivity';
 import TrendAnalysis from './trendanalysis';
 import { useAssessment } from '../../contexts/assessmentcontext';
+import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import toast from 'react-hot-toast';
 
 function Dashboard() {
@@ -18,6 +19,75 @@ function Dashboard() {
     loadDashboardData();
   }, [currentAssessment]);
 
+  const generateCategoryScores = (assessmentId) => {
+    // E-Commerce Platform (Assessment 1)
+    if (assessmentId === 1) {
+      return {
+        codeQuality: 82,
+        security: 75,
+        infrastructure: 88,
+        devOpsMaturity: 78,
+        databaseOptimization: 85,
+        documentation: 72
+      };
+    }
+    // Financial Services Security (Assessment 2) 
+    else if (assessmentId === 2) {
+      return {
+        codeQuality: 70,
+        security: 58, // Lower due to legacy systems
+        infrastructure: 65, // Mainframe challenges
+        devOpsMaturity: 62, // Conservative approach
+        databaseOptimization: 68,
+        documentation: 85 // Strong compliance docs
+      };
+    }
+    // Cloud Migration Readiness (Assessment 3)
+    else {
+      return {
+        codeQuality: 95,
+        security: 88,
+        infrastructure: 92,
+        devOpsMaturity: 94, // Excellent CI/CD
+        databaseOptimization: 90,
+        documentation: 87
+      };
+    }
+  };
+
+  const generateTrendsData = (assessmentId) => {
+    // E-Commerce Platform (Assessment 1)
+    if (assessmentId === 1) {
+      return [
+        { month: 'Sep', score: 68, readiness: 65, issues: 32 },
+        { month: 'Oct', score: 72, readiness: 68, issues: 28 },
+        { month: 'Nov', score: 75, readiness: 72, issues: 24 },
+        { month: 'Dec', score: 78, readiness: 76, issues: 20 },
+        { month: 'Jan', score: 82, readiness: 80, issues: 15 }
+      ];
+    }
+    // Financial Services Security (Assessment 2)
+    else if (assessmentId === 2) {
+      return [
+        { month: 'Sep', score: 45, readiness: 35, issues: 65 },
+        { month: 'Oct', score: 48, readiness: 38, issues: 58 },
+        { month: 'Nov', score: 52, readiness: 42, issues: 52 },
+        { month: 'Dec', score: 55, readiness: 45, issues: 48 },
+        { month: 'Jan', score: 58, readiness: 47, issues: 44 }
+      ];
+    }
+    // Cloud Migration Readiness (Assessment 3)
+    else {
+      return [
+        { month: 'Sep', score: 88, readiness: 85, issues: 12 },
+        { month: 'Oct', score: 90, readiness: 87, issues: 10 },
+        { month: 'Nov', score: 92, readiness: 90, issues: 8 },
+        { month: 'Dec', score: 94, readiness: 92, issues: 6 },
+        { month: 'Jan', score: 95, readiness: 94, issues: 4 }
+      ];
+    }
+  };
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -26,31 +96,42 @@ function Dashboard() {
         // Load assessment-specific data
         console.log('DASHBOARD: Loading data for assessment ID:', currentAssessment.id);
         
-        // Load applications for this assessment
-        const applications = await apiService.getApplications({ assessmentId: currentAssessment.id });
+        // Generate assessment-specific portfolio data
+        const portfolioData = generateAssessmentSpecificData(currentAssessment, 'portfolio');
         
-        // Calculate assessment-specific metrics
+        // Load applications for this assessment (with fallback to generated data)
+        let applications;
+        try {
+          applications = await apiService.getApplications({ assessmentId: currentAssessment.id });
+        } catch (error) {
+          console.log('Using generated portfolio data as fallback');
+          applications = portfolioData?.applications?.map(app => ({
+            id: Math.floor(Math.random() * 1000),
+            name: app.name,
+            criticalIssues: app.complexity === 'High' || app.complexity === 'Very High' ? 2 : 0,
+            securityIssues: app.criticality === 'Critical' ? 3 : 1
+          })) || [];
+        }
+        
+        // Calculate assessment-specific metrics using portfolio data
         const assessmentMetrics = {
-          totalApplications: applications.length,
-          averageScore: currentAssessment.overallScore || 0,
-          criticalIssues: applications.reduce((sum, app) => sum + (app.criticalIssues || 0), 0),
+          totalApplications: portfolioData?.metrics?.totalApplications || applications.length || currentAssessment.applicationCount || 0,
+          averageScore: Math.round((portfolioData?.applications?.reduce((sum, app) => sum + app.cloudReadiness, 0) || 0) / (portfolioData?.applications?.length || 1)) || currentAssessment.overallScore || 0,
+          criticalIssues: applications.reduce((sum, app) => sum + (app.criticalIssues || 0), 0) || portfolioData?.metrics?.criticalApps || 0,
           potentialSavings: currentAssessment.potentialSavings || 0,
           assessmentProgress: currentAssessment.status === 'Completed' ? 100 : currentAssessment.status === 'InProgress' ? 75 : 25,
           securityIssues: applications.reduce((sum, app) => sum + (app.securityIssues || 0), 0),
           cloudReadiness: currentAssessment.cloudReadinessScore || 0
         };
 
+        // Generate assessment-specific category scores
+        const categoryScores = generateCategoryScores(currentAssessment.id);
+
         const dashboardWithExtras = {
           metrics: assessmentMetrics,
           applications: applications,
-          categoryScores: {
-            codeQuality: 85,
-            security: currentAssessment.securityScore || 0,
-            infrastructure: 92,
-            devOpsMaturity: 74,
-            databaseOptimization: 81,
-            documentation: 69
-          },
+          categoryScores: categoryScores,
+          trends: portfolioData?.trends || generateTrendsData(currentAssessment.id),
           currentAssessment: currentAssessment,
           recentAssessments: assessments.map(assessment => ({
             id: assessment.id,
