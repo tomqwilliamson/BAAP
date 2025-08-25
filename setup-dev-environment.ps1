@@ -18,6 +18,39 @@ function Test-BaapDirectory {
     }
 }
 
+# Function to test SQL Server Express connection
+function Test-SqlServerExpress {
+    Write-Host "Testing SQL Server Express connection..." -ForegroundColor Gray
+    
+    try {
+        # Test if SQL Server Express is running
+        $service = Get-Service -Name "MSSQL`$SQLEXPRESS" -ErrorAction SilentlyContinue
+        if (!$service) {
+            Write-Warning "SQL Server Express service not found. Please ensure SQL Server Express is installed."
+            Write-Host "Download from: https://www.microsoft.com/en-us/sql-server/sql-server-downloads" -ForegroundColor Cyan
+            return
+        }
+        
+        if ($service.Status -ne "Running") {
+            Write-Host "Starting SQL Server Express service..." -ForegroundColor Yellow
+            Start-Service -Name "MSSQL`$SQLEXPRESS"
+            Start-Sleep -Seconds 5
+        }
+        
+        # Test connection using sqlcmd if available
+        $sqlcmdTest = sqlcmd -S "localhost\SQLEXPRESS" -Q "SELECT 1 AS Test" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ SQL Server Express connection successful" -ForegroundColor Green
+        } else {
+            Write-Warning "Could not connect to SQL Server Express. The database operations may fail."
+            Write-Host "Please verify SQL Server Express is installed and running" -ForegroundColor Yellow
+        }
+    }
+    catch {
+        Write-Warning "Could not verify SQL Server Express status: $($_.Exception.Message)"
+    }
+}
+
 # Function to install dependencies
 function Install-Dependencies {
     Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
@@ -64,7 +97,8 @@ function Setup-Database {
         $appSettings.ConnectionStrings.DefaultConnection = $AzureConnectionString
         $appSettings | ConvertTo-Json -Depth 10 | Set-Content "appsettings.Development.json"
     } else {
-        Write-Host "Using SQLite database for development..." -ForegroundColor Gray
+        Write-Host "Using SQL Server Express (localhost\SQLEXPRESS) for development..." -ForegroundColor Gray
+        Test-SqlServerExpress
     }
     
     if ($ResetData) {
@@ -153,7 +187,8 @@ REACT_APP_API_BASE_URL=https://localhost:7001/api
 REACT_APP_ENVIRONMENT=development
 
 # Database Configuration
-DATABASE_TYPE=sqlite
+DATABASE_TYPE=sqlserver
+DATABASE_SERVER=localhost\SQLEXPRESS
 # For Azure SQL, uncomment and configure:
 # DATABASE_TYPE=azuresql
 # CONNECTION_STRING=your_azure_sql_connection_string

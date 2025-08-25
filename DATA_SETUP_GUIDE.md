@@ -75,21 +75,28 @@ REACT_APP_ENVIRONMENT=development
 ```
 
 ### Database Configuration
-- **Development**: Uses SQLite by default (`baap.db`)
+- **Development**: Uses SQL Server Express (`localhost\SQLEXPRESS`) 
 - **Production**: Configurable for Azure SQL Server
 - **Data Seeding**: Automatic in development mode
 
 ## Quick Start
 
+### Prerequisites
+- **SQL Server Express**: Required for development
+- **Test connection first**: `.\test-sqlserver-connection.ps1`
+
 ### Option 1: PowerShell (Recommended)
 ```powershell
-# Basic setup
+# Test SQL Server Express first
+.\test-sqlserver-connection.ps1
+
+# Basic setup with SQL Server Express
 .\setup-dev-environment.ps1
 
 # Reset data and start fresh
 .\setup-dev-environment.ps1 -ResetData
 
-# Use Azure SQL instead of SQLite
+# Use Azure SQL instead of SQL Server Express
 .\setup-dev-environment.ps1 -UseAzureSQL -ConnectionString "your-connection-string"
 ```
 
@@ -198,11 +205,27 @@ The mock data has been carefully crafted to maintain referential integrity:
 
 ### Common Issues:
 
+**SQL Server Express Issues:**
+```powershell
+# Test SQL Server Express connection
+.\test-sqlserver-connection.ps1
+
+# Start SQL Server Express service manually
+Start-Service -Name "MSSQL$SQLEXPRESS"
+
+# Reset database (drops and recreates)
+cd BAAP.API
+dotnet ef database drop --force
+dotnet ef database update
+```
+
 **Database Connection Issues:**
-```bash
-# Reset SQLite database
-rm BAAP.API/baap.db
-cd BAAP.API && dotnet ef database update
+```powershell
+# Check if SQL Server Express is running
+Get-Service -Name "MSSQL$SQLEXPRESS"
+
+# Test connection with sqlcmd
+sqlcmd -S "localhost\SQLEXPRESS" -Q "SELECT 1"
 ```
 
 **API Not Starting:**

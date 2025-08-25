@@ -36,6 +36,16 @@ if exist "package.json" (
 echo ✅ Dependencies installed successfully
 
 echo 🗄️ Setting up database...
+echo Using SQL Server Express (localhost\SQLEXPRESS) for development...
+
+:: Test SQL Server Express service
+net start "MSSQL$SQLEXPRESS" >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo Warning: Could not start SQL Server Express service
+    echo Please ensure SQL Server Express is installed and configured
+    echo Download from: https://www.microsoft.com/en-us/sql-server/sql-server-downloads
+)
+
 cd BAAP.API
 
 :: Create migration if it doesn't exist
@@ -81,7 +91,8 @@ echo REACT_APP_API_BASE_URL=https://localhost:7001/api
 echo REACT_APP_ENVIRONMENT=development
 echo.
 echo # Database Configuration
-echo DATABASE_TYPE=sqlite
+echo DATABASE_TYPE=sqlserver
+echo DATABASE_SERVER=localhost\SQLEXPRESS
 echo.
 echo # Authentication Configuration
 echo USE_AZURE_B2C=false
