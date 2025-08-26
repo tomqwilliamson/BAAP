@@ -6,6 +6,7 @@ import Header from './header';
 import Dashboard from '../dashboard/dashboard';
 import AssessmentDetail from '../assessment/assessmentdetail';
 import ApplicationDetail from '../application/applicationdetail';
+import ApplicationDetailReadOnly from '../application/applicationdetailreadonly';
 import SecurityAssessment from '../security/securityassessment';
 import InfrastructureAssessment from '../infrastructure/infrastructureassessment';
 import DataArchitecture from '../data/dataarchitecture';
@@ -16,6 +17,7 @@ import CloudReadiness from '../cloud/cloudreadiness';
 import Recommendations from '../recommendations/recommendations';
 import CreateAssessment from '../assessment/createassessment';
 import ChatAssistant from '../chat/ChatAssistant';
+import AssessmentSelectionGuard from '../common/AssessmentSelectionGuard';
 
 function Layout() {
   return (
@@ -25,24 +27,27 @@ function Layout() {
         <Header />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
           <div className="container mx-auto px-6 py-8">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/assessments/new" element={<CreateAssessment />} />
-              <Route path="/assessments/:id" element={<AssessmentDetail />} />
-              <Route path="/assessments" element={<Dashboard />} />
-              <Route path="/applications/:id" element={<ApplicationDetail />} />
-              <Route path="/security" element={<SecurityAssessment />} />
-              <Route path="/infrastructure" element={<InfrastructureAssessment />} />
-              <Route path="/data" element={<DataArchitecture />} />
-              <Route path="/data-architecture" element={<DataArchitecture />} />
-              <Route path="/devops" element={<DevOpsAssessment />} />
-              <Route path="/business-context" element={<BusinessContext />} />
-              <Route path="/architecture" element={<ArchitectureReview />} />
-              <Route path="/architecture-review" element={<ArchitectureReview />} />
-              <Route path="/cloud-readiness" element={<CloudReadiness />} />
-              <Route path="/recommendations" element={<Recommendations />} />
-            </Routes>
+            <AssessmentSelectionGuard>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/assessments/new" element={<CreateAssessment />} />
+                <Route path="/assessments/:id" element={<AssessmentDetail />} />
+                <Route path="/assessments" element={<Dashboard />} />
+                <Route path="/applications/:id" element={<ApplicationDetail />} />
+                <Route path="/applications/:id/view" element={<ApplicationDetailReadOnly />} />
+                <Route path="/security" element={<SecurityAssessment />} />
+                <Route path="/infrastructure" element={<InfrastructureAssessment />} />
+                <Route path="/data" element={<DataArchitecture />} />
+                <Route path="/data-architecture" element={<DataArchitecture />} />
+                <Route path="/devops" element={<DevOpsAssessment />} />
+                <Route path="/business-context" element={<BusinessContext />} />
+                <Route path="/architecture" element={<ArchitectureReview />} />
+                <Route path="/architecture-review" element={<ArchitectureReview />} />
+                <Route path="/cloud-readiness" element={<CloudReadiness />} />
+                <Route path="/recommendations" element={<Recommendations />} />
+              </Routes>
+            </AssessmentSelectionGuard>
           </div>
         </main>
       </div>

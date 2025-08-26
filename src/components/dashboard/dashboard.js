@@ -4,8 +4,7 @@ import { Link } from 'react-router-dom';
 import { apiService } from '../../services/apiService';
 import MetricsOverview from './metricsoverview';
 import PortfolioSummary from './portfoliosummary';
-import RecentActivity from './recentactivity';
-import TrendAnalysis from './trendanalysis';
+import AssessmentProgress from './assessmentprogress';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import toast from 'react-hot-toast';
@@ -13,11 +12,11 @@ import toast from 'react-hot-toast';
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { assessments, currentAssessment, loadAssessment } = useAssessment();
+  const { assessments, currentAssessment, loadAssessment, clearCurrentAssessment, loading: assessmentsLoading } = useAssessment();
 
   useEffect(() => {
     loadDashboardData();
-  }, [currentAssessment]);
+  }, [currentAssessment, assessments]); // Add assessments as dependency
 
   const generateCategoryScores = (assessmentId) => {
     // E-Commerce Platform (Assessment 1)
@@ -92,6 +91,13 @@ function Dashboard() {
     try {
       setLoading(true);
       
+      // Wait for assessments to be loaded before proceeding
+      if (assessmentsLoading || assessments.length === 0) {
+        console.log('DASHBOARD: Waiting for assessments to load...', { assessmentsLoading, assessmentsCount: assessments.length });
+        setLoading(false);
+        return;
+      }
+      
       if (currentAssessment?.id) {
         // Load assessment-specific data
         console.log('DASHBOARD: Loading data for assessment ID:', currentAssessment.id);
@@ -144,12 +150,55 @@ function Dashboard() {
         
         setDashboardData(dashboardWithExtras);
       } else {
-        // No assessment selected - show general overview
+        // No assessment selected - show general overview with aggregated data from all assessments
         console.log('DASHBOARD: No assessment selected, showing general overview');
-        const data = await apiService.getDashboardOverview();
+        console.log('DASHBOARD: Available assessments:', assessments);
         
+        // Get all applications across all assessments
+        const allApplicationsData = await apiService.getPortfolioSummary();
+        console.log('DASHBOARD: All applications data:', allApplicationsData);
+        
+        // Calculate aggregated metrics from all assessments
+        const totalApplications = assessments.reduce((sum, assessment) => {
+          console.log(`Assessment ${assessment.name}: ${assessment.applicationCount || 0} apps`);
+          return sum + (assessment.applicationCount || 0);
+        }, 0);
+        
+        const totalPotentialSavings = assessments.reduce((sum, assessment) => sum + (assessment.potentialSavings || 0), 0);
+        const totalMigrationCost = allApplicationsData.reduce((sum, app) => sum + (app.estimatedMigrationCost || 0), 0);
+        const averageScore = assessments.length > 0 ? Math.round(assessments.reduce((sum, assessment) => sum + (assessment.overallScore || 0), 0) / assessments.length) : 0;
+        
+        // Calculate security metrics from actual application data
+        const criticalIssues = allApplicationsData.reduce((sum, app) => sum + (app.criticalFindings || 0), 0);
+        const securityIssues = allApplicationsData.reduce((sum, app) => sum + ((app.criticalFindings || 0) + (app.highFindings || 0)), 0);
+        const avgCloudReadiness = allApplicationsData.length > 0 ? Math.round(allApplicationsData.reduce((sum, app) => sum + (app.cloudReadinessScore || 0), 0) / allApplicationsData.length) : 0;
+        
+        // Calculate assessment progress
+        const completedCount = assessments.filter(a => a.status === 'Completed').length;
+        const assessmentProgress = assessments.length > 0 ? Math.round((completedCount / assessments.length) * 100) : 0;
+
+        console.log('DASHBOARD: Calculated metrics:', {
+          totalApplications,
+          averageScore,
+          criticalIssues,
+          totalPotentialSavings,
+          assessmentProgress,
+          securityIssues,
+          avgCloudReadiness,
+          totalMigrationCost
+        });
+
         const dashboardWithExtras = {
-          ...data,
+          metrics: {
+            totalApplications: totalApplications || allApplicationsData.length || 0,
+            averageScore: averageScore || 0,
+            criticalIssues: criticalIssues || 0,
+            potentialSavings: totalPotentialSavings || 0,
+            assessmentProgress: assessmentProgress || 0,
+            securityIssues: securityIssues || 0,
+            cloudReadiness: avgCloudReadiness || 0,
+            totalMigrationCost: totalMigrationCost || 0
+          },
           categoryScores: {
             codeQuality: 85,
             security: 78,
@@ -164,7 +213,15 @@ function Dashboard() {
             status: assessment.status,
             applicationCount: assessment.applicationCount || 0,
             createdAt: assessment.createdDate
-          }))
+          })),
+          trends: [
+            { month: 'Jan', score: 68 },
+            { month: 'Feb', score: 72 },
+            { month: 'Mar', score: 75 },
+            { month: 'Apr', score: 78 },
+            { month: 'May', score: 74 },
+            { month: 'Jun', score: 82 }
+          ]
         };
         
         setDashboardData(dashboardWithExtras);
@@ -199,10 +256,13 @@ function Dashboard() {
     }
   };
 
-  if (loading) {
+  if (loading || assessmentsLoading || (assessments.length === 0 && !assessmentsLoading)) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+        <div className="ml-4 text-gray-600">
+          {assessmentsLoading ? 'Loading assessments...' : 'Loading dashboard...'}
+        </div>
       </div>
     );
   }
@@ -227,60 +287,18 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Assessment Selection */}
-        <div className="border-t border-blue-500 pt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 max-w-md">
-              <label className="block text-sm font-medium text-blue-100 mb-2">
-                Select Assessment for Detailed View
-              </label>
-              <select
-                value={currentAssessment?.id || ''}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    loadAssessment(parseInt(e.target.value));
-                    toast.success(`Assessment "${assessments.find(a => a.id === parseInt(e.target.value))?.name}" selected`);
-                  }
-                }}
-                className="bg-white text-gray-900 px-3 py-2 rounded-md border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-              >
-                <option value="">View all assessments (general overview)</option>
-                {assessments.map(assessment => (
-                  <option key={assessment.id} value={assessment.id}>
-                    {assessment.name} ({assessment.status})
-                  </option>
-                ))}
-              </select>
-            </div>
-            {currentAssessment && (
-              <div className="text-right ml-6">
-                <p className="text-sm text-blue-100">Assessment Details:</p>
-                <p className="font-semibold text-sm">Status: {currentAssessment.status}</p>
-                <p className="text-xs text-blue-200">ID: {currentAssessment.id}</p>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Metrics Overview */}
-      {dashboardData && <MetricsOverview data={dashboardData.metrics} />}
+      {dashboardData && <MetricsOverview data={dashboardData.metrics} showAllAssessments={!currentAssessment} />}
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Portfolio Summary - Takes 2 columns */}
-        <div className="lg:col-span-2">
-          <PortfolioSummary />
-        </div>
-
-        {/* Recent Activity */}
-        <div>
-          <RecentActivity assessments={dashboardData?.recentAssessments || []} />
-        </div>
+      {/* Application Portfolio - Full Width */}
+      <div>
+        <PortfolioSummary />
       </div>
 
-      {/* Trend Analysis */}
-      {dashboardData && <TrendAnalysis data={dashboardData} />}
+      {/* Assessment Progress Overview */}
+      <AssessmentProgress assessments={assessments} />
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-md p-6">

@@ -53,6 +53,11 @@ public class DashboardController : ControllerBase
                 ? await _context.Applications.AverageAsync(a => (double)a.CloudReadinessScore)
                 : 0;
 
+            // Calculate total migration cost across all applications
+            var totalMigrationCost = await _context.Applications
+                .Where(a => a.EstimatedMigrationCost.HasValue)
+                .SumAsync(a => a.EstimatedMigrationCost!.Value);
+
             // Generate trend data (mock for now - in real app, this would be historical data)
             var trends = GenerateTrendData();
 
@@ -63,10 +68,11 @@ public class DashboardController : ControllerBase
                     totalApplications,
                     averageScore = (int)Math.Round(averageScore),
                     criticalIssues = criticalSecurityFindings,
-                    potentialSavings = (decimal)totalSavings,
+                    potentialSavings = totalSavings,
                     assessmentProgress,
                     securityIssues,
-                    cloudReadiness = (int)Math.Round(avgCloudReadiness)
+                    cloudReadiness = (int)Math.Round(avgCloudReadiness),
+                    totalMigrationCost = totalMigrationCost
                 },
                 trends
             };

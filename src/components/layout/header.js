@@ -1,9 +1,10 @@
 // src/components/Layout/Header.js - Top header component
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Bell, Search, User, Settings } from 'lucide-react';
+import { Bell, Search, User, Settings, ChevronDown } from 'lucide-react';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import UnifiedSignOutButton from '../auth/UnifiedSignOutButton';
+import toast from 'react-hot-toast';
 
 const pageTitle = {
   '/app': 'Dashboard Overview',
@@ -20,7 +21,7 @@ const pageTitle = {
 
 function Header() {
   const location = useLocation();
-  const { currentAssessment, loading } = useAssessment();
+  const { assessments, currentAssessment, loading, loadAssessment, clearCurrentAssessment } = useAssessment();
   
   // For now, use a placeholder user until auth context is resolved
   const user = {
@@ -42,34 +43,41 @@ function Header() {
             <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
           </div>
 
-          {/* Center Section - Current Assessment */}
+          {/* Center Section - Assessment Selector */}
           <div className="flex-1 flex justify-center">
-            {currentAssessment ? (
-              <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                  <div>
-                    <p className="text-sm font-medium text-blue-900">Current Assessment</p>
-                    <p className="text-xs text-blue-700">{currentAssessment.name}</p>
-                  </div>
-                  {loading && (
-                    <span className="ml-3 inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                      Processing...
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-4 py-2">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full mr-3"></div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">No Assessment Selected</p>
-                    <p className="text-xs text-gray-500">Select from Dashboard to begin</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="relative">
+              <select
+                value={currentAssessment?.id || 'all'}
+                onChange={(e) => {
+                  if (e.target.value === 'all') {
+                    clearCurrentAssessment();
+                    toast.success('Switched to all assessments view');
+                  } else {
+                    loadAssessment(parseInt(e.target.value));
+                    toast.success(`Assessment "${assessments.find(a => a.id === parseInt(e.target.value))?.name}" selected`);
+                  }
+                }}
+                className="flex items-center bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm min-w-[280px] text-sm font-medium text-gray-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.75rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.25em 1.25em',
+                  paddingRight: '2.5rem'
+                }}
+              >
+                <option value="all">🌐 View All Assessments</option>
+                {assessments.map(assessment => (
+                  <option key={assessment.id} value={assessment.id}>
+                    📊 {assessment.name} ({assessment.status})
+                  </option>
+                ))}
+              </select>
+              {loading && (
+                <div className="absolute right-8 top-1/2 transform -translate-y-1/2 animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              )}
+              <div className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full ${currentAssessment ? 'bg-blue-500' : 'bg-gray-400'}`}></div>
+            </div>
           </div>
 
           {/* Right Side Actions */}

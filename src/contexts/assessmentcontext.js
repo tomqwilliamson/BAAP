@@ -24,6 +24,8 @@ function assessmentReducer(state, action) {
       return { ...state, assessments: action.payload, loading: false };
     case 'SET_CURRENT_ASSESSMENT':
       return { ...state, currentAssessment: action.payload, loading: false };
+    case 'CLEAR_CURRENT_ASSESSMENT':
+      return { ...state, currentAssessment: null, applications: [], loading: false };
     case 'SET_APPLICATIONS':
       return { ...state, applications: action.payload };
     case 'SET_RECOMMENDATIONS':
@@ -97,6 +99,10 @@ export function AssessmentProvider({ children }) {
     }
   };
 
+  const clearCurrentAssessment = () => {
+    dispatch({ type: 'CLEAR_CURRENT_ASSESSMENT' });
+  };
+
   useEffect(() => {
     loadAssessments();
   }, []);
@@ -107,6 +113,7 @@ export function AssessmentProvider({ children }) {
     loadAssessment,
     createAssessment,
     startAssessment,
+    clearCurrentAssessment,
     dispatch
   };
 

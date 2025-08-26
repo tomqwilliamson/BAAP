@@ -17,6 +17,44 @@ const generateMockDataForAssessment = (assessment, businessDrivers) => {
   // E-Commerce Platform (Assessment 1)
   if (assessmentId === 1) {
     return {
+      businessDrivers: businessDrivers.length > 0 ? businessDrivers : [
+        {
+          id: 1,
+          name: 'Customer Experience Improvement',
+          description: 'Enhance digital customer experience and reduce cart abandonment',
+          priority: 'Critical',
+          impact: 90,
+          urgency: 85,
+          businessValue: 'Increased customer satisfaction and revenue'
+        },
+        {
+          id: 2,
+          name: 'Platform Scalability',
+          description: 'Scale platform to handle peak shopping seasons and growth',
+          priority: 'High',
+          impact: 85,
+          urgency: 70,
+          businessValue: 'Support business growth without performance issues'
+        },
+        {
+          id: 3,
+          name: 'Payment Security',
+          description: 'Enhance payment processing security and compliance',
+          priority: 'Critical',
+          impact: 95,
+          urgency: 80,
+          businessValue: 'Customer trust and regulatory compliance'
+        },
+        {
+          id: 4,
+          name: 'Cost Optimization',
+          description: 'Reduce infrastructure costs through cloud migration',
+          priority: 'Medium',
+          impact: 75,
+          urgency: 60,
+          businessValue: 'Annual savings of $200,000+'
+        }
+      ],
       stakeholderGroups: [
         {
           id: 1,
@@ -118,6 +156,35 @@ const generateMockDataForAssessment = (assessment, businessDrivers) => {
   // Financial Services Security (Assessment 2)
   else if (assessmentId === 2) {
     return {
+      businessDrivers: businessDrivers.length > 0 ? businessDrivers : [
+        {
+          id: 1,
+          name: 'Regulatory Compliance',
+          description: 'Meet banking and financial regulations (SOX, PCI-DSS)',
+          priority: 'Critical',
+          impact: 98,
+          urgency: 95,
+          businessValue: 'Avoid regulatory penalties and maintain banking license'
+        },
+        {
+          id: 2,
+          name: 'Security Enhancement',
+          description: 'Strengthen cybersecurity posture against financial threats',
+          priority: 'Critical',
+          impact: 95,
+          urgency: 90,
+          businessValue: 'Protect customer data and prevent financial losses'
+        },
+        {
+          id: 3,
+          name: 'Audit Readiness',
+          description: 'Maintain continuous audit readiness and documentation',
+          priority: 'High',
+          impact: 85,
+          urgency: 75,
+          businessValue: 'Streamlined audit processes and reduced compliance costs'
+        }
+      ],
       stakeholderGroups: [
         {
           id: 1,
@@ -228,6 +295,17 @@ const generateMockDataForAssessment = (assessment, businessDrivers) => {
   // Cloud Migration Readiness (Assessment 3)
   else {
     return {
+      businessDrivers: businessDrivers.length > 0 ? businessDrivers : [
+        {
+          id: 1,
+          name: 'Innovation Enablement',
+          description: 'Enable faster innovation through modern cloud infrastructure',
+          priority: 'High',
+          impact: 88,
+          urgency: 85,
+          businessValue: 'Accelerated time-to-market and competitive advantage'
+        }
+      ],
       stakeholderGroups: [
         {
           id: 1,
@@ -306,6 +384,7 @@ function BusinessContext() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(true);
   const [lastSaveTime, setLastSaveTime] = useState(new Date());
+  const [loading, setLoading] = useState(false);
   
   // Business context data structure - will be loaded from assessment
   const [businessData, setBusinessData] = useState({
@@ -550,6 +629,8 @@ Priority Actions:
 
   const loadAssessmentData = async () => {
     try {
+      setLoading(true);
+      
       // If we have a current assessment, load its data from the database
       if (currentAssessment?.id) {
         console.log('LOADING: Assessment data for ID:', currentAssessment.id);
@@ -564,13 +645,16 @@ Priority Actions:
 
         // Load business drivers for this assessment
         let businessDrivers = [];
+        let hasStoredDrivers = false;
         try {
           const driversResponse = await apiService.getBusinessDrivers(currentAssessment.id);
           businessDrivers = driversResponse.businessDrivers || [];
+          hasStoredDrivers = businessDrivers.length > 0;
           console.log('LOADING: Business drivers loaded:', businessDrivers.length);
         } catch (error) {
-          console.log('LOADING: No business drivers found for this assessment');
+          console.log('LOADING: No business drivers found for this assessment, will use mock data');
           businessDrivers = [];
+          hasStoredDrivers = false;
         }
 
         // Generate assessment-specific mock data
@@ -580,7 +664,8 @@ Priority Actions:
         setBusinessData({
           ...assessmentSpecificData,
           projectInfo,
-          businessDrivers: businessDrivers // Always use the loaded drivers from database
+          // Only override business drivers if we have stored data, otherwise keep mock data
+          businessDrivers: hasStoredDrivers ? businessDrivers : assessmentSpecificData.businessDrivers
         });
 
         setDataSaved(true);
@@ -626,6 +711,8 @@ Priority Actions:
     } catch (error) {
       console.error('LOADING ERROR: Error loading assessment data:', error);
       toast.error('Error loading assessment data');
+    } finally {
+      setLoading(false);
     }
   };
 

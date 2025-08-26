@@ -34,7 +34,87 @@ function MetricCard({ title, value, subtitle, trend, icon: Icon, color = 'blue' 
   );
 }
 
-function MetricsOverview({ data }) {
+function MetricsOverview({ data, showAllAssessments = false }) {
+  if (showAllAssessments) {
+    // Show comprehensive metrics when viewing all assessments
+    return (
+      <div className="space-y-6">
+        {/* Primary Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Total Applications"
+            value={data?.totalApplications || 0}
+            subtitle="Across all assessments"
+            trend={12}
+            icon={Code}
+            color="blue"
+          />
+          <MetricCard
+            title="Average Score"
+            value={data?.averageScore || 0}
+            subtitle="Portfolio-wide average"
+            trend={8}
+            icon={TrendingUp}
+            color="green"
+          />
+          <MetricCard
+            title="Critical Issues"
+            value={data?.criticalIssues || 0}
+            subtitle="High-priority findings"
+            trend={-15}
+            icon={AlertTriangle}
+            color="red"
+          />
+          <MetricCard
+            title="Potential Savings"
+            value={`$${(data?.potentialSavings || 0).toLocaleString()}`}
+            subtitle="Total estimated savings"
+            trend={22}
+            icon={DollarSign}
+            color="green"
+          />
+        </div>
+
+        {/* Additional Assessment Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Assessment Progress"
+            value={`${data?.assessmentProgress || 0}%`}
+            subtitle="Completed assessments"
+            trend={5}
+            icon={TrendingUp}
+            color="blue"
+          />
+          <MetricCard
+            title="Security Issues"
+            value={data?.securityIssues || 0}
+            subtitle="All security findings"
+            trend={-8}
+            icon={Shield}
+            color="yellow"
+          />
+          <MetricCard
+            title="Cloud Readiness"
+            value={`${data?.cloudReadiness || 0}%`}
+            subtitle="Average readiness score"
+            trend={15}
+            icon={Code}
+            color="green"
+          />
+          <MetricCard
+            title="Migration Cost"
+            value={`$${((data?.totalMigrationCost || 0) / 1000).toFixed(0)}k`}
+            subtitle="Estimated migration cost"
+            trend={-12}
+            icon={DollarSign}
+            color="blue"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Original single-row layout for individual assessment view
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <MetricCard
