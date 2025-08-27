@@ -28,7 +28,7 @@ on:
           - production
 
 env:
-  DOTNET_VERSION: '9.0'
+  DOTNET_VERSION: '8.0'
   AZURE_WEBAPP_PACKAGE_PATH: './publish'
   BUILD_CONFIGURATION: 'Release'
 
