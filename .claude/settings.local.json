@@ -23,7 +23,11 @@
       "Bash(del \"C:\\Users\\twilliamson\\source\\repos\\BAAP\\test-api-integration.js\")",
       "Bash(git rm:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(find:*)",
+      "Bash(dotnet sln:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet add reference:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
