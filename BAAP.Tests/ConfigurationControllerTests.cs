@@ -26,7 +26,10 @@ public class ConfigurationControllerTests
         // Arrange
         _mockConfiguration.Setup(x => x["Environment"]).Returns("Test");
         _mockConfiguration.Setup(x => x["DatabaseName"]).Returns("TestDB");
-        _mockConfiguration.Setup(x => x.GetConnectionString("AppConfig")).Returns("test-connection");
+        
+        var mockConnectionStringsSection = new Mock<IConfigurationSection>();
+        mockConnectionStringsSection.Setup(x => x["AppConfig"]).Returns("test-connection");
+        _mockConfiguration.Setup(x => x.GetSection("ConnectionStrings")).Returns(mockConnectionStringsSection.Object);
 
         // Act
         var result = _controller.GetHealth();
@@ -69,7 +72,10 @@ public class ConfigurationControllerTests
     public void GetDiagnostics_ReturnsOkResult()
     {
         // Arrange
-        _mockConfiguration.Setup(x => x.GetConnectionString("AppConfig")).Returns("test-connection");
+        var mockConnectionStringsSection = new Mock<IConfigurationSection>();
+        mockConnectionStringsSection.Setup(x => x["AppConfig"]).Returns("test-connection");
+        
+        _mockConfiguration.Setup(x => x.GetSection("ConnectionStrings")).Returns(mockConnectionStringsSection.Object);
         _mockConfiguration.Setup(x => x["KeyVaultName"]).Returns("test-vault");
 
         // Act
