@@ -10,11 +10,14 @@ const apiClient = axios.create({
   },
 });
 
-// Add auth token to requests
+// Add auth token to requests or development bypass
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  } else if (process.env.REACT_APP_USE_MOCK_AUTH === 'true') {
+    // Add development bypass header for mock auth
+    config.headers['X-Auth-Bypass'] = 'development';
   }
   return config;
 });
@@ -293,5 +296,26 @@ export const assessmentService = {
   async getAssessmentData(assessmentId, domain = 'all') {
     const response = await apiClient.get(`/assessments/${assessmentId}/data?domain=${domain}`);
     return response.data;
+  },
+
+  // Generic HTTP methods for configuration service
+  async get(url) {
+    const response = await apiClient.get(url);
+    return response;
+  },
+
+  async post(url, data) {
+    const response = await apiClient.post(url, data);
+    return response;
+  },
+
+  async put(url, data) {
+    const response = await apiClient.put(url, data);
+    return response;
+  },
+
+  async delete(url) {
+    const response = await apiClient.delete(url);
+    return response;
   }
 };

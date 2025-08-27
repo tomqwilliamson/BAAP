@@ -128,11 +128,8 @@
     
     <!-- Development helpers -->
     <script>
-      // Console welcome message
-      if (process.env.NODE_ENV === 'development') {
-        console.log('%c🚀 Application Design Lab Software', 'color: #3b82f6; font-size: 16px; font-weight: bold;');
-        console.log('%cDevelopment mode active', 'color: #059669; font-size: 12px;');
-      }
+      // Console welcome message - environment variables aren't available in browser context
+      console.log('%c🚀 Application Design Lab Software', 'color: #3b82f6; font-size: 16px; font-weight: bold;');
     </script>
   </body>
 </html>

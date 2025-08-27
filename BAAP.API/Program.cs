@@ -153,8 +153,12 @@ app.UseHttpsRedirection();
 // Enable CORS
 app.UseCors("ReactApp");
 
-// Enable Azure App Configuration middleware for dynamic refresh
-app.UseAzureAppConfiguration();
+// Enable Azure App Configuration middleware for dynamic refresh (only if configured)
+var appConfigConnectionString = app.Configuration.GetConnectionString("AppConfig");
+if (!string.IsNullOrEmpty(appConfigConnectionString))
+{
+    app.UseAzureAppConfiguration();
+}
 
 // Add authentication bypass middleware for development
 if (app.Environment.IsDevelopment())
