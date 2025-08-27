@@ -63,7 +63,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
-        run: dotnet restore BAAP.sln
+        run: dotnet restore BAAP.sln --runtime linux-x64
 
       - name: Build application
         run: dotnet build BAAP.sln --no-restore --configuration ${{ env.BUILD_CONFIGURATION }}
