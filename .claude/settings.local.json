@@ -27,7 +27,16 @@
       "Bash(find:*)",
       "Bash(dotnet sln:*)",
       "Bash(dotnet test:*)",
-      "Bash(dotnet add reference:*)"
+      "Bash(dotnet add reference:*)",
+      "Bash(az account:*)",
+      "Bash(az webapp list:*)",
+      "Bash(powershell:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet publish:*)",
+      "Bash(az webapp deployment source config-zip:*)",
+      "Bash(az webapp config connection-string list:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"

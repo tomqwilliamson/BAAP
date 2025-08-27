@@ -1,0 +1,64 @@
+name: Simple Azure Deploy (No Service Principal)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Azure App Service name'
+        required: true
+        type: string
+      
+env:
+  DOTNET_VERSION: '8.0'
+  AZURE_WEBAPP_PACKAGE_PATH: './publish'
+  BUILD_CONFIGURATION: 'Release'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    name: Build and Deploy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore BAAP.sln
+
+      - name: Build application
+        run: dotnet build BAAP.sln --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} -p:RuntimeIdentifier=
+
+      - name: Run unit tests
+        run: |
+          if dotnet sln BAAP.sln list | grep -i test; then
+            echo "Test projects found, running tests..."
+            dotnet test BAAP.sln --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity minimal
+          else
+            echo "No test projects found, skipping tests..."
+          fi
+
+      - name: Publish application
+        run: |
+          dotnet publish BAAP.API/BAAP.API.csproj \
+            --no-build \
+            --configuration ${{ env.BUILD_CONFIGURATION }} \
+            --output ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ github.event.inputs.app_name }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Deployment completed
+        run: |
+          echo "🚀 Deployment completed!"
+          echo "App URL: https://${{ github.event.inputs.app_name }}.azurewebsites.net"
+          echo "Swagger: https://${{ github.event.inputs.app_name }}.azurewebsites.net/swagger"

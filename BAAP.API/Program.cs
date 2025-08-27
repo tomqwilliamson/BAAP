@@ -164,6 +164,22 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Apply database migrations automatically on startup
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<BaapDbContext>();
+    try
+    {
+        dbContext.Database.Migrate();
+        Console.WriteLine("✅ Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error applying database migrations: {ex.Message}");
+        // Don't fail the app startup, just log the error
+    }
+}
+
 // Seed data in development environment
 if (app.Environment.IsDevelopment())
 {
