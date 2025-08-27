@@ -97,6 +97,13 @@ public class ConfigurationController : ControllerBase
                 Timestamp = DateTime.UtcNow,
                 Version = "1.0.0",
                 Environment = _configuration["Environment"] ?? "Development",
+                Deployment = new
+                {
+                    Timestamp = _configuration["DEPLOYMENT_TIMESTAMP"] ?? "",
+                    GitCommit = _configuration["GIT_COMMIT"] ?? "",
+                    BuildNumber = _configuration["BUILD_NUMBER"] ?? "",
+                    AspNetCoreEnvironment = _configuration["ASPNETCORE_ENVIRONMENT"] ?? ""
+                },
                 Database = new
                 {
                     Connected = true, // You could add actual database connectivity check here
@@ -107,6 +114,13 @@ public class ConfigurationController : ControllerBase
                     AppConfiguration = !string.IsNullOrEmpty(_configuration.GetConnectionString("AppConfig")),
                     KeyVault = !string.IsNullOrEmpty(_configuration["KeyVaultName"]),
                     ApplicationInsights = !string.IsNullOrEmpty(_configuration["ApplicationInsights:InstrumentationKey"])
+                },
+                Server = new
+                {
+                    MachineName = Environment.MachineName,
+                    ProcessorCount = Environment.ProcessorCount,
+                    WorkingSet = Environment.WorkingSet,
+                    OSVersion = Environment.OSVersion.ToString()
                 }
             };
 
@@ -116,6 +130,48 @@ public class ConfigurationController : ControllerBase
         {
             _logger.LogError(ex, "Error retrieving health status");
             return Problem("Unable to retrieve health status", statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Get detailed application diagnostics (internal use)
+    /// </summary>
+    [HttpGet("diagnostics")]
+    public IActionResult GetDiagnostics()
+    {
+        try
+        {
+            var diagnostics = new
+            {
+                Status = "Healthy",
+                Timestamp = DateTime.UtcNow,
+                Runtime = new
+                {
+                    Version = Environment.Version.ToString(),
+                    Framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
+                    OSDescription = System.Runtime.InteropServices.RuntimeInformation.OSDescription,
+                    ProcessArchitecture = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString()
+                },
+                Memory = new
+                {
+                    WorkingSet = Environment.WorkingSet,
+                    GCTotalMemory = GC.GetTotalMemory(false)
+                },
+                Configuration = new
+                {
+                    HasAppConfig = !string.IsNullOrEmpty(_configuration.GetConnectionString("AppConfig")),
+                    HasKeyVault = !string.IsNullOrEmpty(_configuration["KeyVaultName"]),
+                    HasApplicationInsights = !string.IsNullOrEmpty(_configuration["ApplicationInsights:InstrumentationKey"]),
+                    HasDatabase = !string.IsNullOrEmpty(_configuration.GetConnectionString("DefaultConnection"))
+                }
+            };
+
+            return Ok(diagnostics);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving diagnostics");
+            return Problem("Unable to retrieve diagnostics", statusCode: 500);
         }
     }
 }

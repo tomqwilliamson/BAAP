@@ -19,6 +19,12 @@
     },
     "clientIpAddress": {
       "value": "YOUR_IP_ADDRESS_HERE"
+    },
+    "repositoryUrl": {
+      "value": ""
+    },
+    "githubToken": {
+      "value": ""
     }
   }
 }

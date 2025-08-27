@@ -21,6 +21,13 @@ param sqlAdminPassword string
 @description('Your IP address for SQL firewall rule')
 param clientIpAddress string = '99.16.148.9'
 
+@description('GitHub repository URL for Static Web App')
+param repositoryUrl string = ''
+
+@description('GitHub personal access token for Static Web App')
+@secure()
+param githubToken string = ''
+
 // Variables
 var environmentConfig = {
   dev: {
@@ -123,6 +130,60 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
+// App Service Staging Slot for Production (blue-green deployment)
+resource appServiceStagingSlot 'Microsoft.Web/sites/slots@2022-03-01' = if (environment == 'prod') {
+  parent: appService
+  name: 'staging'
+  location: location
+  properties: {
+    serverFarmId: appServicePlan.id
+    httpsOnly: true
+    siteConfig: {
+      netFrameworkVersion: '6.0'
+      defaultDocuments: []
+      httpLoggingEnabled: true
+      detailedErrorLoggingEnabled: true
+      requestTracingEnabled: true
+      minTlsVersion: '1.2'
+      ftpsState: 'Disabled'
+      appSettings: [
+        {
+          name: 'ASPNETCORE_ENVIRONMENT'
+          value: 'Staging'
+        }
+        {
+          name: 'WEBSITE_RUN_FROM_PACKAGE'
+          value: '1'
+        }
+        {
+          name: 'ApplicationInsights:InstrumentationKey'
+          value: applicationInsights.properties.InstrumentationKey
+        }
+        {
+          name: 'ApplicationInsights:ConnectionString'
+          value: applicationInsights.properties.ConnectionString
+        }
+        {
+          name: 'ConnectionStrings:AppConfig'
+          value: appConfiguration.listKeys().value[0].connectionString
+        }
+      ]
+      connectionStrings: [
+        {
+          name: 'DefaultConnection'
+          connectionString: 'Server=tcp:${sqlServer.properties.fullyQualifiedDomainName},1433;Initial Catalog=${sqlDatabase.name};Persist Security Info=False;User ID=${sqlAdminLogin};Password=${sqlAdminPassword};MultipleActiveResultSets=True;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+          type: 'SQLAzure'
+        }
+      ]
+    }
+  }
+  tags: {
+    Environment: environment
+    Application: 'BAAP'
+    Component: 'API-Staging'
+  }
+}
+
 // Static Web App for React frontend
 resource staticWebApp 'Microsoft.Web/staticSites@2022-03-01' = {
   name: '${resourcePrefix}-web-${uniqueSuffix}'
@@ -132,13 +193,20 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-03-01' = {
     tier: environment == 'dev' ? 'Free' : 'Standard'
   }
   properties: {
-    repositoryUrl: 'https://github.com/your-org/baap-frontend' // Update with your repo
+    repositoryUrl: !empty(repositoryUrl) ? repositoryUrl : null
     branch: environment == 'prod' ? 'main' : 'develop'
+    repositoryToken: !empty(githubToken) ? githubToken : null
     buildProperties: {
       appLocation: '/'
       apiLocation: ''
       outputLocation: 'build'
+      appBuildCommand: 'npm run build'
+      apiBuildCommand: ''
+      skipGithubActionWorkflowGeneration: true // We'll use our own workflow
     }
+    stagingEnvironmentPolicy: 'Enabled'
+    allowConfigFileUpdates: true
+    enterpriseGradeCdnStatus: environment == 'prod' ? 'Enabled' : 'Disabled'
   }
   tags: {
     Environment: environment
@@ -600,4 +668,9 @@ output keyVaultName string = keyVault.name
 output storageAccountName string = storageAccount.name
 output applicationInsightsInstrumentationKey string = applicationInsights.properties.InstrumentationKey
 output appConfigurationEndpoint string = appConfiguration.properties.endpoint
+output staticWebAppDeploymentToken string = staticWebApp.listSecrets().properties.apiKey
+output staticWebAppDefaultHostname string = staticWebApp.properties.defaultHostname
+output appServiceName string = appService.name
+output appServiceUrl string = 'https://${appService.properties.defaultHostName}'
+output appServiceStagingUrl string = environment == 'prod' ? 'https://${appService.name}-staging.azurewebsites.net' : ''
 output resourceGroupName string = resourceGroup().name
