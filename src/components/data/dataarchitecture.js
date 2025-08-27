@@ -45,54 +45,111 @@ function DataArchitecture() {
       const mockData = {
         microsoftDMA: {
           databases: [
-            { name: 'ProductionDB', type: 'SQL Server 2014', size: '250 GB', compatibility: 'Azure SQL DB', readiness: 85, issues: 3 },
-            { name: 'AnalyticsDB', type: 'SQL Server 2012', size: '1.2 TB', compatibility: 'Azure SQL MI', readiness: 65, issues: 8 },
-            { name: 'ReportingDB', type: 'SQL Server 2016', size: '180 GB', compatibility: 'Azure SQL DB', readiness: 92, issues: 1 },
-            { name: 'ArchiveDB', type: 'SQL Server 2008', size: '500 GB', compatibility: 'Azure SQL MI', readiness: 45, issues: 15 }
+            { name: 'CustomerDB-Prod', type: 'SQL Server 2019', size: '485 GB', compatibility: 'Azure SQL DB', readiness: 94, issues: 2, 
+              schemas: ['dbo', 'customer', 'orders', 'inventory'], tableCount: 247, 
+              details: 'Primary OLTP database with customer data, order management, and inventory tracking' },
+            { name: 'DataWarehouse-Main', type: 'SQL Server 2017', size: '2.8 TB', compatibility: 'Azure Synapse', readiness: 78, issues: 12, 
+              schemas: ['dw', 'staging', 'mart', 'reporting'], tableCount: 156,
+              details: 'Enterprise data warehouse with historical data, complex ETL processes, and analytical workloads' },
+            { name: 'LegacyFinance-DB', type: 'SQL Server 2012', size: '920 GB', compatibility: 'Azure SQL MI', readiness: 58, issues: 24, 
+              schemas: ['finance', 'gl', 'ap', 'ar', 'payroll'], tableCount: 89,
+              details: 'Legacy financial system with custom stored procedures, CLR assemblies, and regulatory compliance requirements' },
+            { name: 'CRM-Analytics', type: 'SQL Server 2016', size: '320 GB', compatibility: 'Azure SQL DB', readiness: 89, issues: 5, 
+              schemas: ['crm', 'analytics', 'staging'], tableCount: 67,
+              details: 'CRM analytics database with customer segmentation, campaign tracking, and performance metrics' },
+            { name: 'Archive-Historical', type: 'SQL Server 2008 R2', size: '1.5 TB', compatibility: 'Azure Blob + SQL MI', readiness: 42, issues: 31, 
+              schemas: ['archive', 'historical', 'audit'], tableCount: 198,
+              details: 'Historical archive database requiring major refactoring due to deprecated features and compliance retention' },
+            { name: 'SessionState-Redis', type: 'Redis 6.2', size: '45 GB', compatibility: 'Azure Cache for Redis', readiness: 98, issues: 0, 
+              schemas: ['session', 'cache'], tableCount: 0,
+              details: 'High-performance session state and application caching layer' },
+            { name: 'DocumentStore-Mongo', type: 'MongoDB 4.4', size: '180 GB', compatibility: 'Azure Cosmos DB', readiness: 85, issues: 6, 
+              schemas: ['products', 'catalog', 'content'], tableCount: 0,
+              details: 'Product catalog and content management with flexible document schemas' },
+            { name: 'Analytics-Postgres', type: 'PostgreSQL 13', size: '650 GB', compatibility: 'Azure Database for PostgreSQL', readiness: 91, issues: 3, 
+              schemas: ['analytics', 'metrics', 'logs'], tableCount: 45,
+              details: 'Advanced analytics database with geospatial data, JSON documents, and machine learning extensions' }
           ],
           compatibility: { 
-            azureSQLDB: 40, 
-            azureSQLMI: 35, 
-            sqlServerOnVM: 25 
+            azureSQLDB: 42, 
+            azureSQLMI: 28, 
+            azureSynapse: 15,
+            azureCosmosDB: 8,
+            sqlServerOnVM: 7 
           },
           recommendations: [
-            'Upgrade SQL Server 2008 instances before migration',
-            'Consider Azure SQL Managed Instance for complex databases',
-            'Implement automated backup strategies for critical databases'
+            'Prioritize migration of high-readiness SQL Server 2019 and 2017 databases',
+            'Plan comprehensive refactoring for SQL Server 2008 R2 legacy systems',
+            'Consider Azure Synapse Analytics for the data warehouse modernization',
+            'Implement Azure Cosmos DB for document store migration with API compatibility',
+            'Establish hybrid connectivity for phased migration approach',
+            'Implement automated backup and disaster recovery strategies',
+            'Plan for data governance and compliance requirements during migration'
           ]
         },
         databases: [
-          { type: 'SQL Server', count: 8, usage: 'OLTP', performance: 85 },
-          { type: 'Oracle', count: 3, usage: 'Data Warehouse', performance: 78 },
-          { type: 'PostgreSQL', count: 5, usage: 'Analytics', performance: 92 },
-          { type: 'MongoDB', count: 4, usage: 'Document Store', performance: 88 },
-          { type: 'Redis', count: 6, usage: 'Cache', performance: 95 }
+          { type: 'SQL Server', count: 12, usage: 'OLTP/Data Warehouse', performance: 82, totalSize: '6.5 TB', versions: ['2008 R2', '2012', '2016', '2017', '2019'] },
+          { type: 'PostgreSQL', count: 6, usage: 'Analytics/GIS', performance: 91, totalSize: '980 GB', versions: ['11', '12', '13'] },
+          { type: 'MongoDB', count: 4, usage: 'Document Store', performance: 87, totalSize: '420 GB', versions: ['4.2', '4.4'] },
+          { type: 'Redis', count: 8, usage: 'Caching/Session', performance: 96, totalSize: '185 GB', versions: ['6.0', '6.2'] },
+          { type: 'Oracle', count: 2, usage: 'Legacy ERP', performance: 74, totalSize: '1.2 TB', versions: ['11g', '12c'] },
+          { type: 'MySQL', count: 5, usage: 'Web Applications', performance: 85, totalSize: '340 GB', versions: ['5.7', '8.0'] }
         ],
         integration: [
-          { pattern: 'REST APIs', count: 15, complexity: 'Low' },
-          { pattern: 'Message Queues', count: 8, complexity: 'Medium' },
-          { pattern: 'ETL Batch', count: 12, complexity: 'High' },
-          { pattern: 'Real-time Streaming', count: 3, complexity: 'High' },
-          { pattern: 'File Transfer', count: 6, complexity: 'Low' }
+          { pattern: 'REST APIs', count: 28, complexity: 'Low', description: 'Standard HTTP REST endpoints for web and mobile applications' },
+          { pattern: 'Message Queues (RabbitMQ)', count: 12, complexity: 'Medium', description: 'Asynchronous message processing for order fulfillment and notifications' },
+          { pattern: 'ETL/ELT Batch Processing', count: 18, complexity: 'High', description: 'SSIS packages and custom ETL for data warehouse loading' },
+          { pattern: 'Real-time Streaming (Kafka)', count: 6, complexity: 'High', description: 'Event streaming for real-time analytics and monitoring' },
+          { pattern: 'File-based Transfer (SFTP)', count: 9, complexity: 'Medium', description: 'Scheduled file transfers with external partners and systems' },
+          { pattern: 'Database Replication', count: 7, complexity: 'Medium', description: 'Always On availability groups and read replicas' },
+          { pattern: 'Web Services (SOAP)', count: 4, complexity: 'Low', description: 'Legacy web services for third-party integrations' },
+          { pattern: 'Direct Database Access', count: 15, complexity: 'High', description: 'Direct SQL connections requiring refactoring for cloud migration' }
         ],
         dataFlow: [
-          { month: 'Jan', volume: 2.4, latency: 120 },
-          { month: 'Feb', volume: 2.8, latency: 115 },
-          { month: 'Mar', volume: 3.2, latency: 110 },
-          { month: 'Apr', volume: 3.6, latency: 105 },
-          { month: 'May', volume: 4.1, latency: 100 },
-          { month: 'Jun', volume: 4.5, latency: 95 }
+          { month: 'Jul 2024', volume: 3.2, latency: 125, throughput: 2400, errors: 12 },
+          { month: 'Aug 2024', volume: 3.8, latency: 118, throughput: 2850, errors: 8 },
+          { month: 'Sep 2024', volume: 4.1, latency: 110, throughput: 3200, errors: 6 },
+          { month: 'Oct 2024', volume: 4.7, latency: 105, throughput: 3650, errors: 4 },
+          { month: 'Nov 2024', volume: 5.2, latency: 98, throughput: 4100, errors: 3 },
+          { month: 'Dec 2024', volume: 5.8, latency: 92, throughput: 4580, errors: 2 }
         ],
         quality: {
-          completeness: 85,
-          accuracy: 78,
-          consistency: 82,
-          timeliness: 75,
-          validity: 88
+          completeness: 87,
+          accuracy: 82,
+          consistency: 85,
+          timeliness: 79,
+          validity: 91,
+          uniqueness: 88,
+          integrity: 84
+        },
+        governance: {
+          dataClassification: {
+            public: 35,
+            internal: 40,
+            confidential: 20,
+            restricted: 5
+          },
+          compliance: {
+            gdpr: { status: 'Compliant', coverage: 92 },
+            hipaa: { status: 'Partial', coverage: 78 },
+            sox: { status: 'Compliant', coverage: 95 },
+            pciDss: { status: 'In Progress', coverage: 67 }
+          },
+          dataLineage: {
+            documented: 68,
+            automated: 23,
+            missing: 9
+          }
         },
         uploadedFiles: [
-          { name: 'dma-assessment-results.json', type: 'dma', size: '3.2 MB', uploadDate: '2024-01-15', status: 'Processed' },
-          { name: 'sql-server-logs.txt', type: 'log', size: '5.1 MB', uploadDate: '2024-01-14', status: 'Processed' }
+          { name: 'microsoft-dma-assessment-full.json', type: 'dma', size: '15.7 MB', uploadDate: '2024-01-20', status: 'Processed' },
+          { name: 'sql-server-perfmon-logs.csv', type: 'log', size: '89.2 MB', uploadDate: '2024-01-19', status: 'Processed' },
+          { name: 'database-schema-export.sql', type: 'schema', size: '12.4 MB', uploadDate: '2024-01-18', status: 'Processed' },
+          { name: 'data-warehouse-erd.pdf', type: 'diagram', size: '8.3 MB', uploadDate: '2024-01-17', status: 'Processed' },
+          { name: 'compliance-data-classification.xlsx', type: 'governance', size: '2.1 MB', uploadDate: '2024-01-16', status: 'Processed' },
+          { name: 'integration-architecture.vsdx', type: 'diagram', size: '5.8 MB', uploadDate: '2024-01-15', status: 'Processed' },
+          { name: 'postgres-query-analysis.log', type: 'log', size: '45.6 MB', uploadDate: '2024-01-14', status: 'Processed' },
+          { name: 'mongodb-profiler-output.json', type: 'log', size: '18.9 MB', uploadDate: '2024-01-13', status: 'Processed' }
         ],
         analysis: assessmentSpecificData?.analysis || {
           databaseAnalysis: '',
@@ -265,11 +322,13 @@ function DataArchitecture() {
     return 'bg-red-500';
   };
 
-  const compatibilityColors = ['#3B82F6', '#10B981', '#F59E0B'];
+  const compatibilityColors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'];
   const compatibilityData = [
-    { name: 'Azure SQL DB', value: dataArchData.microsoftDMA?.compatibility?.azureSQLDB || 40 },
-    { name: 'Azure SQL MI', value: dataArchData.microsoftDMA?.compatibility?.azureSQLMI || 35 },
-    { name: 'SQL Server VM', value: dataArchData.microsoftDMA?.compatibility?.sqlServerOnVM || 25 }
+    { name: 'Azure SQL DB', value: dataArchData.microsoftDMA?.compatibility?.azureSQLDB || 42 },
+    { name: 'Azure SQL MI', value: dataArchData.microsoftDMA?.compatibility?.azureSQLMI || 28 },
+    { name: 'Azure Synapse', value: dataArchData.microsoftDMA?.compatibility?.azureSynapse || 15 },
+    { name: 'Azure Cosmos DB', value: dataArchData.microsoftDMA?.compatibility?.azureCosmosDB || 8 },
+    { name: 'SQL Server VM', value: dataArchData.microsoftDMA?.compatibility?.sqlServerOnVM || 7 }
   ];
 
   if (loading) {
@@ -402,6 +461,77 @@ function DataArchitecture() {
               </div>
             </div>
 
+            {/* Data Governance Section */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Governance & Compliance</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Data Classification */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-700">Data Classification</h4>
+                  {Object.entries(dataArchData.governance?.dataClassification || {}).map(([level, percentage]) => (
+                    <div key={level} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 capitalize">{level}</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              level === 'restricted' ? 'bg-red-500' :
+                              level === 'confidential' ? 'bg-yellow-500' :
+                              level === 'internal' ? 'bg-blue-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">{percentage}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Compliance Status */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-700">Compliance Status</h4>
+                  {Object.entries(dataArchData.governance?.compliance || {}).map(([standard, info]) => (
+                    <div key={standard} className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm text-gray-600 uppercase">{standard}</span>
+                        <div className="text-xs text-gray-500">{info.coverage}% coverage</div>
+                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        info.status === 'Compliant' ? 'bg-green-100 text-green-800' :
+                        info.status === 'Partial' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {info.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Data Lineage */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-700">Data Lineage Coverage</h4>
+                  {Object.entries(dataArchData.governance?.dataLineage || {}).map(([type, percentage]) => (
+                    <div key={type} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 capitalize">{type}</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              type === 'missing' ? 'bg-red-500' :
+                              type === 'automated' ? 'bg-green-500' : 'bg-blue-500'
+                            }`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">{percentage}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Microsoft DMA Compatibility */}
@@ -452,7 +582,7 @@ function DataArchitecture() {
             {/* Microsoft DMA Assessment Results */}
             <div className="bg-white shadow-lg rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Microsoft DMA - Database Assessment Results</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Microsoft DMA - Detailed Database Assessment</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
