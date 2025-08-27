@@ -54,26 +54,30 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Cache .NET packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
+      # Temporarily disable cache to avoid stale assets
+      # - name: Cache .NET packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.nuget/packages
+      #     key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-nuget-
 
+      - name: Clean previous builds
+        run: dotnet clean BAAP.sln
+        
       - name: Restore dependencies
         run: dotnet restore BAAP.sln --runtime linux-x64
 
       - name: Build application
-        run: dotnet build BAAP.sln --no-restore --configuration ${{ env.BUILD_CONFIGURATION }}
+        run: dotnet build BAAP.sln --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} --runtime linux-x64
 
       - name: Run unit tests
         run: |
           # Check if test projects exist before running tests
           if dotnet sln BAAP.sln list | grep -i test; then
             echo "Test projects found, running tests..."
-            dotnet test BAAP.sln --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal --collect:"XPlat Code Coverage" --logger trx
+            dotnet test BAAP.sln --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --runtime linux-x64 --verbosity normal --collect:"XPlat Code Coverage" --logger trx
           else
             echo "No test projects found, skipping tests..."
             echo "⚠️ Consider adding unit tests for better code quality assurance"
