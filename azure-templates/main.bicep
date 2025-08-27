@@ -19,7 +19,7 @@ param sqlAdminLogin string
 param sqlAdminPassword string
 
 @description('Your IP address for SQL firewall rule')
-param clientIpAddress string = '0.0.0.0'
+param clientIpAddress string = '99.16.148.9'
 
 // Variables
 var environmentConfig = {
@@ -102,6 +102,10 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
           name: 'ApplicationInsights:ConnectionString'
           value: applicationInsights.properties.ConnectionString
         }
+        {
+          name: 'ConnectionStrings:AppConfig'
+          value: appConfiguration.listKeys().value[0].connectionString
+        }
       ]
       connectionStrings: [
         {
@@ -112,9 +116,6 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
       ]
     }
   }
-  dependsOn: [
-    sqlDatabase
-  ]
   tags: {
     Environment: environment
     Application: 'BAAP'
@@ -207,6 +208,190 @@ resource sqlFirewallClient 'Microsoft.Sql/servers/firewallRules@2022-05-01-previ
   }
 }
 
+// App Configuration
+resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2023-03-01' = {
+  name: '${resourcePrefix}-config-${uniqueSuffix}'
+  location: location
+  sku: {
+    name: environment == 'dev' ? 'free' : 'standard'
+  }
+  properties: {
+    disableLocalAuth: false
+    enablePurgeProtection: false
+  }
+  tags: {
+    Environment: environment
+    Application: 'BAAP'
+    Component: 'Configuration'
+  }
+}
+
+// App Configuration Key-Value pairs
+resource appConfigApiUrl 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:ApiBaseUrl'
+  properties: {
+    value: 'https://${appService.properties.defaultHostName}'
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigWebUrl 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:WebAppUrl'
+  properties: {
+    value: 'https://${staticWebApp.properties.defaultHostname}'
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigEnvironment 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:Environment'
+  properties: {
+    value: environment
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigDatabaseName 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:DatabaseName'
+  properties: {
+    value: sqlDatabase.name
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigStorageAccount 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:StorageAccountName'
+  properties: {
+    value: storageAccount.name
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigKeyVaultName 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:KeyVaultName'
+  properties: {
+    value: keyVault.name
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigAppInsightsKey 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:ApplicationInsights:InstrumentationKey'
+  properties: {
+    value: applicationInsights.properties.InstrumentationKey
+    contentType: 'text/plain'
+  }
+}
+
+// Key Vault references in App Configuration for sensitive values
+resource appConfigSqlConnectionRef 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:ConnectionStrings:DefaultConnection'
+  properties: {
+    value: '{"uri":"${kvSecretSqlConnection.properties.secretUri}"}'
+    contentType: 'application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8'
+  }
+}
+
+resource appConfigJwtSecretRef 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:JwtSettings:SecretKey'
+  properties: {
+    value: '{"uri":"${kvSecretJwtSecret.properties.secretUri}"}'
+    contentType: 'application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8'
+  }
+}
+
+// Additional configuration for JWT settings
+resource appConfigJwtIssuer 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:JwtSettings:Issuer'
+  properties: {
+    value: 'BAAP-API'
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigJwtAudience 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:JwtSettings:Audience'
+  properties: {
+    value: 'BAAP-Client'
+    contentType: 'text/plain'
+  }
+}
+
+// UI-specific configuration
+resource appConfigFeaturesUseApi 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:Features:UseApi'
+  properties: {
+    value: 'true'
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigFeaturesEnableAnalytics 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:Features:EnableAnalytics'
+  properties: {
+    value: 'true'
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigFeaturesEnableChatAssistant 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:Features:EnableChatAssistant'
+  properties: {
+    value: environment == 'prod' ? 'true' : 'false'
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigFeaturesAdvancedReporting 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:Features:EnableAdvancedReporting'
+  properties: {
+    value: environment == 'dev' ? 'false' : 'true'
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigUITheme 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:UI:Theme'
+  properties: {
+    value: 'light'
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigUIPageSize 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:UI:DefaultPageSize'
+  properties: {
+    value: '25'
+    contentType: 'text/plain'
+  }
+}
+
+resource appConfigUIDebugMode 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  parent: appConfiguration
+  name: 'BAAP:UI:EnableDebugMode'
+  properties: {
+    value: environment == 'dev' ? 'true' : 'false'
+    contentType: 'text/plain'
+  }
+}
+
 // Key Vault
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: '${resourcePrefix}-kv-${uniqueSuffix}'
@@ -223,6 +408,14 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
         objectId: appService.identity.principalId
         permissions: {
           secrets: [
+            'get'
+            'list'
+          ]
+          keys: [
+            'get'
+            'list'
+          ]
+          certificates: [
             'get'
             'list'
           ]
@@ -253,7 +446,7 @@ resource kvSecretJwtSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'JwtSecretKey'
   properties: {
-    value: base64ToString(base64(guid()))
+    value: base64ToString(base64(string(guid('${resourcePrefix}-jwt-secret'))))
   }
 }
 
@@ -406,4 +599,5 @@ output sqlServerFqdn string = sqlServer.properties.fullyQualifiedDomainName
 output keyVaultName string = keyVault.name
 output storageAccountName string = storageAccount.name
 output applicationInsightsInstrumentationKey string = applicationInsights.properties.InstrumentationKey
+output appConfigurationEndpoint string = appConfiguration.properties.endpoint
 output resourceGroupName string = resourceGroup().name

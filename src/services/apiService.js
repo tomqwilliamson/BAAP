@@ -1,7 +1,22 @@
 // src/services/apiService.js - Service wrapper with mock data fallback
 import { assessmentService } from './assessmentservice';
+import { configurationService } from './configurationService';
 
-const USE_API = process.env.REACT_APP_USE_API === 'true';
+let USE_API = process.env.REACT_APP_USE_API === 'true';
+
+// Initialize configuration
+const initializeConfiguration = async () => {
+  try {
+    const features = await configurationService.getFeatureFlags();
+    USE_API = features.UseApi;
+    console.log('🔧 Configuration initialized. USE_API:', USE_API);
+  } catch (error) {
+    console.warn('⚠️ Failed to load configuration, using environment variable:', error.message);
+  }
+};
+
+// Initialize on module load
+initializeConfiguration();
 
 // Mock data definitions
 const mockData = {
@@ -386,5 +401,26 @@ export const apiService = {
   downloadReport: assessmentService.downloadReport,
   search: assessmentService.search,
   getCurrentUser: assessmentService.getCurrentUser,
-  updateProfile: assessmentService.updateProfile
+  updateProfile: assessmentService.updateProfile,
+
+  // Configuration services
+  async getConfiguration() {
+    return await configurationService.getClientConfiguration();
+  },
+
+  async getFeatureFlags() {
+    return await configurationService.getFeatureFlags();
+  },
+
+  async getHealthStatus() {
+    return await configurationService.getHealthStatus();
+  },
+
+  async isFeatureEnabled(featureName) {
+    return await configurationService.isFeatureEnabled(featureName);
+  },
+
+  async refreshConfiguration() {
+    return await configurationService.refreshConfiguration();
+  }
 };

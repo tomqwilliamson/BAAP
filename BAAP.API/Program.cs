@@ -5,8 +5,31 @@ using System.Text;
 using BAAP.API.Data;
 using BAAP.API.Services;
 using BAAP.API.Middleware;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Azure App Configuration
+var connectionString = builder.Configuration.GetConnectionString("AppConfig");
+if (!string.IsNullOrEmpty(connectionString))
+{
+    builder.Configuration.AddAzureAppConfiguration(options =>
+    {
+        options.Connect(connectionString)
+               .ConfigureKeyVault(kv =>
+               {
+                   // Use managed identity in production, default credential for development
+                   kv.SetCredential(builder.Environment.IsDevelopment() 
+                       ? new DefaultAzureCredential() 
+                       : new ManagedIdentityCredential());
+               })
+               .Select("BAAP:*")
+               .TrimKeyPrefix("BAAP:");
+    });
+    
+    // Add App Configuration middleware for dynamic configuration refresh
+    builder.Services.AddAzureAppConfiguration();
+}
 
 // Add services to the container.
 builder.Services.AddDbContext<BaapDbContext>(options =>
@@ -125,6 +148,9 @@ app.UseHttpsRedirection();
 
 // Enable CORS
 app.UseCors("ReactApp");
+
+// Enable Azure App Configuration middleware for dynamic refresh
+app.UseAzureAppConfiguration();
 
 // Add authentication bypass middleware for development
 if (app.Environment.IsDevelopment())

@@ -13,7 +13,7 @@ param(
     [string]$ResourceGroupName,
     
     [Parameter(Mandatory=$false)]
-    [string]$Location = "East US",
+    [string]$Location = "East US 2",
     
     [Parameter(Mandatory=$false)]
     [switch]$WhatIf = $false
