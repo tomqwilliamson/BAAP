@@ -42,7 +42,8 @@
       "Bash(swa deploy:*)",
       "Bash(az staticwebapp environment show:*)",
       "Bash(az staticwebapp show:*)",
-      "Bash(az webapp show:*)"
+      "Bash(az webapp show:*)",
+      "Bash(npx swa deploy:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"

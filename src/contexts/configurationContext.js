@@ -205,7 +205,7 @@ export const ConfigurationDebug = () => {
   const { config, features, loading, error, lastUpdated } = useConfiguration();
   const isDebugMode = useConfigValue('UI.EnableDebugMode', false);
   
-  if (!isDebugMode || process.env.NODE_ENV !== 'development') {
+  if (!isDebugMode) {
     return null;
   }
   

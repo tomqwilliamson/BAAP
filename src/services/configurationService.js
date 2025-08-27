@@ -54,7 +54,7 @@ class ConfigurationService {
         UI: {
           Theme: 'light',
           DefaultPageSize: 25,
-          EnableDebugMode: process.env.NODE_ENV === 'development'
+          EnableDebugMode: false
         }
       };
       
