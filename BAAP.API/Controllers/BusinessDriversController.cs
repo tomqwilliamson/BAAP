@@ -9,7 +9,7 @@ namespace BAAP.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Route("api/business-drivers")]
-[Authorize]
+//[Authorize]
 public class BusinessDriversController : ControllerBase
 {
     private readonly BaapDbContext _context;

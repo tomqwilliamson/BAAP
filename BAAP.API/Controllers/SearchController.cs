@@ -7,7 +7,7 @@ namespace BAAP.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class SearchController : ControllerBase
 {
     private readonly BaapDbContext _context;

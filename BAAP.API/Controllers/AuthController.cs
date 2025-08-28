@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
 
     // POST: api/auth/validate
     [HttpPost("validate")]
-    [Authorize]
+    //[Authorize]
     public ActionResult ValidateToken()
     {
         try
@@ -80,7 +80,7 @@ public class AuthController : ControllerBase
 
     // GET: api/auth/user
     [HttpGet("user")]
-    [Authorize]
+    //[Authorize]
     public ActionResult GetCurrentUser()
     {
         try
@@ -102,7 +102,7 @@ public class AuthController : ControllerBase
 
     // POST: api/auth/logout
     [HttpPost("logout")]
-    [Authorize]
+    //[Authorize]
     public ActionResult Logout()
     {
         // In a real implementation, you might want to blacklist the token
