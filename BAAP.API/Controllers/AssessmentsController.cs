@@ -37,8 +37,8 @@ public class AssessmentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving assessments");
-            return StatusCode(500, "An error occurred while retrieving assessments");
+            _logger.LogError(ex, "Error retrieving assessments: {ErrorMessage}", ex.Message);
+            return StatusCode(500, $"An error occurred while retrieving assessments: {ex.Message}");
         }
     }
 

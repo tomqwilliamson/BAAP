@@ -198,12 +198,12 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Seed data in development environment
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    var seeder = scope.ServiceProvider.GetRequiredService<DataSeederService>();
-    await seeder.SeedDataAsync();
-}
+// Seed data in development environment - DISABLED AFTER SEEDING
+// if (app.Environment.IsDevelopment())
+// {
+//     using var scope = app.Services.CreateScope();
+//     var seeder = scope.ServiceProvider.GetRequiredService<DataSeederService>();
+//     await seeder.SeedDataAsync();
+// }
 
 app.Run();

@@ -62,7 +62,9 @@
       "Bash(az webapp identity:*)",
       "Bash(az sql server ad-admin create:*)",
       "Bash(taskkill:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(az sql server ad-admin delete:*)",
+      "Bash(az webapp config show:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
