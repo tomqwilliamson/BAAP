@@ -42,7 +42,7 @@ public class SearchController : ControllerBase
             {
                 var assessments = await _context.Assessments
                     .Where(a => a.Name.Contains(query) || 
-                               a.Description.Contains(query) ||
+                               (a.Description != null && a.Description.Contains(query)) ||
                                (a.BusinessObjective != null && a.BusinessObjective.Contains(query)))
                     .Select(a => new
                     {
@@ -66,7 +66,7 @@ public class SearchController : ControllerBase
                 var applications = await _context.Applications
                     .Include(app => app.Assessment)
                     .Where(app => app.Name.Contains(query) || 
-                                 app.Description.Contains(query) ||
+                                 (app.Description != null && app.Description.Contains(query)) ||
                                  app.Technology.Contains(query) ||
                                  app.Type.Contains(query))
                     .Select(app => new
@@ -94,9 +94,9 @@ public class SearchController : ControllerBase
                 var stakeholders = await _context.Stakeholders
                     .Include(s => s.Assessment)
                     .Where(s => s.Name.Contains(query) || 
-                               s.Role.Contains(query) ||
-                               s.Department.Contains(query) ||
-                               s.Email.Contains(query))
+                               (s.Role != null && s.Role.Contains(query)) ||
+                               (s.Department != null && s.Department.Contains(query)) ||
+                               (s.Email != null && s.Email.Contains(query)))
                     .Select(s => new
                     {
                         type = "stakeholder",
@@ -121,7 +121,7 @@ public class SearchController : ControllerBase
                 var businessDrivers = await _context.BusinessDrivers
                     .Include(bd => bd.Assessment)
                     .Where(bd => bd.Name.Contains(query) || 
-                                bd.Description.Contains(query))
+                                (bd.Description != null && bd.Description.Contains(query)))
                     .Select(bd => new
                     {
                         type = "businessdriver",
@@ -145,8 +145,8 @@ public class SearchController : ControllerBase
                 var recommendations = await _context.Recommendations
                     .Include(r => r.Assessment)
                     .Where(r => r.Title.Contains(query) || 
-                               r.Description.Contains(query) ||
-                               r.Category.Contains(query))
+                               (r.Description != null && r.Description.Contains(query)) ||
+                               (r.Category != null && r.Category.Contains(query)))
                     .Select(r => new
                     {
                         type = "recommendation",
@@ -173,8 +173,8 @@ public class SearchController : ControllerBase
                 var securityFindings = await _context.SecurityFindings
                     .Include(sf => sf.Application)
                     .Where(sf => sf.Title.Contains(query) || 
-                                sf.Description.Contains(query) ||
-                                sf.Category.Contains(query))
+                                (sf.Description != null && sf.Description.Contains(query)) ||
+                                (sf.Category != null && sf.Category.Contains(query)))
                     .Select(sf => new
                     {
                         type = "securityfinding",
@@ -265,7 +265,7 @@ public class SearchController : ControllerBase
             {
                 queryable = queryable.Where(app => 
                     app.Name.Contains(query) || 
-                    app.Description.Contains(query) ||
+                    (app.Description != null && app.Description.Contains(query)) ||
                     app.Technology.Contains(query));
             }
 
@@ -425,7 +425,7 @@ public class SearchController : ControllerBase
             {
                 queryable = queryable.Where(a => 
                     a.Name.Contains(query) || 
-                    a.Description.Contains(query) ||
+                    (a.Description != null && a.Description.Contains(query)) ||
                     (a.BusinessObjective != null && a.BusinessObjective.Contains(query)));
             }
 

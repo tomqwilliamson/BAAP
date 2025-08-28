@@ -8,6 +8,7 @@ namespace BAAP.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Route("api/business-drivers")]
 [Authorize]
 public class BusinessDriversController : ControllerBase
 {
@@ -93,7 +94,7 @@ public class BusinessDriversController : ControllerBase
                 Priority = bd.Priority,
                 Impact = bd.Impact,
                 Urgency = bd.Urgency,
-                BusinessValue = bd.BusinessValue.ToString(),
+                BusinessValue = bd.BusinessValue ?? "",
                 AssessmentId = assessmentId
             }).ToList();
 
@@ -120,6 +121,14 @@ public class BusinessDriversController : ControllerBase
             _logger.LogError(ex, "Error updating business drivers for assessment ID {AssessmentId}", assessmentId);
             return StatusCode(500, "An error occurred while updating business drivers");
         }
+    }
+
+    // PUT: api/business-drivers/assessment/{assessmentId} - UI expects this specific route
+    [HttpPut("assessment/{assessmentId}")]
+    public async Task<ActionResult> UpdateBusinessDriversForUI(int assessmentId, [FromBody] UpdateBusinessDriversRequest request)
+    {
+        // Delegate to the existing method to avoid code duplication
+        return await UpdateBusinessDrivers(assessmentId, request);
     }
 
     // GET: api/businessdrivers/{id}
@@ -385,6 +394,66 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
+    // PUT: api/businessdrivers/context/{assessmentId}
+    [HttpPut("context/{assessmentId}")]
+    public async Task<ActionResult> UpdateBusinessContext(int assessmentId, [FromBody] UpdateBusinessContextRequest request)
+    {
+        try
+        {
+            var assessment = await _context.Assessments.FindAsync(assessmentId);
+            if (assessment == null)
+            {
+                return NotFound($"Assessment with ID {assessmentId} not found");
+            }
+
+            assessment.BusinessContext = request.BusinessContext;
+            assessment.LastModifiedDate = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Business context updated successfully",
+                assessmentId = assessmentId,
+                businessContext = assessment.BusinessContext
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating business context for assessment ID {AssessmentId}", assessmentId);
+            return StatusCode(500, "An error occurred while updating business context");
+        }
+    }
+
+    // GET: api/businessdrivers/context/{assessmentId}
+    [HttpGet("context/{assessmentId}")]
+    public async Task<ActionResult> GetBusinessContext(int assessmentId)
+    {
+        try
+        {
+            var assessment = await _context.Assessments
+                .Where(a => a.Id == assessmentId)
+                .Select(a => new { 
+                    id = a.Id, 
+                    name = a.Name, 
+                    businessContext = a.BusinessContext 
+                })
+                .FirstOrDefaultAsync();
+
+            if (assessment == null)
+            {
+                return NotFound($"Assessment with ID {assessmentId} not found");
+            }
+
+            return Ok(assessment);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving business context for assessment ID {AssessmentId}", assessmentId);
+            return StatusCode(500, "An error occurred while retrieving business context");
+        }
+    }
+
     // GET: api/businessdrivers/templates
     [HttpGet("templates")]
     public ActionResult GetBusinessDriverTemplates()
@@ -480,4 +549,9 @@ public class BusinessDriverData
     public int? Impact { get; set; }
     public int? Urgency { get; set; }
     public string? BusinessValue { get; set; }
+}
+
+public class UpdateBusinessContextRequest
+{
+    public string? BusinessContext { get; set; }
 }

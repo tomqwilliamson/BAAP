@@ -40,7 +40,7 @@ public class ApplicationsController : ControllerBase
             // Apply filters
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(a => a.Name.Contains(search) || a.Description.Contains(search));
+                query = query.Where(a => a.Name.Contains(search) || (a.Description != null && a.Description.Contains(search)));
             }
 
             if (!string.IsNullOrEmpty(type))

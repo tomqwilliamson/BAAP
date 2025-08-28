@@ -18,5 +18,5 @@ public class BusinessDriverDto
     public string Priority { get; set; } = "Medium";
     public int Impact { get; set; }
     public int Urgency { get; set; }
-    public int BusinessValue { get; set; }
+    public string? BusinessValue { get; set; }
 }
