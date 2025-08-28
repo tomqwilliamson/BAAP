@@ -47,7 +47,7 @@ builder.Services.AddCors(options =>
         {
             builder
                 .WithOrigins(
-                    "http://localhost:3000", 
+                    "http://localhost:3000",
                     "https://localhost:3000",
                     "https://jolly-ocean-089232b0f.1.azurestaticapps.net"
                 )
@@ -139,6 +139,12 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Configure HTTPS
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.HttpsPort = 7273; // Default HTTPS port for development
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -147,6 +153,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
 
 app.UseHttpsRedirection();
 

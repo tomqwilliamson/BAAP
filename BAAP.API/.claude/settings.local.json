@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(C:\\Users\\twilliamson\\source\\repos\\BAAP\\scripts/**)",
+      "Read(C:\\Users\\twilliamson\\source\\repos\\BAAP\\scripts/**)",
+      "Read(C:\\Users\\twilliamson\\source\\repos\\BAAP\\scripts/**)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet build)",
+      "Bash(dotnet run:*)",
+      "Bash(curl:*)",
+      "Bash(npm start)",
+      "Bash(set PORT=3001)",
+      "Bash(powershell:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Users\\twilliamson\\source\\repos\\BAAP"
+    ]
+  }
+}
