@@ -268,5 +268,10 @@ TestResults/
 *.gz
 *.tgz
 
+# Azure logs and deployment files
+azure-logs/
+azure-logs.zip
+deploy.zip
+
 .fakenul
 nul
