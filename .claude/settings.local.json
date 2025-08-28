@@ -43,7 +43,26 @@
       "Bash(az staticwebapp environment show:*)",
       "Bash(az staticwebapp show:*)",
       "Bash(az webapp show:*)",
-      "Bash(npx swa deploy:*)"
+      "Bash(npx swa deploy:*)",
+      "Bash(set REACT_APP_API_BASE_URL=https://baap-dev-api-wsnmnw.azurewebsites.net/api)",
+      "Bash(az webapp log tail:*)",
+      "Bash(az webapp log download:*)",
+      "Bash(az webapp config appsettings list:*)",
+      "Bash(az webapp config appsettings set:*)",
+      "Bash(az webapp restart:*)",
+      "Bash(az webapp config set:*)",
+      "Bash(az webapp deploy:*)",
+      "Bash(az webapp log config:*)",
+      "Bash(az webapp config connection-string set:*)",
+      "Bash(az sql server list:*)",
+      "Bash(az sql db list:*)",
+      "Bash(az sql server firewall-rule list:*)",
+      "Bash(az sql server show:*)",
+      "Bash(az sql server update:*)",
+      "Bash(az webapp identity:*)",
+      "Bash(az sql server ad-admin create:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
