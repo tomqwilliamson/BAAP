@@ -49,6 +49,8 @@ builder.Services.AddCors(options =>
                 .WithOrigins(
                     "http://localhost:3000",
                     "https://localhost:3000",
+                    "http://localhost:3001",
+                    "https://localhost:3001",
                     "https://jolly-ocean-089232b0f.1.azurestaticapps.net"
                 )
                 .AllowAnyMethod()

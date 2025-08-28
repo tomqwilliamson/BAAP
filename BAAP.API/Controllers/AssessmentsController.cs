@@ -98,6 +98,41 @@ public class AssessmentsController : ControllerBase
         }
     }
 
+    // PUT: api/assessments/{id}
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateAssessment(int id, AssessmentUpdate assessmentUpdate)
+    {
+        try
+        {
+            var assessment = await _context.Assessments.FindAsync(id);
+            if (assessment == null)
+            {
+                return NotFound($"Assessment with ID {id} not found");
+            }
+
+            // Update only the fields that are provided
+            if (assessmentUpdate.Name != null) assessment.Name = assessmentUpdate.Name;
+            if (assessmentUpdate.Description != null) assessment.Description = assessmentUpdate.Description;
+            if (assessmentUpdate.Status != null) assessment.Status = assessmentUpdate.Status;
+            if (assessmentUpdate.BusinessContext != null) assessment.BusinessContext = assessmentUpdate.BusinessContext;
+            if (assessmentUpdate.EstimatedCost.HasValue) assessment.EstimatedCost = assessmentUpdate.EstimatedCost.Value;
+            if (assessmentUpdate.PotentialSavings.HasValue) assessment.PotentialSavings = assessmentUpdate.PotentialSavings.Value;
+            if (assessmentUpdate.OverallScore.HasValue) assessment.OverallScore = assessmentUpdate.OverallScore.Value;
+            if (assessmentUpdate.SecurityScore.HasValue) assessment.SecurityScore = assessmentUpdate.SecurityScore.Value;
+            if (assessmentUpdate.CloudReadinessScore.HasValue) assessment.CloudReadinessScore = assessmentUpdate.CloudReadinessScore.Value;
+
+            assessment.LastModifiedDate = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return Ok(assessment);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating assessment with ID {AssessmentId}", id);
+            return StatusCode(500, "An error occurred while updating the assessment");
+        }
+    }
+
     // POST: api/assessments/{id}/start
     [HttpPost("{id}/start")]
     public async Task<ActionResult<Assessment>> StartAssessment(int id)
@@ -127,46 +162,6 @@ public class AssessmentsController : ControllerBase
         {
             _logger.LogError(ex, "Error starting assessment with ID {AssessmentId}", id);
             return StatusCode(500, "An error occurred while starting the assessment");
-        }
-    }
-
-    // PUT: api/assessments/{id}
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateAssessment(int id, Assessment assessment)
-    {
-        try
-        {
-            if (id != assessment.Id)
-            {
-                return BadRequest("Assessment ID mismatch");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _context.Entry(assessment).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!AssessmentExists(id))
-                {
-                    return NotFound($"Assessment with ID {id} not found");
-                }
-                throw;
-            }
-
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating assessment with ID {AssessmentId}", id);
-            return StatusCode(500, "An error occurred while updating the assessment");
         }
     }
 

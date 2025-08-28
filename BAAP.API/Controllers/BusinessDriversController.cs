@@ -67,6 +67,61 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
+    // PUT: api/businessdrivers/assessment/{assessmentId}/update
+    [HttpPut("assessment/{assessmentId}/update")]
+    public async Task<ActionResult> UpdateBusinessDrivers(int assessmentId, [FromBody] UpdateBusinessDriversRequest request)
+    {
+        try
+        {
+            var assessment = await _context.Assessments
+                .Include(a => a.BusinessDrivers)
+                .FirstOrDefaultAsync(a => a.Id == assessmentId);
+
+            if (assessment == null)
+            {
+                return NotFound($"Assessment with ID {assessmentId} not found");
+            }
+
+            // Remove existing business drivers
+            _context.BusinessDrivers.RemoveRange(assessment.BusinessDrivers);
+
+            // Add new business drivers
+            var newBusinessDrivers = request.BusinessDrivers.Select(bd => new BusinessDriver
+            {
+                Name = bd.Name,
+                Description = bd.Description ?? "",
+                Priority = bd.Priority,
+                Impact = bd.Impact,
+                Urgency = bd.Urgency,
+                BusinessValue = bd.BusinessValue.ToString(),
+                AssessmentId = assessmentId
+            }).ToList();
+
+            assessment.BusinessDrivers = newBusinessDrivers;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Business drivers updated successfully",
+                businessDrivers = newBusinessDrivers.Select(bd => new
+                {
+                    id = bd.Id,
+                    name = bd.Name,
+                    description = bd.Description,
+                    priority = bd.Priority,
+                    impact = bd.Impact,
+                    urgency = bd.Urgency,
+                    businessValue = bd.BusinessValue
+                })
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating business drivers for assessment ID {AssessmentId}", assessmentId);
+            return StatusCode(500, "An error occurred while updating business drivers");
+        }
+    }
+
     // GET: api/businessdrivers/{id}
     [HttpGet("{id}")]
     public async Task<ActionResult> GetBusinessDriver(int id)
@@ -278,8 +333,8 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // PUT: api/businessdrivers/assessment/{assessmentId}
-    [HttpPut("assessment/{assessmentId}")]
+    // PUT: api/businessdrivers/assessment/{assessmentId}/replace
+    [HttpPut("assessment/{assessmentId}/replace")]
     public async Task<ActionResult> UpdateAssessmentBusinessDrivers(int assessmentId, [FromBody] UpdateAssessmentBusinessDriversRequest request)
     {
         try

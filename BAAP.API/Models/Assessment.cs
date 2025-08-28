@@ -32,6 +32,8 @@ public class Assessment
     public string? Timeline { get; set; }
     public decimal? Budget { get; set; }
     public string? Notes { get; set; }
+    public string? BusinessContext { get; set; }
+    public DateTime? LastModifiedDate { get; set; }
     
     // Navigation properties
     public virtual ICollection<Application> Applications { get; set; } = new List<Application>();

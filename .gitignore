@@ -1,10 +1,13 @@
 # Dependencies
 node_modules/
 node_modules_win/
+.next/
+.vscode-test/
 
 # Production build
 build/
 dist/
+publish/
 
 # Environment variables
 .env
@@ -18,6 +21,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+npm-debug.log
+coverage-ts/
 
 # Runtime data
 pids
@@ -233,12 +238,34 @@ MigrationBackup/
 
 # Azure Functions localsettings file
 local.settings.json
+.azure/
+*.azurepubxml
+*.pubxml
+*.pubxml.user
+
+# Development settings
+appsettings.Development.json
+Properties/launchSettings.json
+*.Development.json
 
 # User secrets
 secrets.json
 
+# Test Results
+TestResults/
+*.trx
+*.coverage
+
 # Temporary files
 *.tmp
 *.temp
+
+# Archive files
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+*.tgz
 
 .fakenul

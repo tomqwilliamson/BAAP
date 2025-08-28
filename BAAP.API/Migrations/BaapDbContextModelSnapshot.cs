@@ -153,6 +153,9 @@ namespace BAAP.API.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("BusinessContext")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("BusinessObjective")
                         .HasColumnType("nvarchar(max)");
 
@@ -171,6 +174,9 @@ namespace BAAP.API.Migrations
                     b.Property<decimal?>("EstimatedCost")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("LastModifiedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
