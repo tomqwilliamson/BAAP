@@ -8,7 +8,7 @@ namespace BAAP.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize] // Temporarily disabled for development
 public class AssessmentsController : ControllerBase
 {
     private readonly BaapDbContext _context;
