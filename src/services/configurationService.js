@@ -30,7 +30,7 @@ class ConfigurationService {
     this.isLoading = true;
 
     try {
-      const response = await assessmentService.get('/api/configuration/client');
+      const response = await assessmentService.get('/configuration/client');
       this.config = response.data;
       this.lastFetchTime = Date.now();
       console.log('✅ Configuration loaded from API:', this.config);
@@ -71,7 +71,7 @@ class ConfigurationService {
    */
   async getFeatureFlags() {
     try {
-      const response = await assessmentService.get('/api/configuration/features');
+      const response = await assessmentService.get('/configuration/features');
       this.features = response.data;
       console.log('✅ Feature flags loaded from API:', this.features);
       return this.features;
@@ -133,7 +133,7 @@ class ConfigurationService {
    */
   async getHealthStatus() {
     try {
-      const response = await assessmentService.get('/api/configuration/health');
+      const response = await assessmentService.get('/configuration/health');
       console.log('✅ Health status loaded from API:', response.data);
       return response.data;
     } catch (error) {

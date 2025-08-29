@@ -6,8 +6,10 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import toast from 'react-hot-toast';
+import { useAssessment } from '../../contexts/assessmentcontext';
 
 function DataArchitecture() {
+  const { currentAssessment } = useAssessment();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -37,11 +39,16 @@ function DataArchitecture() {
 
   useEffect(() => {
     loadDataArchitectureData();
-  }, []);
+  }, [currentAssessment]);
 
   const loadDataArchitectureData = async () => {
     try {
       setLoading(true);
+      console.log('DATA ARCHITECTURE: Loading data for assessment:', currentAssessment?.id);
+      
+      // Generate assessment-specific data
+      const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'data');
+      
       const mockData = {
         microsoftDMA: {
           databases: [

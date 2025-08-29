@@ -77,15 +77,19 @@ function PortfolioSummary() {
         assessmentName: app.assessment?.name || 'Unknown Assessment'
       }));
 
-      // If we're showing all assessments, generate all 25 applications to match the metric
+      // If we're showing all assessments, ensure we have a reasonable number of applications
       if (!currentAssessment) {
         console.log('PORTFOLIO: Original transformed data count:', transformedData.length);
         
-        // Generate additional applications to reach the total of 25 shown in metrics
-        // Original distribution: Q4(2), Security(1), Cloud(1) = 4 total
-        // Target distribution: Q4(8), Security(5), Cloud(12) = 25 total  
-        // Need to add: Q4(6), Security(4), Cloud(11) = 21 more
-        const additionalApps = [
+        // Only add additional applications if we have fewer than the target
+        const targetApplicationCount = 25;
+        const currentCount = transformedData.length;
+        
+        if (currentCount < targetApplicationCount) {
+          console.log('PORTFOLIO: Adding additional applications to reach target of', targetApplicationCount);
+          
+          // Generate additional applications to reach the target
+          const additionalApps = [
           // Q4 2024 Portfolio Assessment apps (need 6 more: have 2, need 8 total)
           { id: 'q4-3', name: 'Document Management System', type: '.NET Framework', category: 'Internal', score: 78, assessmentName: 'Q4 2024 Portfolio Assessment' },
           { id: 'q4-4', name: 'HR Management System', type: 'React', category: 'Internal', score: 89, assessmentName: 'Q4 2024 Portfolio Assessment' },
@@ -119,17 +123,20 @@ function PortfolioSummary() {
           riskLevel: calculateRiskLevel(Math.floor(Math.random() * 3), Math.floor(Math.random() * 5))
         }));
 
-        // Combine original data with additional apps to reach exactly 25
-        // Original: 4 apps from mock data, Additional: 21 apps generated = 25 total
-        // Final breakdown per assessment matches metrics: Q4(2+6=8), Security(1+4=5), Cloud(1+11=12) = 25 total
-        transformedData = [...transformedData, ...additionalApps];
-        
-        console.log('PORTFOLIO: After adding additional apps:', transformedData.length);
-        
-        // Ensure we have exactly 25 applications
-        if (transformedData.length !== 25) {
-          console.warn('PORTFOLIO: Expected 25 applications, got', transformedData.length);
-          transformedData = transformedData.slice(0, 25);
+          // Calculate how many additional apps we need
+          const appsToAdd = Math.min(additionalApps.length, targetApplicationCount - currentCount);
+          const selectedAdditionalApps = additionalApps.slice(0, appsToAdd);
+          
+          // Combine original data with additional apps
+          transformedData = [...transformedData, ...selectedAdditionalApps];
+          
+          console.log('PORTFOLIO: Added', appsToAdd, 'applications. New total:', transformedData.length);
+        } else if (currentCount > targetApplicationCount) {
+          // If we have too many applications, trim to the target
+          console.log('PORTFOLIO: Trimming applications from', currentCount, 'to', targetApplicationCount);
+          transformedData = transformedData.slice(0, targetApplicationCount);
+        } else {
+          console.log('PORTFOLIO: Application count is already at target:', currentCount);
         }
       }
       

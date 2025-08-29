@@ -66,12 +66,12 @@ public class ConfigurationController : ControllerBase
         {
             var features = new
             {
-                UseApi = bool.Parse(_configuration["Features:UseApi"] ?? "true"),
-                EnableAnalytics = bool.Parse(_configuration["Features:EnableAnalytics"] ?? "true"),
-                EnableChatAssistant = bool.Parse(_configuration["Features:EnableChatAssistant"] ?? "false"),
-                EnableAdvancedReporting = bool.Parse(_configuration["Features:EnableAdvancedReporting"] ?? "false"),
-                EnableCloudRecommendations = bool.Parse(_configuration["Features:EnableCloudRecommendations"] ?? "true"),
-                EnableSecurityScanning = bool.Parse(_configuration["Features:EnableSecurityScanning"] ?? "true")
+                UseApi = bool.TryParse(_configuration["Features:UseApi"], out bool useApi) ? useApi : true,
+                EnableAnalytics = bool.TryParse(_configuration["Features:EnableAnalytics"], out bool enableAnalytics) ? enableAnalytics : true,
+                EnableChatAssistant = bool.TryParse(_configuration["Features:EnableChatAssistant"], out bool enableChatAssistant) ? enableChatAssistant : false,
+                EnableAdvancedReporting = bool.TryParse(_configuration["Features:EnableAdvancedReporting"], out bool enableAdvancedReporting) ? enableAdvancedReporting : false,
+                EnableCloudRecommendations = bool.TryParse(_configuration["Features:EnableCloudRecommendations"], out bool enableCloudRecommendations) ? enableCloudRecommendations : true,
+                EnableSecurityScanning = bool.TryParse(_configuration["Features:EnableSecurityScanning"], out bool enableSecurityScanning) ? enableSecurityScanning : true
             };
 
             return Ok(features);

@@ -25,6 +25,8 @@ export const generateAssessmentSpecificData = (assessment, component) => {
       return generatePortfolioData(assessmentId, assessment);
     case 'recommendations':
       return generateRecommendationsData(assessmentId, assessment);
+    case 'business':
+      return generateBusinessContextData(assessmentId, assessment);
     default:
       return {};
   }
@@ -723,6 +725,250 @@ const generateRecommendationsData = (assessmentId, assessment) => {
         executiveSummary: 'Cloud-native architecture is mature and well-implemented. Focus on optimization and resilience enhancements to maximize cloud investment.',
         keyFindings: 'Excellent microservices implementation with low technical debt. Opportunities exist in observability and multi-region resilience.',
         recommendations: 'Build on strong foundation with service mesh and multi-region capabilities. Implement chaos engineering for resilience testing.'
+      }
+    };
+  }
+};
+
+const generateBusinessContextData = (assessmentId, assessment) => {
+  // E-Commerce Platform (Assessment 1)
+  if (assessmentId === 1) {
+    return {
+      businessDrivers: [
+        {
+          id: 1,
+          name: 'Customer Experience Improvement',
+          description: 'Enhance digital customer experience and reduce cart abandonment',
+          priority: 'Critical',
+          impact: 90,
+          urgency: 85,
+          businessValue: 'Increased customer satisfaction and revenue'
+        },
+        {
+          id: 2,
+          name: 'Platform Scalability',
+          description: 'Scale platform to handle peak shopping seasons and growth',
+          priority: 'High',
+          impact: 85,
+          urgency: 70,
+          businessValue: 'Support business growth without performance issues'
+        },
+        {
+          id: 3,
+          name: 'Payment Security',
+          description: 'Enhance payment processing security and compliance',
+          priority: 'Critical',
+          impact: 95,
+          urgency: 80,
+          businessValue: 'Customer trust and regulatory compliance'
+        },
+        {
+          id: 4,
+          name: 'Cost Optimization',
+          description: 'Reduce infrastructure costs through cloud migration',
+          priority: 'Medium',
+          impact: 75,
+          urgency: 60,
+          businessValue: 'Annual savings of $200,000+'
+        }
+      ],
+      stakeholderGroups: [
+        {
+          id: 1,
+          name: 'Executive Leadership',
+          members: ['CEO', 'CTO', 'VP of Engineering'],
+          role: 'Strategic Decision Making',
+          influence: 'High',
+          interest: 'High',
+          notes: 'Primary sponsors and budget approvers'
+        },
+        {
+          id: 2,
+          name: 'Development Team',
+          members: ['Lead Developer', 'Frontend Team', 'Backend Team'],
+          role: 'Technical Implementation',
+          influence: 'Medium',
+          interest: 'High',
+          notes: 'Responsible for day-to-day development and migration'
+        },
+        {
+          id: 3,
+          name: 'Customer Support',
+          members: ['Support Manager', 'Customer Success Team'],
+          role: 'End User Advocacy',
+          influence: 'Medium',
+          interest: 'High',
+          notes: 'Represents customer needs and concerns'
+        }
+      ],
+      projectTimeline: [
+        {
+          id: 1,
+          phase: 'Discovery & Planning',
+          description: 'Requirements gathering, architecture design, and migration strategy',
+          startDate: '2025-01-15',
+          duration: '6 weeks',
+          dependencies: 'Business requirements approval',
+          deliverables: 'Technical architecture, migration plan, risk assessment',
+          status: 'Planned'
+        },
+        {
+          id: 2,
+          phase: 'Infrastructure Setup',
+          description: 'Set up cloud infrastructure and development environments',
+          startDate: '2025-03-01',
+          duration: '8 weeks',
+          dependencies: 'Architecture approval, cloud account setup',
+          deliverables: 'Production and staging environments, CI/CD pipelines',
+          status: 'Planned'
+        },
+        {
+          id: 3,
+          phase: 'Application Migration',
+          description: 'Migrate applications and data to cloud infrastructure',
+          startDate: '2025-04-26',
+          duration: '12 weeks',
+          dependencies: 'Infrastructure completion, testing strategy',
+          deliverables: 'Migrated applications, performance validation, security testing',
+          status: 'Planned'
+        }
+      ],
+      businessCase: {
+        totalInvestment: 850000,
+        projectedSavings: 2400000,
+        roi: 285,
+        paybackPeriod: '14 months',
+        timeToValue: '18 months'
+      }
+    };
+  }
+  // Financial Services Security (Assessment 2)
+  else if (assessmentId === 2) {
+    return {
+      businessDrivers: [
+        {
+          id: 1,
+          name: 'Regulatory Compliance',
+          description: 'Meet evolving financial regulations and security standards',
+          priority: 'Critical',
+          impact: 95,
+          urgency: 90,
+          businessValue: 'Avoid regulatory penalties and maintain license'
+        },
+        {
+          id: 2,
+          name: 'Risk Mitigation',
+          description: 'Reduce cybersecurity risks and potential data breaches',
+          priority: 'Critical',
+          impact: 90,
+          urgency: 85,
+          businessValue: 'Protect customer data and company reputation'
+        },
+        {
+          id: 3,
+          name: 'Operational Efficiency',
+          description: 'Modernize legacy systems for improved efficiency',
+          priority: 'High',
+          impact: 80,
+          urgency: 65,
+          businessValue: 'Reduced operational costs and faster processing'
+        }
+      ],
+      stakeholderGroups: [
+        {
+          id: 1,
+          name: 'Risk Management',
+          members: ['CRO', 'Compliance Officer', 'Security Team'],
+          role: 'Risk Oversight',
+          influence: 'High',
+          interest: 'High',
+          notes: 'Primary drivers of security initiative'
+        },
+        {
+          id: 2,
+          name: 'IT Operations',
+          members: ['CTO', 'IT Director', 'Security Engineers'],
+          role: 'Technical Implementation',
+          influence: 'High',
+          interest: 'High',
+          notes: 'Responsible for technical execution'
+        }
+      ],
+      projectTimeline: [
+        {
+          id: 1,
+          phase: 'Security Assessment',
+          description: 'Comprehensive security audit and vulnerability assessment',
+          startDate: '2025-02-01',
+          duration: '4 weeks',
+          status: 'Planned'
+        },
+        {
+          id: 2,
+          phase: 'Compliance Implementation',
+          description: 'Implement security controls and compliance measures',
+          startDate: '2025-03-01',
+          duration: '16 weeks',
+          status: 'Planned'
+        }
+      ],
+      businessCase: {
+        totalInvestment: 450000,
+        projectedSavings: 1200000,
+        roi: 267,
+        paybackPeriod: '16 months'
+      }
+    };
+  }
+  // Cloud Migration Readiness (Assessment 3)
+  else {
+    return {
+      businessDrivers: [
+        {
+          id: 1,
+          name: 'Cloud Transformation',
+          description: 'Complete migration to cloud-native architecture',
+          priority: 'High',
+          impact: 85,
+          urgency: 75,
+          businessValue: 'Scalability and cost optimization'
+        },
+        {
+          id: 2,
+          name: 'Innovation Acceleration',
+          description: 'Enable faster deployment and innovation cycles',
+          priority: 'High',
+          impact: 80,
+          urgency: 70,
+          businessValue: 'Competitive advantage through faster time-to-market'
+        }
+      ],
+      stakeholderGroups: [
+        {
+          id: 1,
+          name: 'Cloud Center of Excellence',
+          members: ['Cloud Architect', 'DevOps Engineers', 'Platform Team'],
+          role: 'Technical Leadership',
+          influence: 'High',
+          interest: 'High',
+          notes: 'Driving cloud adoption strategy'
+        }
+      ],
+      projectTimeline: [
+        {
+          id: 1,
+          phase: 'Cloud Optimization',
+          description: 'Optimize existing cloud infrastructure and processes',
+          startDate: '2025-01-15',
+          duration: '12 weeks',
+          status: 'Planned'
+        }
+      ],
+      businessCase: {
+        totalInvestment: 300000,
+        projectedSavings: 800000,
+        roi: 267,
+        paybackPeriod: '11 months'
       }
     };
   }
