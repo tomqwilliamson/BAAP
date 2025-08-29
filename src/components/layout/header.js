@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { Bell, Search, User, Settings, ChevronDown } from 'lucide-react';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import UnifiedSignOutButton from '../auth/UnifiedSignOutButton';
+import NotificationDropdown from '../notifications/NotificationDropdown';
 import toast from 'react-hot-toast';
 
 const pageTitle = {
@@ -95,9 +96,7 @@ function Header() {
             </div>
 
             {/* Notifications */}
-            <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md transition-colors duration-200">
-              <Bell className="h-5 w-5" />
-            </button>
+            <NotificationDropdown />
 
             {/* Settings */}
             <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md transition-colors duration-200">

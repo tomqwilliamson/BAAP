@@ -10,14 +10,19 @@ import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/currency';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
+import { useAnalysis } from '../../hooks/useAnalysis';
 
 function InfrastructureAssessment() {
   const { currentAssessment } = useAssessment();
+  const { startAnalysis, getAnalysisState, isAnalysisRunning } = useAnalysis();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  
+  // Get analysis state for this module
+  const analysisState = getAnalysisState('infrastructure');
+  const isAnalyzing = isAnalysisRunning('infrastructure');
   
   const [assessmentData, setAssessmentData] = useState({
     azureMigrate: {
@@ -206,49 +211,45 @@ function InfrastructureAssessment() {
   };
 
   const runAnalysis = async () => {
-    setIsAnalyzing(true);
     setShowAnalysisResults(false);
     
-    // Simulate analysis processing
-    setTimeout(() => {
-      const analysisResults = {
-        infrastructureAnalysis: `Based on the assessment of ${assessmentData.azureMigrate?.servers?.length || 5} servers, your infrastructure shows mixed cloud readiness. Key findings:
+    const result = await startAnalysis('infrastructure');
+    
+    const analysisResults = {
+      infrastructureAnalysis: `Based on the assessment of ${assessmentData.azureMigrate?.servers?.length || 5} servers, your infrastructure shows mixed cloud readiness. Key findings:
 
 • ${assessmentData.azureMigrate?.readiness?.ready || 45}% of applications are cloud-ready with minimal modifications
 • Legacy systems (Windows Server 2012) require significant modernization effort
 • Current resource utilization shows opportunity for optimization`,
 
-        costOptimizationAnalysis: `Cost analysis reveals significant savings opportunities:
+      costOptimizationAnalysis: `Cost analysis reveals significant savings opportunities:
 
 • Estimated monthly savings: ${formatCurrency(assessmentData.azureMigrate?.costs?.savings || 3490)}
 • ROI payback period: ${assessmentData.azureMigrate?.costs?.paybackMonths || 18} months
 • Overprovisioned resources detected in ${assessmentData.azureMigrate?.servers?.filter(s => s.readiness < 80).length || 2} servers
 • Cloud-native services could reduce operational overhead by 40%`,
 
-        securityAnalysis: `Security assessment highlights critical areas:
+      securityAnalysis: `Security assessment indicates good baseline with improvement opportunities:
 
-• Legacy operating systems present security risks (Windows Server 2012)
-• No evidence of auto-patching or security automation
-• Network segmentation analysis required for cloud migration
-• Identity and access management modernization needed`,
+• Current infrastructure follows standard security practices
+• Recommend implementing Azure Security Center for enhanced monitoring  
+• Network segmentation should be improved for better isolation
+• Multi-factor authentication should be enforced across all systems`,
 
-        modernizationRecommendations: `Recommended modernization strategy:
+      modernizationRecommendations: `Recommended modernization strategy:
 
 1. **Phase 1**: Migrate ${assessmentData.azureMigrate?.readiness?.ready || 45}% cloud-ready applications via lift-and-shift
 2. **Phase 2**: Refactor medium-complexity applications for cloud optimization  
 3. **Phase 3**: Rebuild legacy systems with modern architecture patterns
 4. **Implement**: Container orchestration, auto-scaling, and monitoring solutions`
-      };
+    };
 
-      setAssessmentData(prev => ({
-        ...prev,
-        analysis: analysisResults
-      }));
-      
-      setIsAnalyzing(false);
-      setShowAnalysisResults(true);
-      toast.success('Analysis completed successfully!');
-    }, 3000);
+    setAssessmentData(prev => ({
+      ...prev,
+      analysis: analysisResults
+    }));
+    
+    setShowAnalysisResults(true);
   };
 
   const hostingColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];

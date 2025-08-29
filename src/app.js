@@ -8,6 +8,7 @@ import LandingPage from './components/landing/LandingPage';
 import UnifiedLoginPage from './components/auth/UnifiedLoginPage';
 import UnifiedProtectedRoute from './components/auth/UnifiedProtectedRoute';
 import { AssessmentProvider } from './contexts/assessmentcontext';
+import { NotificationProvider } from './contexts/notificationcontext';
 import './app.css';
 
 // Redirect component for assessment routes with parameters
@@ -46,7 +47,9 @@ function App() {
               element={
                 <UnifiedProtectedRoute>
                   <AssessmentProvider>
-                    <Layout />
+                    <NotificationProvider>
+                      <Layout />
+                    </NotificationProvider>
                   </AssessmentProvider>
                 </UnifiedProtectedRoute>
               } 

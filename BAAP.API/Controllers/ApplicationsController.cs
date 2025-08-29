@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using BAAP.API.Data;
 using BAAP.API.Models;
+using BAAP.API.Hubs;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BAAP.API.Controllers;
@@ -13,11 +15,16 @@ public class ApplicationsController : ControllerBase
 {
     private readonly BaapDbContext _context;
     private readonly ILogger<ApplicationsController> _logger;
+    private readonly IHubContext<NotificationHub> _hubContext;
 
-    public ApplicationsController(BaapDbContext context, ILogger<ApplicationsController> logger)
+    public ApplicationsController(
+        BaapDbContext context,
+        ILogger<ApplicationsController> logger,
+        IHubContext<NotificationHub> hubContext)
     {
         _context = context;
         _logger = logger;
+        _hubContext = hubContext;
     }
 
     // GET: api/applications

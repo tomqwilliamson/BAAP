@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using BAAP.API.Data;
 using BAAP.API.Models;
+using BAAP.API.Hubs;
 
 namespace BAAP.API.Controllers;
 
@@ -11,11 +13,16 @@ public class CloudReadinessController : ControllerBase
 {
     private readonly BaapDbContext _context;
     private readonly ILogger<CloudReadinessController> _logger;
+    private readonly IHubContext<NotificationHub> _hubContext;
 
-    public CloudReadinessController(BaapDbContext context, ILogger<CloudReadinessController> logger)
+    public CloudReadinessController(
+        BaapDbContext context,
+        ILogger<CloudReadinessController> logger,
+        IHubContext<NotificationHub> hubContext)
     {
         _context = context;
         _logger = logger;
+        _hubContext = hubContext;
     }
 
     // GET: api/cloudreadiness/assessment/{assessmentId}
@@ -73,6 +80,16 @@ public class CloudReadinessController : ControllerBase
             // Update assessment scores based on analysis
             assessment.CloudReadinessScore = analysisResult.OverallScore;
             await _context.SaveChangesAsync();
+
+            // Send notification
+            await _hubContext.Clients.All.SendAsync("ReceiveNotification", new
+            {
+                Type = "analysis",
+                Module = "cloud-readiness",
+                AssessmentName = assessment.Name,
+                Duration = "2s", // This should be calculated from actual duration
+                Timestamp = DateTime.UtcNow
+            });
 
             return Ok(analysisResult);
         }

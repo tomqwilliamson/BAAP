@@ -5,6 +5,7 @@ using System.Text;
 using BAAP.API.Data;
 using BAAP.API.Services;
 using BAAP.API.Middleware;
+using BAAP.API.Hubs;
 using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -102,6 +103,9 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddScoped<DataSeederService>();
 
+// Add SignalR for real-time notifications
+builder.Services.AddSignalR();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -181,6 +185,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Map SignalR hub
+app.MapHub<NotificationHub>("/hubs/notification");
 
 // Apply database migrations automatically on startup
 using (var scope = app.Services.CreateScope())
