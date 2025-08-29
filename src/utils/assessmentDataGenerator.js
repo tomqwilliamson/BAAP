@@ -593,33 +593,197 @@ const generateRecommendationsData = (assessmentId, assessment) => {
   // E-Commerce Platform (Assessment 1)
   if (assessmentId === 1) {
     return {
-      priority: [
+      strategicRecommendations: [
         { 
-          title: 'Optimize Payment Processing Performance', 
-          impact: 'High', 
-          effort: 'Medium', 
-          category: 'Performance',
-          description: 'Payment processing latency causes cart abandonment. Implement caching and optimize database queries.',
-          estimatedSavings: 45000,
-          timeline: '3 months'
-        },
-        { 
-          title: 'Modernize Customer Portal UI/UX', 
+          id: 'ecom-str-1',
+          title: 'Cloud-Native Architecture Migration', 
+          description: 'Migrate core e-commerce platform from monolithic architecture to cloud-native microservices for improved scalability, reliability, and development velocity.',
           impact: 'High', 
           effort: 'High', 
-          category: 'User Experience',
-          description: 'Legacy customer portal affects user satisfaction. Migrate to modern React-based SPA.',
-          estimatedSavings: 85000,
-          timeline: '6 months'
+          priority: 'Critical',
+          category: 'Strategic',
+          timeline: '12-18 months',
+          investment: '$450,000',
+          estimatedROI: '280%',
+          benefits: [
+            'Improved system scalability and performance',
+            'Reduced operational costs by 35%',
+            'Faster time-to-market for new features',
+            'Enhanced disaster recovery capabilities',
+            'Better resource utilization and cost control'
+          ],
+          risks: [
+            'Complex migration requiring careful planning',
+            'Temporary performance impact during transition',
+            'Need for team upskilling on cloud technologies',
+            'Integration challenges with existing systems'
+          ]
         },
         { 
-          title: 'Implement Auto-scaling', 
+          id: 'ecom-str-2',
+          title: 'Advanced Security Implementation', 
+          description: 'Implement comprehensive security framework including zero-trust architecture, advanced threat detection, and automated compliance monitoring.',
+          impact: 'Critical', 
+          effort: 'High', 
+          priority: 'Critical',
+          category: 'Security',
+          timeline: '6-9 months',
+          investment: '$280,000',
+          estimatedROI: '195%',
+          benefits: [
+            'Reduced security incidents by 85%',
+            'Automated compliance reporting',
+            'Enhanced customer trust and brand protection',
+            'Proactive threat detection and response',
+            'Reduced manual security monitoring effort'
+          ],
+          risks: [
+            'Initial performance overhead from security controls',
+            'User experience changes requiring training',
+            'Integration complexity with existing systems',
+            'Potential false positives requiring tuning'
+          ]
+        },
+        { 
+          id: 'ecom-str-3',
+          title: 'Modern CI/CD Pipeline', 
+          description: 'Establish enterprise-grade CI/CD pipeline with automated testing, security scanning, and deployment orchestration for faster, safer releases.',
+          impact: 'High', 
+          effort: 'Medium', 
+          priority: 'High',
+          category: 'Infrastructure',
+          timeline: '4-6 months',
+          investment: '$150,000',
+          estimatedROI: '240%',
+          benefits: [
+            'Deployment frequency increased by 500%',
+            'Lead time reduced from weeks to hours',
+            'Deployment failure rate reduced by 90%',
+            'Automated quality gates and compliance checks',
+            'Improved developer productivity and satisfaction'
+          ],
+          risks: [
+            'Initial learning curve for development teams',
+            'Potential pipeline complexity requiring maintenance',
+            'Dependency on third-party tools and services',
+            'Need for cultural shift in deployment practices'
+          ]
+        }
+      ],
+      tacticalRecommendations: [
+        { 
+          id: 'ecom-tac-1',
+          title: 'Database Performance Optimization', 
+          description: 'Optimize database queries, implement intelligent caching, and establish read replicas for improved application performance.',
+          impact: 'High', 
+          effort: 'Medium', 
+          priority: 'High',
+          category: 'Performance',
+          timeline: '3-4 months',
+          investment: '$85,000',
+          estimatedROI: '180%',
+          benefits: [
+            'Application response time improved by 60%',
+            'Database query optimization reducing server load',
+            'Better user experience during peak traffic',
+            'Reduced infrastructure costs through efficiency'
+          ],
+          risks: [
+            'Temporary performance impact during optimization',
+            'Potential data consistency challenges with caching',
+            'Need for careful testing of query changes'
+          ]
+        },
+        { 
+          id: 'ecom-tac-2',
+          title: 'API Gateway Implementation', 
+          description: 'Deploy enterprise API gateway for centralized API management, security, and monitoring across all services.',
+          impact: 'Medium', 
+          effort: 'Medium', 
+          priority: 'Medium',
+          category: 'Architecture',
+          timeline: '2-3 months',
+          investment: '$65,000',
+          estimatedROI: '150%',
+          benefits: [
+            'Centralized API security and rate limiting',
+            'Improved API monitoring and analytics',
+            'Simplified API versioning and management',
+            'Better integration with third-party services'
+          ],
+          risks: [
+            'Single point of failure requiring high availability',
+            'Additional latency from gateway processing',
+            'Integration complexity with existing APIs'
+          ]
+        }
+      ],
+      quickWins: [
+        { 
+          id: 'ecom-qw-1',
+          title: 'Enable Application Monitoring', 
+          description: 'Implement comprehensive application performance monitoring with real-time alerting and dashboards.',
           impact: 'Medium', 
           effort: 'Low', 
-          category: 'Scalability',
-          description: 'Handle traffic spikes during sales events with cloud auto-scaling capabilities.',
-          estimatedSavings: 25000,
-          timeline: '2 months'
+          priority: 'Medium',
+          category: 'Operations',
+          timeline: '2-3 weeks',
+          investment: '$15,000',
+          estimatedROI: '300%',
+          benefits: [
+            'Proactive issue detection and resolution',
+            'Improved mean time to recovery (MTTR)',
+            'Better visibility into application performance',
+            'Data-driven optimization decisions'
+          ],
+          risks: [
+            'Alert fatigue if not properly configured',
+            'Initial overhead in dashboard setup'
+          ]
+        },
+        { 
+          id: 'ecom-qw-2',
+          title: 'Implement CDN for Static Assets', 
+          description: 'Deploy Content Delivery Network to improve page load times and reduce server load for static content.',
+          impact: 'Medium', 
+          effort: 'Low', 
+          priority: 'Low',
+          category: 'Performance',
+          timeline: '1-2 weeks',
+          investment: '$8,000',
+          estimatedROI: '250%',
+          benefits: [
+            'Page load time reduction of 40%',
+            'Reduced bandwidth costs',
+            'Improved global user experience',
+            'Decreased server load during traffic spikes'
+          ],
+          risks: [
+            'Cache invalidation complexity',
+            'Additional service dependency'
+          ]
+        },
+        { 
+          id: 'ecom-qw-3',
+          title: 'Automated Backup Verification', 
+          description: 'Implement automated testing of backup integrity and recovery procedures to ensure data protection.',
+          impact: 'High', 
+          effort: 'Low', 
+          priority: 'High',
+          category: 'Security',
+          timeline: '1 week',
+          investment: '$5,000',
+          estimatedROI: '500%',
+          benefits: [
+            'Guaranteed backup reliability',
+            'Reduced recovery time objectives (RTO)',
+            'Compliance with data protection requirements',
+            'Peace of mind for disaster recovery'
+          ],
+          risks: [
+            'Resource consumption during backup testing',
+            'Potential false alarms requiring investigation'
+          ]
         }
       ],
       businessCase: {
@@ -639,33 +803,199 @@ const generateRecommendationsData = (assessmentId, assessment) => {
   // Financial Services Security (Assessment 2)
   else if (assessmentId === 2) {
     return {
-      priority: [
+      strategicRecommendations: [
         { 
-          title: 'Implement Modern Authentication', 
+          id: 'fin-str-1',
+          title: 'Modern Authentication & Identity Management', 
+          description: 'Replace legacy authentication systems with enterprise-grade identity management including MFA, OAuth 2.0, and SAML for regulatory compliance and enhanced security.',
           impact: 'Critical', 
           effort: 'High', 
+          priority: 'Critical',
           category: 'Security',
-          description: 'Replace legacy authentication with MFA and OAuth 2.0 to meet regulatory requirements.',
-          estimatedSavings: 125000,
-          timeline: '8 months'
+          timeline: '8-12 months',
+          investment: '$380,000',
+          estimatedROI: '165%',
+          benefits: [
+            'Regulatory compliance with modern banking standards',
+            'Reduced security incidents by 75%',
+            'Improved user experience with SSO',
+            'Centralized access control and audit trails',
+            'Support for mobile and API authentication'
+          ],
+          risks: [
+            'Complex integration with legacy mainframe systems',
+            'User training required for new authentication methods',
+            'Potential service disruption during migration',
+            'Regulatory approval process for changes'
+          ]
         },
         { 
-          title: 'Establish API Gateway', 
+          id: 'fin-str-2',
+          title: 'Mainframe Modernization Strategy', 
+          description: 'Implement phased approach to modernize core banking systems while maintaining regulatory compliance and operational stability.',
+          impact: 'High', 
+          effort: 'High', 
+          priority: 'High',
+          category: 'Strategic',
+          timeline: '18-24 months',
+          investment: '$1,200,000',
+          estimatedROI: '145%',
+          benefits: [
+            'Reduced mainframe operational costs by 45%',
+            'Improved system flexibility and agility',
+            'Enhanced disaster recovery capabilities',
+            'Better integration with modern systems',
+            'Reduced dependency on specialized COBOL skills'
+          ],
+          risks: [
+            'High complexity requiring extensive testing',
+            'Regulatory scrutiny and approval requirements',
+            'Risk of service disruption to critical operations',
+            'Significant resource investment required'
+          ]
+        },
+        { 
+          id: 'fin-str-3',
+          title: 'Comprehensive Fraud Detection System', 
+          description: 'Deploy AI-powered fraud detection with real-time transaction monitoring and automated response capabilities.',
+          impact: 'Critical', 
+          effort: 'Medium', 
+          priority: 'Critical',
+          category: 'Security',
+          timeline: '6-8 months',
+          investment: '$320,000',
+          estimatedROI: '280%',
+          benefits: [
+            'Fraud detection accuracy improved by 85%',
+            'Reduced false positives by 60%',
+            'Real-time transaction monitoring and blocking',
+            'Automated compliance reporting',
+            'Enhanced customer protection and trust'
+          ],
+          risks: [
+            'Model training requiring historical fraud data',
+            'Potential for false positives impacting customers',
+            'Integration complexity with existing systems',
+            'Ongoing model maintenance and tuning required'
+          ]
+        }
+      ],
+      tacticalRecommendations: [
+        { 
+          id: 'fin-tac-1',
+          title: 'API Gateway for Legacy Integration', 
+          description: 'Implement secure API gateway to create modern interface layer for mainframe systems and enable gradual modernization.',
           impact: 'High', 
           effort: 'Medium', 
+          priority: 'High',
           category: 'Architecture',
-          description: 'Create secure API layer to reduce direct mainframe access and enable gradual modernization.',
-          estimatedSavings: 95000,
-          timeline: '4 months'
+          timeline: '4-5 months',
+          investment: '$180,000',
+          estimatedROI: '190%',
+          benefits: [
+            'Reduced direct mainframe access by 70%',
+            'Improved API security and rate limiting',
+            'Enhanced monitoring and analytics',
+            'Simplified integration for new applications',
+            'Better scalability for peak transaction periods'
+          ],
+          risks: [
+            'Additional latency from gateway processing',
+            'Single point of failure requiring redundancy',
+            'Complex mapping of legacy data formats'
+          ]
         },
         { 
-          title: 'Deploy Advanced Monitoring', 
+          id: 'fin-tac-2',
+          title: 'Enhanced Regulatory Reporting', 
+          description: 'Automate regulatory reporting processes with real-time data collection and compliance validation.',
           impact: 'High', 
           effort: 'Medium', 
+          priority: 'High',
+          category: 'Compliance',
+          timeline: '3-4 months',
+          investment: '$150,000',
+          estimatedROI: '220%',
+          benefits: [
+            'Automated generation of regulatory reports',
+            'Reduced compliance processing time by 80%',
+            'Improved accuracy and consistency',
+            'Real-time compliance monitoring',
+            'Reduced manual effort and errors'
+          ],
+          risks: [
+            'Regulatory changes requiring system updates',
+            'Data quality issues affecting report accuracy',
+            'Integration challenges with multiple data sources'
+          ]
+        }
+      ],
+      quickWins: [
+        { 
+          id: 'fin-qw-1',
+          title: 'Advanced Security Monitoring', 
+          description: 'Deploy comprehensive security monitoring with SIEM integration for real-time threat detection.',
+          impact: 'High', 
+          effort: 'Low', 
+          priority: 'High',
+          category: 'Security',
+          timeline: '3-4 weeks',
+          investment: '$35,000',
+          estimatedROI: '400%',
+          benefits: [
+            'Real-time security threat detection',
+            'Automated incident response workflows',
+            'Compliance audit trail generation',
+            'Reduced mean time to threat detection'
+          ],
+          risks: [
+            'Alert fatigue from excessive notifications',
+            'Initial tuning period for rule optimization'
+          ]
+        },
+        { 
+          id: 'fin-qw-2',
+          title: 'Database Query Optimization', 
+          description: 'Optimize critical database queries to improve transaction processing performance during peak hours.',
+          impact: 'Medium', 
+          effort: 'Low', 
+          priority: 'Medium',
+          category: 'Performance',
+          timeline: '2-3 weeks',
+          investment: '$25,000',
+          estimatedROI: '320%',
+          benefits: [
+            'Transaction processing speed improved by 40%',
+            'Reduced database server load',
+            'Better customer experience during peak times',
+            'Lower infrastructure costs through efficiency'
+          ],
+          risks: [
+            'Temporary performance impact during optimization',
+            'Need for thorough testing in production-like environment'
+          ]
+        },
+        { 
+          id: 'fin-qw-3',
+          title: 'Automated Backup Testing', 
+          description: 'Implement automated testing of backup and recovery procedures to ensure data protection and regulatory compliance.',
+          impact: 'High', 
+          effort: 'Low', 
+          priority: 'High',
           category: 'Operations',
-          description: 'Implement comprehensive monitoring for regulatory compliance and fraud detection.',
-          estimatedSavings: 75000,
-          timeline: '3 months'
+          timeline: '1-2 weeks',
+          investment: '$15,000',
+          estimatedROI: '500%',
+          benefits: [
+            'Guaranteed backup reliability and compliance',
+            'Reduced recovery time objectives (RTO)',
+            'Automated compliance documentation',
+            'Peace of mind for regulatory audits'
+          ],
+          risks: [
+            'Resource consumption during backup testing',
+            'Need for careful scheduling to avoid business impact'
+          ]
         }
       ],
       businessCase: {
@@ -685,33 +1015,199 @@ const generateRecommendationsData = (assessmentId, assessment) => {
   // Cloud Migration Readiness (Assessment 3)
   else {
     return {
-      priority: [
+      strategicRecommendations: [
         { 
-          title: 'Implement Service Mesh', 
-          impact: 'Medium', 
-          effort: 'Medium', 
-          category: 'Architecture',
-          description: 'Deploy Istio service mesh for advanced traffic management, security, and observability.',
-          estimatedSavings: 35000,
-          timeline: '4 months'
-        },
-        { 
-          title: 'Multi-Region Deployment', 
+          id: 'cloud-str-1',
+          title: 'Multi-Region High Availability Architecture', 
+          description: 'Implement multi-region deployment strategy with automated failover and disaster recovery capabilities for global scale and resilience.',
           impact: 'High', 
           effort: 'High', 
-          category: 'Reliability',
-          description: 'Establish multi-region deployment for disaster recovery and global performance.',
-          estimatedSavings: 65000,
-          timeline: '6 months'
+          priority: 'High',
+          category: 'Strategic',
+          timeline: '6-9 months',
+          investment: '$320,000',
+          estimatedROI: '185%',
+          benefits: [
+            '99.99% uptime with automated failover',
+            'Global performance optimization',
+            'Comprehensive disaster recovery capabilities',
+            'Reduced latency for international users',
+            'Enhanced business continuity assurance'
+          ],
+          risks: [
+            'Increased complexity in deployment and management',
+            'Higher operational costs for multi-region setup',
+            'Data consistency challenges across regions',
+            'Network latency considerations for synchronization'
+          ]
         },
         { 
-          title: 'Advanced Observability', 
+          id: 'cloud-str-2',
+          title: 'Advanced Service Mesh Implementation', 
+          description: 'Deploy comprehensive service mesh architecture with Istio for advanced traffic management, security policies, and observability.',
+          impact: 'Medium', 
+          effort: 'Medium', 
+          priority: 'Medium',
+          category: 'Infrastructure',
+          timeline: '4-6 months',
+          investment: '$180,000',
+          estimatedROI: '155%',
+          benefits: [
+            'Centralized traffic management and routing',
+            'Enhanced security with mutual TLS',
+            'Improved observability and monitoring',
+            'Simplified canary deployments',
+            'Better microservices governance'
+          ],
+          risks: [
+            'Additional complexity in service configuration',
+            'Performance overhead from proxy layers',
+            'Learning curve for development teams',
+            'Potential debugging challenges'
+          ]
+        },
+        { 
+          id: 'cloud-str-3',
+          title: 'AI-Powered Optimization Platform', 
+          description: 'Implement AI-driven resource optimization and predictive scaling for cost efficiency and performance optimization.',
+          impact: 'Medium', 
+          effort: 'Medium', 
+          priority: 'Medium',
+          category: 'Strategic',
+          timeline: '5-7 months',
+          investment: '$240,000',
+          estimatedROI: '210%',
+          benefits: [
+            'Automated resource optimization reducing costs by 30%',
+            'Predictive scaling based on usage patterns',
+            'Intelligent workload placement',
+            'Proactive performance issue detection',
+            'Cost optimization recommendations'
+          ],
+          risks: [
+            'Model accuracy dependent on historical data',
+            'Initial tuning period for optimization algorithms',
+            'Integration complexity with existing monitoring',
+            'Potential over-optimization affecting performance'
+          ]
+        }
+      ],
+      tacticalRecommendations: [
+        { 
+          id: 'cloud-tac-1',
+          title: 'Enhanced Observability Stack', 
+          description: 'Implement comprehensive observability with distributed tracing, advanced metrics, and intelligent alerting for proactive issue resolution.',
           impact: 'Medium', 
           effort: 'Low', 
+          priority: 'Medium',
           category: 'Operations',
-          description: 'Enhance monitoring with distributed tracing and advanced analytics for proactive issue resolution.',
-          estimatedSavings: 20000,
-          timeline: '2 months'
+          timeline: '2-3 months',
+          investment: '$85,000',
+          estimatedROI: '180%',
+          benefits: [
+            'Complete visibility into distributed systems',
+            'Faster root cause analysis and resolution',
+            'Proactive performance issue detection',
+            'Improved system reliability metrics',
+            'Better capacity planning insights'
+          ],
+          risks: [
+            'Data volume management for tracing',
+            'Potential performance impact from instrumentation',
+            'Tool complexity requiring training'
+          ]
+        },
+        { 
+          id: 'cloud-tac-2',
+          title: 'Chaos Engineering Implementation', 
+          description: 'Establish chaos engineering practices to test system resilience and identify failure modes proactively.',
+          impact: 'Medium', 
+          effort: 'Medium', 
+          priority: 'Low',
+          category: 'Reliability',
+          timeline: '3-4 months',
+          investment: '$95,000',
+          estimatedROI: '165%',
+          benefits: [
+            'Improved system resilience and reliability',
+            'Proactive identification of failure modes',
+            'Enhanced confidence in system behavior',
+            'Better incident response preparedness',
+            'Reduced mean time to recovery (MTTR)'
+          ],
+          risks: [
+            'Potential service disruption during testing',
+            'Need for careful test planning and execution',
+            'Cultural resistance to intentional failure introduction'
+          ]
+        }
+      ],
+      quickWins: [
+        { 
+          id: 'cloud-qw-1',
+          title: 'Cost Optimization Dashboard', 
+          description: 'Implement real-time cost monitoring and optimization dashboard with automated recommendations.',
+          impact: 'Medium', 
+          effort: 'Low', 
+          priority: 'Medium',
+          category: 'Cost',
+          timeline: '2-3 weeks',
+          investment: '$18,000',
+          estimatedROI: '350%',
+          benefits: [
+            'Real-time visibility into cloud spending',
+            'Automated cost optimization recommendations',
+            'Resource rightsizing suggestions',
+            'Budget alerts and forecasting'
+          ],
+          risks: [
+            'Data accuracy dependent on proper tagging',
+            'Initial setup complexity for cost allocation'
+          ]
+        },
+        { 
+          id: 'cloud-qw-2',
+          title: 'Automated Security Scanning', 
+          description: 'Implement automated security scanning in CI/CD pipeline for container images and infrastructure code.',
+          impact: 'High', 
+          effort: 'Low', 
+          priority: 'High',
+          category: 'Security',
+          timeline: '1-2 weeks',
+          investment: '$12,000',
+          estimatedROI: '400%',
+          benefits: [
+            'Automated vulnerability detection',
+            'Security compliance validation',
+            'Prevention of security issues in production',
+            'Reduced manual security review effort'
+          ],
+          risks: [
+            'Potential false positives requiring review',
+            'Integration complexity with existing pipeline'
+          ]
+        },
+        { 
+          id: 'cloud-qw-3',
+          title: 'Performance Baseline Establishment', 
+          description: 'Establish comprehensive performance baselines and SLI/SLO definitions for all critical services.',
+          impact: 'Medium', 
+          effort: 'Low', 
+          priority: 'Medium',
+          category: 'Performance',
+          timeline: '1-2 weeks',
+          investment: '$8,000',
+          estimatedROI: '300%',
+          benefits: [
+            'Clear performance expectations and targets',
+            'Improved performance regression detection',
+            'Better capacity planning foundation',
+            'Enhanced service reliability tracking'
+          ],
+          risks: [
+            'Initial effort to define appropriate SLIs/SLOs',
+            'Need for ongoing baseline maintenance'
+          ]
         }
       ],
       businessCase: {

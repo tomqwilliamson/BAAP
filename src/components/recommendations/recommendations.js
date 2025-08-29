@@ -14,7 +14,7 @@ import {
   Download, FileText, BarChart3, CheckCircle, AlertTriangle, DollarSign,
   Clock, Users, Settings, Monitor, Brain, RefreshCw, ArrowRight, 
   Award, Lightbulb, ChevronDown, ChevronUp, Printer, FileSpreadsheet,
-  Building, Calendar, Layers, Code, ExternalLink, TrendingDown
+  Building, Calendar, Layers, Code, ExternalLink, TrendingDown, AlertCircle
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -797,6 +797,123 @@ const Recommendations = () => {
 
   const DetailedRecommendations = () => (
     <div className="space-y-8">
+      {/* Recommendations Overview Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+          <div className="flex items-center">
+            <Target className="h-8 w-8 text-blue-600 mr-3" />
+            <div>
+              <p className="text-sm font-medium text-gray-600">Strategic Actions</p>
+              <p className="text-2xl font-bold text-gray-900">{(comprehensiveResults.strategicRecommendations || []).length}</p>
+              <p className="text-xs text-gray-500">High-impact initiatives</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
+          <div className="flex items-center">
+            <Zap className="h-8 w-8 text-yellow-600 mr-3" />
+            <div>
+              <p className="text-sm font-medium text-gray-600">Quick Wins</p>
+              <p className="text-2xl font-bold text-gray-900">{(comprehensiveResults.quickWins || []).length}</p>
+              <p className="text-xs text-gray-500">Low effort, high impact</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+          <div className="flex items-center">
+            <DollarSign className="h-8 w-8 text-green-600 mr-3" />
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Investment</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ${((comprehensiveResults.strategicRecommendations || [])
+                  .reduce((sum, rec) => sum + (parseInt(rec.investment?.replace(/[^0-9]/g, '')) || 0), 0) / 1000).toFixed(0)}K
+              </p>
+              <p className="text-xs text-gray-500">Estimated cost</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+          <div className="flex items-center">
+            <TrendingUp className="h-8 w-8 text-purple-600 mr-3" />
+            <div>
+              <p className="text-sm font-medium text-gray-600">Avg ROI</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {Math.round((comprehensiveResults.strategicRecommendations || [])
+                  .reduce((sum, rec) => sum + (parseInt(rec.estimatedROI?.replace('%', '')) || 0), 0) / 
+                  Math.max((comprehensiveResults.strategicRecommendations || []).length, 1))}%
+              </p>
+              <p className="text-xs text-gray-500">Expected return</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recommendations by Category Chart */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-lg font-semibold mb-6">Recommendations by Category</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Security', value: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Security').length, color: '#EF4444' },
+                    { name: 'Infrastructure', value: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Infrastructure').length, color: '#3B82F6' },
+                    { name: 'Strategic', value: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Strategic').length, color: '#10B981' },
+                    { name: 'Quick Wins', value: (comprehensiveResults?.quickWins || []).length, color: '#F59E0B' }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  dataKey="value"
+                  label={({name, value}) => `${name}: ${value}`}
+                >
+                  {[
+                    { name: 'Security', value: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Security').length, color: '#EF4444' },
+                    { name: 'Infrastructure', value: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Infrastructure').length, color: '#3B82F6' },
+                    { name: 'Strategic', value: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Strategic').length, color: '#10B981' },
+                    { name: 'Quick Wins', value: (comprehensiveResults?.quickWins || []).length, color: '#F59E0B' }
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900">Priority Distribution</h4>
+            {['Critical', 'High', 'Medium', 'Low'].map(priority => {
+              const count = (comprehensiveResults?.strategicRecommendations || []).filter(r => r.priority === priority).length;
+              const total = Math.max((comprehensiveResults?.strategicRecommendations || []).length, 1);
+              const percentage = Math.round((count / total) * 100);
+              return (
+                <div key={priority} className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">{priority} Priority</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          priority === 'Critical' ? 'bg-red-500' : 
+                          priority === 'High' ? 'bg-orange-500' : 
+                          priority === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">{count}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Strategic Recommendations */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-semibold mb-6 flex items-center">
@@ -895,56 +1012,222 @@ const Recommendations = () => {
       {
         phase: 'Phase 1: Foundation (0-3 months)',
         items: comprehensiveResults?.quickWins || [],
-        color: 'blue'
+        color: 'blue',
+        description: 'Quick wins and foundational improvements',
+        totalCost: (comprehensiveResults?.quickWins || []).reduce((sum, item) => sum + (parseInt(item.investment?.replace(/[^0-9]/g, '')) || 50000), 0),
+        expectedROI: '150%',
+        riskLevel: 'Low'
       },
       {
         phase: 'Phase 2: Security & Compliance (3-9 months)',
         items: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Security'),
-        color: 'red'
+        color: 'red',
+        description: 'Critical security vulnerabilities and compliance gaps',
+        totalCost: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Security')
+          .reduce((sum, item) => sum + (parseInt(item.investment?.replace(/[^0-9]/g, '')) || 200000), 0),
+        expectedROI: '125%',
+        riskLevel: 'Medium'
       },
       {
         phase: 'Phase 3: Infrastructure Modernization (6-15 months)',
         items: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Strategic'),
-        color: 'green'
+        color: 'green',
+        description: 'Core infrastructure and architecture transformation',
+        totalCost: (comprehensiveResults?.strategicRecommendations || []).filter(r => r.category === 'Strategic')
+          .reduce((sum, item) => sum + (parseInt(item.investment?.replace(/[^0-9]/g, '')) || 500000), 0),
+        expectedROI: '200%',
+        riskLevel: 'High'
       },
       {
         phase: 'Phase 4: Optimization (12-18 months)',
         items: comprehensiveResults?.tacticalRecommendations || [],
-        color: 'purple'
+        color: 'purple',
+        description: 'Performance optimization and continuous improvement',
+        totalCost: (comprehensiveResults?.tacticalRecommendations || [])
+          .reduce((sum, item) => sum + (parseInt(item.investment?.replace(/[^0-9]/g, '')) || 100000), 0),
+        expectedROI: '175%',
+        riskLevel: 'Low'
       }
     ];
 
+    const totalInvestment = phases.reduce((sum, phase) => sum + phase.totalCost, 0);
+    const totalItems = phases.reduce((sum, phase) => sum + (phase.items || []).length, 0);
+
     return (
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-semibold mb-6">Implementation Roadmap</h3>
-        <div className="space-y-8">
+      <div className="space-y-8">
+        {/* Roadmap Overview Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500">
+            <div className="flex items-center">
+              <Calendar className="h-8 w-8 text-indigo-600 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Duration</p>
+                <p className="text-2xl font-bold text-gray-900">18 months</p>
+                <p className="text-xs text-gray-500">End-to-end timeline</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+            <div className="flex items-center">
+              <Target className="h-8 w-8 text-blue-600 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Initiatives</p>
+                <p className="text-2xl font-bold text-gray-900">{totalItems}</p>
+                <p className="text-xs text-gray-500">Across all phases</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+            <div className="flex items-center">
+              <DollarSign className="h-8 w-8 text-green-600 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Investment</p>
+                <p className="text-2xl font-bold text-gray-900">${(totalInvestment / 1000000).toFixed(1)}M</p>
+                <p className="text-xs text-gray-500">Estimated cost</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+            <div className="flex items-center">
+              <TrendingUp className="h-8 w-8 text-purple-600 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Expected ROI</p>
+                <p className="text-2xl font-bold text-gray-900">165%</p>
+                <p className="text-xs text-gray-500">Weighted average</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Phase Investment Timeline Chart */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold mb-6">Investment Timeline by Phase</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={phases.map(phase => ({
+                name: phase.phase.split(':')[0],
+                investment: phase.totalCost / 1000000,
+                items: (phase.items || []).length
+              }))}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis label={{ value: 'Investment ($M)', angle: -90, position: 'insideLeft' }} />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    name === 'investment' ? `$${value.toFixed(1)}M` : value,
+                    name === 'investment' ? 'Investment' : 'Items'
+                  ]}
+                />
+                <Bar dataKey="investment" fill="#3B82F6" name="investment" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Phase Details */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-xl font-semibold mb-6">Implementation Phases</h3>
+          <div className="space-y-8">
           {phases.map((phase, index) => (
-            <div key={index} className="relative">
-              <div className="flex items-center mb-4">
-                <div className={`w-4 h-4 bg-${phase.color}-500 rounded-full mr-4`}></div>
-                <h4 className="text-lg font-semibold text-gray-900">{phase.phase}</h4>
-                <span className="ml-3 px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
-                  {(phase.items || []).length} items
-                </span>
-              </div>
-              <div className="ml-8 space-y-3">
-                {(phase.items || []).map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <div className="font-medium text-gray-900">{item.title}</div>
-                      <div className="text-sm text-gray-600">{item.description || 'See detailed recommendations above'}</div>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {item.timeline || item.investment || 'TBD'}
-                    </div>
+            <div key={index} className="relative border border-gray-200 rounded-lg p-6">
+              {/* Phase Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className={`w-6 h-6 bg-${phase.color}-500 rounded-full mr-4 flex items-center justify-center`}>
+                    <span className="text-white text-sm font-bold">{index + 1}</span>
                   </div>
-                ))}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900">{phase.phase}</h4>
+                    <p className="text-sm text-gray-600">{phase.description}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900">${(phase.totalCost / 1000000).toFixed(1)}M</div>
+                  <div className="text-sm text-gray-500">Total Investment</div>
+                </div>
               </div>
-              {index < phases.length - 1 && (
-                <div className="absolute left-2 top-8 w-0.5 h-8 bg-gray-300"></div>
+
+              {/* Phase Metrics */}
+              <div className="grid grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-gray-900">{(phase.items || []).length}</div>
+                  <div className="text-xs text-gray-500">Initiatives</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-green-600">{phase.expectedROI}</div>
+                  <div className="text-xs text-gray-500">Expected ROI</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-lg font-bold ${
+                    phase.riskLevel === 'Low' ? 'text-green-600' :
+                    phase.riskLevel === 'Medium' ? 'text-yellow-600' : 'text-red-600'
+                  }`}>
+                    {phase.riskLevel}
+                  </div>
+                  <div className="text-xs text-gray-500">Risk Level</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-blue-600">
+                    {(() => {
+                      const match = phase.phase.match(/\(([^)]+)\)/);
+                      return match ? match[1] : 'TBD';
+                    })()}
+                  </div>
+                  <div className="text-xs text-gray-500">Duration</div>
+                </div>
+              </div>
+
+              {/* Phase Items */}
+              <div className="space-y-3">
+                <h5 className="font-medium text-gray-900 mb-3">Key Initiatives</h5>
+                {(phase.items || []).length > 0 ? (
+                  (phase.items || []).map(item => (
+                    <div key={item.id} className="flex items-start justify-between p-4 bg-white border border-gray-100 rounded-lg">
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900 mb-1">{item.title}</div>
+                        <div className="text-sm text-gray-600 mb-2">{item.description || 'See detailed recommendations above'}</div>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <span>⏱ {item.timeline || 'TBD'}</span>
+                          <span>💰 {item.investment || 'TBD'}</span>
+                          {item.estimatedROI && <span>📈 {item.estimatedROI} ROI</span>}
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          item.priority === 'Critical' ? 'bg-red-100 text-red-800' :
+                          item.priority === 'High' ? 'bg-orange-100 text-orange-800' :
+                          item.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {item.priority || 'Medium'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Target className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p>No specific initiatives defined for this phase yet</p>
+                    <p className="text-sm">Items will be populated based on assessment results</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Phase Dependencies */}
+              {index > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    <span>Depends on completion of {phases[index - 1].phase.split(':')[0]}</span>
+                  </div>
+                </div>
               )}
             </div>
           ))}
+          </div>
         </div>
       </div>
     );
