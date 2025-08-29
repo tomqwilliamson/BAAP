@@ -2,8 +2,8 @@
 # Run this script to build and create a ZIP file for manual upload
 
 param(
-    [string]$AppName = "",
-    [string]$ResourceGroup = ""
+    [string]$AppName = "baap-dev-api-wsnmnw",
+    [string]$ResourceGroup = "rg-baap-dev"
 )
 
 Write-Host "🚀 Building BAAP API for manual deployment..." -ForegroundColor Yellow
