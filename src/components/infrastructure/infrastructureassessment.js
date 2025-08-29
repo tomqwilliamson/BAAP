@@ -443,6 +443,212 @@ function InfrastructureAssessment() {
                 </div>
               </div>
             </div>
+
+            {/* Enhanced Azure Migrate Metrics */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Migration Readiness Breakdown */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Migration Readiness</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                      <span className="text-sm text-gray-700">Ready</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-sm font-medium text-gray-900 mr-2">{assessmentData.azureMigrate?.readiness?.ready || 45}%</span>
+                      <span className="text-xs text-gray-500">({Math.round(((assessmentData.azureMigrate?.servers?.length || 5) * (assessmentData.azureMigrate?.readiness?.ready || 45)) / 100)} servers)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                      <span className="text-sm text-gray-700">Conditional</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-sm font-medium text-gray-900 mr-2">{assessmentData.azureMigrate?.readiness?.conditional || 35}%</span>
+                      <span className="text-xs text-gray-500">({Math.round(((assessmentData.azureMigrate?.servers?.length || 5) * (assessmentData.azureMigrate?.readiness?.conditional || 35)) / 100)} servers)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                      <span className="text-sm text-gray-700">Not Ready</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-sm font-medium text-gray-900 mr-2">{assessmentData.azureMigrate?.readiness?.notReady || 20}%</span>
+                      <span className="text-xs text-gray-500">({Math.round(((assessmentData.azureMigrate?.servers?.length || 5) * (assessmentData.azureMigrate?.readiness?.notReady || 20)) / 100)} servers)</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Average Readiness</span>
+                    <span className="font-medium text-gray-900">{Math.round(((assessmentData.azureMigrate?.readiness?.ready || 45) + (assessmentData.azureMigrate?.readiness?.conditional || 35) * 0.5) / 1)}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Overview</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Avg CPU Usage</span>
+                    <div className="flex items-center">
+                      <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="bg-blue-600 h-2 rounded-full" style={{width: '67%'}}></div>
+                      </div>
+                      <span className="text-sm font-medium">67%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Avg Memory</span>
+                    <div className="flex items-center">
+                      <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="bg-yellow-500 h-2 rounded-full" style={{width: '84%'}}></div>
+                      </div>
+                      <span className="text-sm font-medium">84%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Storage Usage</span>
+                    <div className="flex items-center">
+                      <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{width: '58%'}}></div>
+                      </div>
+                      <span className="text-sm font-medium">58%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Network I/O</span>
+                    <div className="flex items-center">
+                      <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{width: '45%'}}></div>
+                      </div>
+                      <span className="text-sm font-medium">45%</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="text-xs text-gray-500">
+                    <span className="inline-flex items-center">
+                      <Activity className="h-3 w-3 mr-1" />
+                      Last 30 days average
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cost Breakdown */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Cost Analysis</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Current Monthly</span>
+                    <span className="text-lg font-bold text-gray-900">${(assessmentData.azureMigrate?.costs?.current || 12450).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Azure Estimate</span>
+                    <span className="text-lg font-bold text-blue-600">${(assessmentData.azureMigrate?.costs?.azureEstimate || 8960).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                    <span className="text-sm font-medium text-green-600">Monthly Savings</span>
+                    <span className="text-lg font-bold text-green-600">${(assessmentData.azureMigrate?.costs?.savings || 3490).toLocaleString()}</span>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-3">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-700">{Math.round(((assessmentData.azureMigrate?.costs?.savings || 3490) / (assessmentData.azureMigrate?.costs?.current || 12450)) * 100)}%</div>
+                      <div className="text-xs text-green-600">Cost Reduction</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Server Details and Migration Timeline */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Top Servers by Resource Usage */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Resource Consumers</h3>
+                <div className="space-y-3">
+                  {[
+                    { name: 'SQL-PROD-01', cpu: 89, memory: 92, storage: 78, readiness: 85 },
+                    { name: 'WEB-FARM-03', cpu: 76, memory: 83, storage: 65, readiness: 92 },
+                    { name: 'APP-SRV-02', cpu: 72, memory: 79, storage: 82, readiness: 78 },
+                    { name: 'FILE-SRV-01', cpu: 45, memory: 67, storage: 94, readiness: 88 },
+                    { name: 'DC-CTRL-01', cpu: 68, memory: 71, storage: 45, readiness: 65 }
+                  ].map((server, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        <Server className="h-5 w-5 text-gray-600 mr-3" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{server.name}</div>
+                          <div className="text-xs text-gray-500">CPU: {server.cpu}% | Mem: {server.memory}% | Storage: {server.storage}%</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${getReadinessColor(server.readiness)} text-white`}>
+                          {server.readiness}% Ready
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Migration Effort Estimation */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Migration Effort Estimation</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                      <div>
+                        <div className="text-sm font-medium">Low Effort</div>
+                        <div className="text-xs text-gray-500">Lift & Shift</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold">15 servers</div>
+                      <div className="text-xs text-gray-500">2-4 weeks</div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
+                      <div>
+                        <div className="text-sm font-medium">Medium Effort</div>
+                        <div className="text-xs text-gray-500">Refactor Required</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold">8 servers</div>
+                      <div className="text-xs text-gray-500">6-12 weeks</div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
+                      <div>
+                        <div className="text-sm font-medium">High Effort</div>
+                        <div className="text-xs text-gray-500">Rebuild/Replace</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold">3 servers</div>
+                      <div className="text-xs text-gray-500">16-24 weeks</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Estimated Timeline</span>
+                    <span className="font-medium text-gray-900">18-24 months</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

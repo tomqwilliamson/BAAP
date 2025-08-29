@@ -86,20 +86,20 @@ try {
     Write-Host "   API:      https://$ApiAppName.azurewebsites.net" -ForegroundColor White
     Write-Host ""
     Write-Host "📋 What was deployed:" -ForegroundColor Yellow
-    Write-Host "   ✅ New database models (Infrastructure, Database, Security, Compliance)" -ForegroundColor White
-    Write-Host "   ✅ Database migration with 4 new tables" -ForegroundColor White
-    Write-Host "   ✅ Data seeding for realistic sample data" -ForegroundColor White
-    Write-Host "   ✅ Fixed UI components (Data Governance, Infrastructure, Security)" -ForegroundColor White
-    Write-Host "   ✅ Enhanced recommendations with business case data" -ForegroundColor White
+    Write-Host "   * New database models (Infrastructure, Database, Security, Compliance)" -ForegroundColor White
+    Write-Host "   * Database migration with 4 new tables" -ForegroundColor White
+    Write-Host "   * Data seeding for realistic sample data" -ForegroundColor White
+    Write-Host "   * Fixed UI components (Data Governance, Infrastructure, Security)" -ForegroundColor White
+    Write-Host "   * Enhanced recommendations with business case data" -ForegroundColor White
     Write-Host ""
-    Write-Host "🔄 The application will automatically:" -ForegroundColor Yellow
-    Write-Host "   • Apply database migrations on startup" -ForegroundColor White
-    Write-Host "   • Seed detailed assessment data (in development)" -ForegroundColor White
-    Write-Host "   • Display rich, persistent data in all components" -ForegroundColor White
+    Write-Host "The application will automatically:" -ForegroundColor Yellow
+    Write-Host "   - Apply database migrations on startup" -ForegroundColor White
+    Write-Host "   - Seed detailed assessment data (in development)" -ForegroundColor White
+    Write-Host "   - Display rich, persistent data in all components" -ForegroundColor White
     Write-Host ""
     
     # Cleanup
-    Write-Host "🧹 Cleaning up deployment files..." -ForegroundColor White
+    Write-Host "Cleaning up deployment files..." -ForegroundColor White
     if (Test-Path $publishPath) {
         Remove-Item $publishPath -Recurse -Force
     }
@@ -119,4 +119,4 @@ try {
     exit 1
 }
 
-Write-Host "🚀 Deployment script completed successfully!" -ForegroundColor Green
+Write-Host "Deployment script completed successfully!" -ForegroundColor Green

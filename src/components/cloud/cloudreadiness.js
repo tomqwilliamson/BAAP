@@ -30,6 +30,65 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 // import { assessmentService } from '../../services/assessmentservice'; // Commented out since we're using mock data for now
 
+// Calculate cloud readiness scores from domain data
+const calculateCloudReadiness = (securityData, infrastructureData, devopsData, assessmentSpecificData) => {
+  // Calculate domain scores
+  const securityScore = Math.min(((securityData?.complianceScore || 70) + (100 - (securityData?.vulnerabilities?.critical || 0) * 10)), 100);
+  const infrastructureScore = infrastructureData?.cloudReadiness?.ready || 75;
+  const devopsScore = devopsData?.automationLevel || 80;
+  const dataScore = assessmentSpecificData?.dataReadiness || 70;
+  
+  const overallScore = Math.round((securityScore + infrastructureScore + devopsScore + dataScore) / 4);
+  
+  return {
+    crossDomainAnalysis: {
+      securityReadiness: securityScore,
+      infrastructureReadiness: infrastructureScore,
+      devopsReadiness: devopsScore,
+      dataReadiness: dataScore,
+      overallScore: overallScore
+    },
+    domainScores: {
+      security: {
+        score: securityScore,
+        vulnerabilities: securityData?.vulnerabilities || { critical: 0, high: 0, medium: 0, low: 0 },
+        complianceScore: securityData?.complianceScore || 70,
+        findings: securityData?.findings || []
+      },
+      infrastructure: {
+        score: infrastructureScore,
+        serversAssessed: infrastructureData?.servers?.length || 0,
+        cloudReadyServers: Math.round((infrastructureData?.servers?.length || 0) * (infrastructureScore / 100)),
+        migrationComplexity: infrastructureScore > 80 ? 'Low' : infrastructureScore > 60 ? 'Medium' : 'High'
+      },
+      devops: {
+        score: devopsScore,
+        automationLevel: devopsScore,
+        pipelineMaturity: devopsScore > 80 ? 'Advanced' : devopsScore > 60 ? 'Intermediate' : 'Basic'
+      }
+    },
+    manualInputs: {
+      organizationalReadiness: 50,
+      budgetAvailability: 50,
+      timelineFlexibility: 50,
+      skillsAvailability: 50,
+      businessSupport: 50
+    },
+    recommendations: [
+      'Address critical security vulnerabilities before migration',
+      'Implement infrastructure automation tools',
+      'Establish cloud governance framework',
+      'Train team on cloud technologies'
+    ],
+    analysis: {
+      summary: `Overall cloud readiness score: ${overallScore}%. ${overallScore > 80 ? 'Ready for migration' : overallScore > 60 ? 'Conditional readiness - address key gaps' : 'Significant preparation required before migration'}.`,
+      recommendations: '',
+      riskAssessment: '',
+      timeline: ''
+    }
+  };
+};
+
 const CloudReadiness = () => {
   const { currentAssessment } = useAssessment();
   const [currentView, setCurrentView] = useState('overview'); // overview, manual-input, analyze

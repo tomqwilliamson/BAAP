@@ -282,7 +282,7 @@ function DataArchitecture() {
           { name: 'postgres-query-analysis.log', type: 'log', size: '45.6 MB', uploadDate: '2024-01-14', status: 'Processed' },
           { name: 'mongodb-profiler-output.json', type: 'log', size: '18.9 MB', uploadDate: '2024-01-13', status: 'Processed' }
         ],
-        analysis: assessmentSpecificData?.analysis || {
+        analysis: {
           databaseAnalysis: '',
           migrationAnalysis: '',
           performanceAnalysis: '',

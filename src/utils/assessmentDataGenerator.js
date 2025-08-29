@@ -3,7 +3,7 @@
 
 export const generateAssessmentSpecificData = (assessment, component) => {
   if (!assessment?.id) {
-    return getEmptyData(component);
+    return null; // Return null instead of calling non-existent function
   }
 
   const assessmentId = assessment.id;
@@ -37,9 +37,16 @@ const generateInfrastructureData = (assessmentId, assessment) => {
   if (assessmentId === 1) {
     return {
       servers: [
-        { name: 'Web Server Cluster', type: 'IIS', count: 4, utilization: 78, readiness: 'High' },
-        { name: 'Database Servers', type: 'SQL Server', count: 2, utilization: 65, readiness: 'Medium' },
-        { name: 'Load Balancers', type: 'F5', count: 2, utilization: 45, readiness: 'High' }
+        { name: 'WEB-PROD-01', type: 'IIS', count: 1, cpu: 76, memory: 83, storage: 65, utilization: 78, readiness: 92, os: 'Windows Server 2019', cores: 8, ram: '32GB' },
+        { name: 'WEB-PROD-02', type: 'IIS', count: 1, cpu: 68, memory: 79, storage: 58, utilization: 75, readiness: 89, os: 'Windows Server 2019', cores: 8, ram: '32GB' },
+        { name: 'SQL-PROD-01', type: 'SQL Server', count: 1, cpu: 89, memory: 92, storage: 78, utilization: 85, readiness: 85, os: 'Windows Server 2019', cores: 16, ram: '128GB' },
+        { name: 'SQL-PROD-02', type: 'SQL Server', count: 1, cpu: 45, memory: 67, storage: 82, utilization: 65, readiness: 88, os: 'Windows Server 2019', cores: 16, ram: '128GB' },
+        { name: 'APP-SRV-01', type: '.NET App', count: 1, cpu: 72, memory: 79, storage: 82, utilization: 78, readiness: 78, os: 'Windows Server 2016', cores: 4, ram: '16GB' },
+        { name: 'APP-SRV-02', type: '.NET App', count: 1, cpu: 63, memory: 71, storage: 67, utilization: 67, readiness: 82, os: 'Windows Server 2016', cores: 4, ram: '16GB' },
+        { name: 'FILE-SRV-01', type: 'File Server', count: 1, cpu: 45, memory: 67, storage: 94, utilization: 69, readiness: 88, os: 'Windows Server 2012 R2', cores: 2, ram: '8GB' },
+        { name: 'DC-CTRL-01', type: 'Domain Controller', count: 1, cpu: 68, memory: 71, storage: 45, utilization: 61, readiness: 65, os: 'Windows Server 2016', cores: 2, ram: '8GB' },
+        { name: 'LB-PROD-01', type: 'Load Balancer', count: 1, cpu: 32, memory: 45, storage: 34, utilization: 37, readiness: 95, os: 'F5 BIG-IP', cores: 4, ram: '16GB' },
+        { name: 'MON-SRV-01', type: 'Monitoring', count: 1, cpu: 58, memory: 62, storage: 73, utilization: 64, readiness: 72, os: 'Windows Server 2016', cores: 4, ram: '16GB' }
       ],
       hosting: [
         { service: 'Web Hosting', current: 'On-Premises', recommended: 'Azure App Service', effort: 'Medium', cost: '$2,500/month' },
@@ -69,9 +76,16 @@ const generateInfrastructureData = (assessmentId, assessment) => {
   else if (assessmentId === 2) {
     return {
       servers: [
-        { name: 'Core Banking System', type: 'Mainframe', count: 1, utilization: 85, readiness: 'Low' },
-        { name: 'Web Services', type: 'Windows Server', count: 6, utilization: 72, readiness: 'Medium' },
-        { name: 'Database Cluster', type: 'Oracle RAC', count: 4, utilization: 68, readiness: 'Medium' }
+        { name: 'MAINFRAME-01', type: 'IBM z/OS', count: 1, cpu: 92, memory: 89, storage: 85, utilization: 89, readiness: 25, os: 'IBM z/OS 2.4', cores: 24, ram: '512GB' },
+        { name: 'WEB-DMZ-01', type: 'IIS', count: 1, cpu: 78, memory: 84, storage: 67, utilization: 76, readiness: 68, os: 'Windows Server 2016', cores: 8, ram: '64GB' },
+        { name: 'WEB-DMZ-02', type: 'IIS', count: 1, cpu: 72, memory: 79, storage: 61, utilization: 71, readiness: 72, os: 'Windows Server 2016', cores: 8, ram: '64GB' },
+        { name: 'ORA-CLUS-01', type: 'Oracle DB', count: 1, cpu: 88, memory: 91, storage: 92, utilization: 90, readiness: 58, os: 'Linux RHEL 7', cores: 32, ram: '256GB' },
+        { name: 'ORA-CLUS-02', type: 'Oracle DB', count: 1, cpu: 85, memory: 87, storage: 88, utilization: 87, readiness: 61, os: 'Linux RHEL 7', cores: 32, ram: '256GB' },
+        { name: 'APP-CORE-01', type: 'Java App', count: 1, cpu: 79, memory: 82, storage: 74, utilization: 78, readiness: 45, os: 'Linux RHEL 8', cores: 16, ram: '128GB' },
+        { name: 'APP-CORE-02', type: 'Java App', count: 1, cpu: 76, memory: 78, storage: 71, utilization: 75, readiness: 48, os: 'Linux RHEL 8', cores: 16, ram: '128GB' },
+        { name: 'SEC-PROXY-01', type: 'Security Gateway', count: 1, cpu: 45, memory: 52, storage: 38, utilization: 45, readiness: 82, os: 'Linux Ubuntu 20.04', cores: 4, ram: '16GB' },
+        { name: 'FILE-ARCH-01', type: 'Archive Server', count: 1, cpu: 34, memory: 41, storage: 96, utilization: 57, readiness: 78, os: 'Windows Server 2012 R2', cores: 4, ram: '32GB' },
+        { name: 'MON-SPLUNK-01', type: 'Log Analytics', count: 1, cpu: 67, memory: 73, storage: 84, utilization: 75, readiness: 85, os: 'Linux CentOS 7', cores: 8, ram: '64GB' }
       ],
       hosting: [
         { service: 'Core Banking', current: 'Mainframe', recommended: 'Hybrid Cloud', effort: 'High', cost: '$8,000/month' },
@@ -101,9 +115,16 @@ const generateInfrastructureData = (assessmentId, assessment) => {
   else {
     return {
       servers: [
-        { name: 'Application Servers', type: 'Linux', count: 8, utilization: 62, readiness: 'High' },
-        { name: 'Container Platform', type: 'Kubernetes', count: 12, utilization: 58, readiness: 'High' },
-        { name: 'Data Services', type: 'PostgreSQL', count: 3, utilization: 45, readiness: 'High' }
+        { name: 'K8S-MASTER-01', type: 'Kubernetes Master', count: 1, cpu: 65, memory: 78, storage: 58, utilization: 67, readiness: 95, os: 'Ubuntu 20.04 LTS', cores: 8, ram: '32GB' },
+        { name: 'K8S-MASTER-02', type: 'Kubernetes Master', count: 1, cpu: 62, memory: 75, storage: 55, utilization: 64, readiness: 95, os: 'Ubuntu 20.04 LTS', cores: 8, ram: '32GB' },
+        { name: 'K8S-NODE-01', type: 'Kubernetes Worker', count: 1, cpu: 78, memory: 82, storage: 67, utilization: 76, readiness: 92, os: 'Ubuntu 20.04 LTS', cores: 16, ram: '64GB' },
+        { name: 'K8S-NODE-02', type: 'Kubernetes Worker', count: 1, cpu: 74, memory: 79, storage: 63, utilization: 72, readiness: 92, os: 'Ubuntu 20.04 LTS', cores: 16, ram: '64GB' },
+        { name: 'K8S-NODE-03', type: 'Kubernetes Worker', count: 1, cpu: 71, memory: 76, storage: 61, utilization: 69, readiness: 92, os: 'Ubuntu 20.04 LTS', cores: 16, ram: '64GB' },
+        { name: 'PG-CLUS-01', type: 'PostgreSQL', count: 1, cpu: 58, memory: 72, storage: 89, utilization: 73, readiness: 88, os: 'Ubuntu 20.04 LTS', cores: 8, ram: '64GB' },
+        { name: 'PG-CLUS-02', type: 'PostgreSQL', count: 1, cpu: 55, memory: 68, storage: 85, utilization: 69, readiness: 88, os: 'Ubuntu 20.04 LTS', cores: 8, ram: '64GB' },
+        { name: 'REDIS-CACHE-01', type: 'Redis Cache', count: 1, cpu: 42, memory: 85, storage: 34, utilization: 54, readiness: 94, os: 'Ubuntu 20.04 LTS', cores: 4, ram: '32GB' },
+        { name: 'MONITOR-01', type: 'Prometheus/Grafana', count: 1, cpu: 48, memory: 62, storage: 76, utilization: 62, readiness: 90, os: 'Ubuntu 20.04 LTS', cores: 4, ram: '16GB' },
+        { name: 'INGRESS-01', type: 'NGINX Ingress', count: 1, cpu: 35, memory: 45, storage: 28, utilization: 36, readiness: 96, os: 'Ubuntu 20.04 LTS', cores: 2, ram: '8GB' }
       ],
       hosting: [
         { service: 'Container Orchestration', current: 'On-Premises K8s', recommended: 'Azure AKS', effort: 'Low', cost: '$1,200/month' },
