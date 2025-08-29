@@ -190,10 +190,17 @@ using (var scope = app.Services.CreateScope())
     {
         dbContext.Database.Migrate();
         Console.WriteLine("✅ Database migrations applied successfully.");
+        
+        // Seed detailed assessment data in development
+        if (app.Environment.IsDevelopment())
+        {
+            await AssessmentDataSeeder.SeedDetailedAssessmentDataAsync(dbContext);
+            Console.WriteLine("✅ Detailed assessment data seeded successfully.");
+        }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"❌ Error applying database migrations: {ex.Message}");
+        Console.WriteLine($"❌ Error applying database migrations or seeding data: {ex.Message}");
         // Don't fail the app startup, just log the error
     }
 }

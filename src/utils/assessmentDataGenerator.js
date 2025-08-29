@@ -787,11 +787,26 @@ const generateRecommendationsData = (assessmentId, assessment) => {
         }
       ],
       businessCase: {
-        totalInvestment: 180000,
-        projectedSavings: 155000,
-        roi: 86,
+        totalInvestment: 880000,
+        projectedSavings: 2200000,
+        currentStateCosts: 1800000,
+        futureStateBenefits: 2200000,
+        netPresentValue: 1320000,
+        roi: 250,
         paybackPeriod: '18 months',
-        riskReduction: 'Medium'
+        riskReduction: 'Medium',
+        riskMitigation: [
+          'Reduced security vulnerabilities through modern infrastructure',
+          'Improved system reliability and uptime',
+          'Better disaster recovery capabilities',
+          'Enhanced compliance with industry standards'
+        ],
+        competitiveAdvantages: [
+          'Faster time-to-market for new features',
+          'Improved customer experience and satisfaction',
+          'Lower operational costs and higher margins',
+          'Better scalability for business growth'
+        ]
       },
       analysis: {
         executiveSummary: 'E-commerce platform modernization will improve customer experience and reduce operational costs. Focus on performance optimization and user interface updates.',
@@ -999,11 +1014,26 @@ const generateRecommendationsData = (assessmentId, assessment) => {
         }
       ],
       businessCase: {
-        totalInvestment: 450000,
-        projectedSavings: 295000,
-        roi: 65,
+        totalInvestment: 1900000,
+        projectedSavings: 3200000,
+        currentStateCosts: 4500000,
+        futureStateBenefits: 3200000,
+        netPresentValue: 1300000,
+        roi: 168,
         paybackPeriod: '24 months',
-        riskReduction: 'High'
+        riskReduction: 'High',
+        riskMitigation: [
+          'Enhanced regulatory compliance and reduced audit risk',
+          'Improved fraud detection and prevention capabilities',
+          'Stronger cybersecurity posture and threat protection',
+          'Better operational resilience and disaster recovery'
+        ],
+        competitiveAdvantages: [
+          'Modern digital banking capabilities',
+          'Improved customer trust and satisfaction',
+          'Reduced operational costs and regulatory penalties',
+          'Enhanced agility for new financial products'
+        ]
       },
       analysis: {
         executiveSummary: 'Critical security and compliance gaps require immediate attention. Modernization strategy must balance innovation with regulatory requirements and operational stability.',
@@ -1211,11 +1241,26 @@ const generateRecommendationsData = (assessmentId, assessment) => {
         }
       ],
       businessCase: {
-        totalInvestment: 85000,
-        projectedSavings: 120000,
-        roi: 141,
+        totalInvestment: 740000,
+        projectedSavings: 1850000,
+        currentStateCosts: 1200000,
+        futureStateBenefits: 1850000,
+        netPresentValue: 1110000,
+        roi: 250,
         paybackPeriod: '12 months',
-        riskReduction: 'Low'
+        riskReduction: 'Low',
+        riskMitigation: [
+          'Enhanced system resilience and disaster recovery',
+          'Automated cost optimization and resource management',
+          'Improved security posture with cloud-native tools',
+          'Better performance and user experience'
+        ],
+        competitiveAdvantages: [
+          'Global scale and performance optimization',
+          'Advanced AI/ML capabilities and insights',
+          'Rapid innovation and feature deployment',
+          'Cost efficiency and resource optimization'
+        ]
       },
       analysis: {
         executiveSummary: 'Cloud-native architecture is mature and well-implemented. Focus on optimization and resilience enhancements to maximize cloud investment.',

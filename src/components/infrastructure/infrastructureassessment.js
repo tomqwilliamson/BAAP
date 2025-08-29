@@ -54,14 +54,66 @@ function InfrastructureAssessment() {
       // Generate assessment-specific data
       const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'infrastructure');
       
+      // Transform hosting data from service recommendations to distribution for pie chart
+      const transformHostingData = (hostingServices) => {
+        if (!hostingServices || hostingServices.length === 0) {
+          return [
+            { name: 'On-Premises Physical', count: 12, percentage: 48 },
+            { name: 'VMware vSphere', count: 8, percentage: 32 },
+            { name: 'Hyper-V', count: 3, percentage: 12 },
+            { name: 'Public Cloud', count: 2, percentage: 8 }
+          ];
+        }
+        // Extract hosting patterns from current environments
+        const hostingTypes = {};
+        hostingServices.forEach(service => {
+          if (service.current?.includes('On-Premises') || service.current?.includes('Mainframe')) {
+            hostingTypes['On-Premises Physical'] = (hostingTypes['On-Premises Physical'] || 0) + 1;
+          } else if (service.current?.includes('Windows Server') || service.current?.includes('IIS')) {
+            hostingTypes['Windows Server'] = (hostingTypes['Windows Server'] || 0) + 1;
+          } else if (service.current?.includes('Linux') || service.current?.includes('K8s')) {
+            hostingTypes['Linux/Container'] = (hostingTypes['Linux/Container'] || 0) + 1;
+          } else {
+            hostingTypes['Other'] = (hostingTypes['Other'] || 0) + 1;
+          }
+        });
+        
+        const total = Object.values(hostingTypes).reduce((sum, count) => sum + count, 0) || 1;
+        return Object.entries(hostingTypes).map(([name, count]) => ({
+          name,
+          count,
+          percentage: Math.round((count / total) * 100)
+        }));
+      };
+
+      // Transform utilization data from monthly trends to current resource utilization
+      const transformUtilizationData = (monthlyData) => {
+        if (!monthlyData || monthlyData.length === 0) {
+          return [
+            { name: 'CPU Usage', current: 67, status: 'Good', target: 75 },
+            { name: 'Memory Usage', current: 84, status: 'High', target: 80 },
+            { name: 'Storage Usage', current: 58, status: 'Good', target: 85 },
+            { name: 'Network I/O', current: 45, status: 'Low', target: 70 },
+            { name: 'Disk I/O', current: 72, status: 'Good', target: 80 }
+          ];
+        }
+        // Use the latest month's data
+        const latestData = monthlyData[monthlyData.length - 1];
+        return [
+          { name: 'CPU Usage', current: latestData.cpu || 67, status: latestData.cpu > 80 ? 'High' : latestData.cpu > 60 ? 'Good' : 'Low', target: 75 },
+          { name: 'Memory Usage', current: latestData.memory || 84, status: latestData.memory > 80 ? 'High' : latestData.memory > 60 ? 'Good' : 'Low', target: 80 },
+          { name: 'Storage Usage', current: latestData.storage || 58, status: latestData.storage > 85 ? 'High' : latestData.storage > 70 ? 'Good' : 'Low', target: 85 }
+        ];
+      };
+
       const mockData = {
         azureMigrate: {
           servers: assessmentSpecificData.servers || [],
           readiness: { ready: 45, conditional: 35, notReady: 20 },
           costs: { current: 12450, azureEstimate: 8960, savings: 3490, paybackMonths: 18 }
         },
-        hosting: assessmentSpecificData.hosting || [],
-        utilization: assessmentSpecificData.utilization || [],
+        hosting: transformHostingData(assessmentSpecificData.hosting),
+        utilization: transformUtilizationData(assessmentSpecificData.utilization),
         cloudReadiness: assessmentSpecificData.cloudReadiness || [],
         scalability: {
           autoScaling: 30,

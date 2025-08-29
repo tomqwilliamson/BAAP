@@ -7,6 +7,70 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
+import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
+
+// Helper functions
+const getCompatibilityTarget = (dbType) => {
+  if (dbType.includes('SQL Server')) return 'Azure SQL Database';
+  if (dbType.includes('MongoDB')) return 'Azure Cosmos DB';
+  if (dbType.includes('Redis')) return 'Azure Cache for Redis';
+  if (dbType.includes('PostgreSQL')) return 'Azure Database for PostgreSQL';
+  if (dbType.includes('Oracle')) return 'Azure SQL Managed Instance';
+  if (dbType.includes('DB2')) return 'Azure SQL Managed Instance';
+  return 'Azure SQL Database';
+};
+
+const generateSchemas = (dbType) => {
+  if (dbType.includes('SQL Server')) return ['dbo', 'staging', 'reporting'];
+  if (dbType.includes('MongoDB')) return ['collections'];
+  if (dbType.includes('Redis')) return ['cache', 'session'];
+  return ['main', 'staging'];
+};
+
+const generateDMAAssessments = (databases) => {
+  return databases.map((db, index) => ({
+    database: db.name,
+    status: db.performance > 80 ? 'Ready' : db.performance > 60 ? 'Warning' : 'Needs Work',
+    compatibility: db.performance,
+    blockers: db.performance > 80 ? 0 : Math.floor(Math.random() * 5) + 1,
+    warnings: Math.floor(Math.random() * 10) + 2
+  }));
+};
+
+const generateCompatibilityMatrix = (databases) => {
+  const matrix = {};
+  databases.forEach(db => {
+    matrix[db.name] = {
+      azureSQL: db.performance,
+      cosmosDB: Math.floor(Math.random() * 40) + 60,
+      managedInstance: Math.floor(Math.random() * 30) + 70
+    };
+  });
+  return matrix;
+};
+
+const generateDMARecommendations = (databases) => {
+  return databases.map(db => ({
+    database: db.name,
+    recommendation: `Optimize ${db.name} for ${getCompatibilityTarget(db.type)}`,
+    priority: db.performance > 80 ? 'Low' : db.performance > 60 ? 'Medium' : 'High',
+    effort: db.performance > 80 ? 'Small' : 'Medium'
+  }));
+};
+
+const createTechnologyDistribution = (databases) => {
+  const distribution = {};
+  databases.forEach(db => {
+    const type = db.type.split(' ')[0]; // Get base type like "SQL" from "SQL Server"
+    distribution[type] = (distribution[type] || 0) + 1;
+  });
+  
+  return Object.entries(distribution).map(([type, count]) => ({
+    type,
+    count,
+    name: type
+  }));
+};
 
 function DataArchitecture() {
   const { currentAssessment } = useAssessment();
@@ -47,9 +111,69 @@ function DataArchitecture() {
       console.log('DATA ARCHITECTURE: Loading data for assessment:', currentAssessment?.id);
       
       // Generate assessment-specific data
-      const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'data');
+      const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'dataArchitecture');
       
-      const mockData = {
+      if (assessmentSpecificData && assessmentSpecificData.databases) {
+        // Use assessment-specific data
+        const enhancedData = {
+          microsoftDMA: {
+            databases: assessmentSpecificData.databases.map((db, index) => ({
+              name: db.name,
+              type: db.type,
+              size: db.size,
+              compatibility: getCompatibilityTarget(db.type),
+              readiness: db.performance,
+              issues: Math.floor(Math.random() * 15) + 1,
+              schemas: generateSchemas(db.type),
+              tableCount: Math.floor(Math.random() * 200) + 50,
+              details: `${db.name} - High-performance ${db.type} database`
+            })),
+            assessments: generateDMAAssessments(assessmentSpecificData.databases),
+            compatibility: generateCompatibilityMatrix(assessmentSpecificData.databases),
+            recommendations: generateDMARecommendations(assessmentSpecificData.databases)
+          },
+          databases: createTechnologyDistribution(assessmentSpecificData.databases),
+          rawDatabases: assessmentSpecificData.databases,
+          integration: assessmentSpecificData.dataflows || [],
+          dataFlow: assessmentSpecificData.dataflows || [],
+          quality: {
+            overall: 85,
+            completeness: 92,
+            accuracy: 88,
+            consistency: 79,
+            timeliness: 91
+          },
+          governance: {
+            dataClassification: {
+              public: 35,
+              internal: 40,
+              confidential: 20,
+              restricted: 5
+            },
+            compliance: {
+              gdpr: { status: 'Compliant', coverage: 92 },
+              hipaa: { status: 'Partial', coverage: 78 },
+              sox: { status: 'Compliant', coverage: 95 },
+              pciDss: { status: 'In Progress', coverage: 67 }
+            },
+            dataLineage: {
+              documented: 68,
+              automated: 23,
+              missing: 9
+            }
+          },
+          uploadedFiles: [],
+          analysis: {
+            databaseAnalysis: assessmentSpecificData.analysis?.dataArchitectureAnalysis || '',
+            migrationAnalysis: assessmentSpecificData.analysis?.modernizationAnalysis || '',
+            performanceAnalysis: assessmentSpecificData.analysis?.performanceAnalysis || '',
+            modernizationRecommendations: assessmentSpecificData.analysis?.modernizationAnalysis || ''
+          }
+        };
+        setDataArchData(enhancedData);
+      } else {
+        // Fallback to mock data
+        const mockData = {
         microsoftDMA: {
           databases: [
             { name: 'CustomerDB-Prod', type: 'SQL Server 2019', size: '485 GB', compatibility: 'Azure SQL DB', readiness: 94, issues: 2, 
@@ -166,6 +290,7 @@ function DataArchitecture() {
         }
       };
       setDataArchData(mockData);
+      }
     } catch (error) {
       console.error('Error loading data architecture data:', error);
     } finally {

@@ -7,6 +7,63 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
+import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
+
+// Helper functions for generating cross-assessment and log data
+const generateInfrastructureRisks = (securityData) => [
+  { source: 'Infrastructure Assessment', risk: 'Unencrypted network traffic', severity: 'High', count: Math.floor(Math.random() * 5) + 2 },
+  { source: 'Server Analysis', risk: 'Unpatched vulnerabilities', severity: 'Critical', count: securityData.vulnerabilities?.filter(v => v.category === 'Infrastructure').length || 3 },
+  { source: 'Network Assessment', risk: 'Open firewall ports', severity: 'Medium', count: Math.floor(Math.random() * 8) + 4 }
+];
+
+const generateDatabaseVulnerabilities = (securityData) => [
+  { source: 'Database Security Scan', risk: 'SQL injection vulnerabilities', severity: 'Critical', count: securityData.vulnerabilities?.filter(v => v.category === 'Database').length || 2 },
+  { source: 'Access Control Audit', risk: 'Weak authentication', severity: 'High', count: Math.floor(Math.random() * 4) + 3 },
+  { source: 'Privilege Review', risk: 'Excessive database privileges', severity: 'Medium', count: Math.floor(Math.random() * 8) + 5 }
+];
+
+const generateDevopsSecurityGaps = (securityData) => [
+  { source: 'DevOps Assessment', risk: 'Secrets in source code', severity: 'Critical', count: Math.floor(Math.random() * 3) + 1 },
+  { source: 'CI/CD Pipeline Review', risk: 'Insecure deployment processes', severity: 'High', count: Math.floor(Math.random() * 4) + 2 },
+  { source: 'Container Security Scan', risk: 'Vulnerable container images', severity: 'Medium', count: Math.floor(Math.random() * 6) + 4 }
+];
+
+const generateSecurityLogs = (securityData) => ({
+  vulnerabilityScans: [
+    { scanner: 'Nessus', lastScan: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
+      critical: securityData.vulnerabilities?.filter(v => v.severity === 'Critical').length || 5,
+      high: securityData.vulnerabilities?.filter(v => v.severity === 'High').length || 12,
+      medium: securityData.vulnerabilities?.filter(v => v.severity === 'Medium').length || 25 },
+    { scanner: 'OpenVAS', lastScan: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
+      critical: Math.floor(Math.random() * 8) + 2,
+      high: Math.floor(Math.random() * 15) + 8,
+      medium: Math.floor(Math.random() * 20) + 15 },
+    { scanner: 'Qualys', lastScan: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
+      critical: Math.floor(Math.random() * 10) + 3,
+      high: Math.floor(Math.random() * 18) + 10,
+      medium: Math.floor(Math.random() * 25) + 20 }
+  ],
+  siemAlerts: [
+    { source: 'Azure Sentinel', type: 'Suspicious Login Attempts', count: Math.floor(Math.random() * 30) + 15, severity: 'High' },
+    { source: 'Microsoft Defender', type: 'Malware Detection', count: Math.floor(Math.random() * 10) + 3, severity: 'Critical' },
+    { source: 'Custom SIEM', type: 'Data Exfiltration Attempt', count: Math.floor(Math.random() * 5) + 1, severity: 'Critical' }
+  ],
+  accessLogs: [
+    { system: 'Active Directory', events: Math.floor(Math.random() * 1000) + 800, anomalies: Math.floor(Math.random() * 25) + 10, lastUpdate: new Date().toISOString().split('T')[0] },
+    { system: 'VPN Access', events: Math.floor(Math.random() * 500) + 400, anomalies: Math.floor(Math.random() * 15) + 5, lastUpdate: new Date().toISOString().split('T')[0] },
+    { system: 'Database Access', events: Math.floor(Math.random() * 2000) + 1000, anomalies: Math.floor(Math.random() * 50) + 20, lastUpdate: new Date().toISOString().split('T')[0] }
+  ],
+  networkTraffic: [
+    { source: 'Firewall Logs', blocked: Math.floor(Math.random() * 1000) + 500, allowed: Math.floor(Math.random() * 8000) + 5000, suspicious: Math.floor(Math.random() * 50) + 20 },
+    { source: 'IDS/IPS', detections: Math.floor(Math.random() * 100) + 50, blocked: Math.floor(Math.random() * 80) + 40, investigated: Math.floor(Math.random() * 30) + 15 },
+    { source: 'DNS Logs', queries: Math.floor(Math.random() * 10000) + 8000, malicious: Math.floor(Math.random() * 30) + 10, blocked: Math.floor(Math.random() * 25) + 8 }
+  ],
+  endpointEvents: [
+    { agent: 'Microsoft Defender', endpoints: Math.floor(Math.random() * 150) + 100, threats: Math.floor(Math.random() * 15) + 5, quarantined: Math.floor(Math.random() * 10) + 3 },
+    { agent: 'CrowdStrike', endpoints: Math.floor(Math.random() * 200) + 150, threats: Math.floor(Math.random() * 12) + 4, quarantined: Math.floor(Math.random() * 8) + 2 },
+    { agent: 'Carbon Black', endpoints: Math.floor(Math.random() * 120) + 80, threats: Math.floor(Math.random() * 8) + 2, quarantined: Math.floor(Math.random() * 6) + 1 }
+  ]
+});
 
 function SecurityAssessment() {
   const { currentAssessment } = useAssessment();
@@ -46,13 +103,48 @@ function SecurityAssessment() {
 
   useEffect(() => {
     loadSecurityData();
-  }, []);
+  }, [currentAssessment]);
 
   const loadSecurityData = async () => {
     try {
       setLoading(true);
-      // Mock comprehensive security assessment data
-      const mockData = {
+      console.log('SECURITY: Loading data for assessment:', currentAssessment?.id);
+      
+      // Generate assessment-specific data
+      const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'security');
+      
+      if (assessmentSpecificData) {
+        // Use assessment-specific security data with enhanced cross-assessment and log analysis
+        const enhancedData = {
+          crossAssessment: {
+            infrastructureRisks: generateInfrastructureRisks(assessmentSpecificData),
+            databaseVulnerabilities: generateDatabaseVulnerabilities(assessmentSpecificData),
+            devopsSecurityGaps: generateDevopsSecurityGaps(assessmentSpecificData),
+            overallSecurityScore: assessmentSpecificData.complianceScore || 68
+          },
+          securityLogs: generateSecurityLogs(assessmentSpecificData),
+          findings: assessmentSpecificData.vulnerabilities || [],
+          summary: {
+            critical: assessmentSpecificData.vulnerabilities?.filter(v => v.severity === 'Critical').length || 0,
+            high: assessmentSpecificData.vulnerabilities?.filter(v => v.severity === 'High').length || 0,
+            medium: assessmentSpecificData.vulnerabilities?.filter(v => v.severity === 'Medium').length || 0,
+            low: assessmentSpecificData.vulnerabilities?.filter(v => v.severity === 'Low').length || 0,
+            total: assessmentSpecificData.vulnerabilities?.length || 0
+          },
+          owasp: assessmentSpecificData.owaspCompliance || [],
+          compliance: assessmentSpecificData.complianceResults || [],
+          uploadedFiles: [],
+          analysis: {
+            securityPostureAnalysis: assessmentSpecificData.analysis?.securityPostureAnalysis || '',
+            threatAnalysis: assessmentSpecificData.analysis?.threatAnalysis || '',
+            complianceAnalysis: assessmentSpecificData.analysis?.complianceAnalysis || '',
+            recommendationsAnalysis: assessmentSpecificData.analysis?.recommendationsAnalysis || ''
+          }
+        };
+        setSecurityData(enhancedData);
+      } else {
+        // Fallback to mock data
+        const mockData = {
         crossAssessment: {
           infrastructureRisks: [
             { source: 'Azure Migrate', risk: 'Unencrypted data migration', severity: 'High', count: 3 },
@@ -155,7 +247,7 @@ function SecurityAssessment() {
           { name: 'siem-alerts-export.json', type: 'siem', size: '12.3 MB', uploadDate: '2024-01-14', status: 'Processed' },
           { name: 'firewall-logs.txt', type: 'firewall', size: '45.2 MB', uploadDate: '2024-01-13', status: 'Processed' }
         ],
-        analysis: assessmentSpecificData?.analysis || {
+        analysis: {
           securityPostureAnalysis: '',
           threatAnalysis: '',
           complianceAnalysis: '',
@@ -163,6 +255,7 @@ function SecurityAssessment() {
         }
       };
       setSecurityData(mockData);
+      }
     } catch (error) {
       console.error('Error loading security data:', error);
     } finally {

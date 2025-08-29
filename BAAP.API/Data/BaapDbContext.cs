@@ -19,7 +19,11 @@ public class BaapDbContext : DbContext
     public DbSet<Recommendation> Recommendations { get; set; } = null!;
     public DbSet<CodeMetric> CodeMetrics { get; set; } = null!;
     public DbSet<DashboardMetric> DashboardMetrics { get; set; } = null!;
-    public DbSet<AssessmentFile> AssessmentFiles { get; set; } = null!;
+    public DbSet<BAAP.API.Controllers.AssessmentFile> AssessmentFiles { get; set; } = null!;
+    public DbSet<InfrastructureServer> InfrastructureServers { get; set; } = null!;
+    public DbSet<DatabaseInstance> DatabaseInstances { get; set; } = null!;
+    public DbSet<SecurityVulnerability> SecurityVulnerabilities { get; set; } = null!;
+    public DbSet<ComplianceFramework> ComplianceFrameworks { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -72,6 +76,30 @@ public class BaapDbContext : DbContext
             .HasOne(af => af.Assessment)
             .WithMany()
             .HasForeignKey(af => af.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<InfrastructureServer>()
+            .HasOne(s => s.Assessment)
+            .WithMany()
+            .HasForeignKey(s => s.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DatabaseInstance>()
+            .HasOne(db => db.Assessment)
+            .WithMany()
+            .HasForeignKey(db => db.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SecurityVulnerability>()
+            .HasOne(sv => sv.Assessment)
+            .WithMany()
+            .HasForeignKey(sv => sv.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ComplianceFramework>()
+            .HasOne(cf => cf.Assessment)
+            .WithMany()
+            .HasForeignKey(cf => cf.AssessmentId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Configure decimal precision for currency fields

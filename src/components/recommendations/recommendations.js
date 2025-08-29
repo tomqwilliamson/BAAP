@@ -91,11 +91,17 @@ const Recommendations = () => {
       
       if (assessmentSpecificData) {
         // Use assessment-specific recommendations data
+        const allRecommendations = [
+          ...(assessmentSpecificData.strategicRecommendations || []),
+          ...(assessmentSpecificData.tacticalRecommendations || []),
+          ...(assessmentSpecificData.quickWins || [])
+        ];
+        
         const analysisResults = {
           executiveSummary: {
-            overallReadinessScore: assessmentSpecificData.businessCase?.roi || 85,
-            totalFindings: assessmentSpecificData.priority?.length || 3,
-            criticalIssues: assessmentSpecificData.priority?.filter(p => p.impact === 'Critical').length || 1,
+            overallReadinessScore: Math.min(currentAssessment?.overallScore || 85, 100),
+            totalFindings: allRecommendations.length,
+            criticalIssues: allRecommendations.filter(p => p.priority === 'Critical').length,
             estimatedSavings: assessmentSpecificData.businessCase?.projectedSavings || 180000,
             recommendedInvestment: assessmentSpecificData.businessCase?.totalInvestment || 150000,
             roiProjection: assessmentSpecificData.businessCase?.roi || 120,
@@ -108,7 +114,9 @@ const Recommendations = () => {
             devops: { score: 78, pipelines: 8, maturity: 65 },
             cloudReadiness: { score: 72, strategy: 'Hybrid Migration', timeline: '12-18 months' }
           },
-          priorityRecommendations: assessmentSpecificData.priority || [],
+          strategicRecommendations: assessmentSpecificData.strategicRecommendations || [],
+          tacticalRecommendations: assessmentSpecificData.tacticalRecommendations || [],
+          quickWins: assessmentSpecificData.quickWins || [],
           businessCase: {
             currentStateCosts: assessmentSpecificData.businessCase?.currentStateCosts || 2450000,
             futureStateBenefits: assessmentSpecificData.businessCase?.futureStateBenefits || 4890000,
@@ -118,7 +126,7 @@ const Recommendations = () => {
             ...(assessmentSpecificData.businessCase || {})
           },
           analysis: assessmentSpecificData.analysis || {},
-          roadmap: generateRoadmap(assessmentSpecificData.priority || []),
+          roadmap: generateRoadmap(allRecommendations),
           aiInsights: {
             trendAnalysis: `Based on industry benchmarks and assessment data, your organization shows strong potential for digital transformation. Key trends indicate that similar organizations achieving 70%+ modernization scores see average ROI of 280% within 24 months. Your current readiness score of ${assessmentSpecificData.businessCase?.roi || 85}% positions you well for accelerated transformation.`,
             riskAssessment: `Primary risks center around security vulnerabilities and legacy infrastructure dependencies. However, strong foundation provides basis for successful modernization. Risk mitigation through phased approach reduces implementation complexity.`,
