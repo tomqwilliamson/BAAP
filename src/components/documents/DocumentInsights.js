@@ -1,0 +1,645 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { 
+    FileText, 
+    Search, 
+    TrendingUp, 
+    Network, 
+    Brain, 
+    MessageCircle,
+    Upload,
+    Trash2,
+    Download,
+    Filter,
+    BarChart3,
+    Clock,
+    CheckCircle,
+    AlertCircle
+} from 'lucide-react';
+
+const DocumentInsights = () => {
+    const [documents, setDocuments] = useState([]);
+    const [insights, setInsights] = useState([]);
+    const [searchResults, setSearchResults] = useState(null);
+    const [chatMessages, setChatMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(null);
+    const [selectedTab, setSelectedTab] = useState('documents');
+    
+    // Form states
+    const [searchQuery, setSearchQuery] = useState('');
+    const [chatQuery, setChatQuery] = useState('');
+    const [selectedDocTypes, setSelectedDocTypes] = useState([]);
+    const [dragOver, setDragOver] = useState(false);
+
+    const documentTypes = [
+        'Business Requirements',
+        'Technical Architecture', 
+        'Infrastructure Documentation',
+        'Security Documentation',
+        'Data Architecture',
+        'DevOps Documentation',
+        'Project Management',
+        'Compliance & Governance'
+    ];
+
+    useEffect(() => {
+        loadDocuments();
+        loadInsights();
+    }, []);
+
+    const loadDocuments = async () => {
+        try {
+            const response = await fetch('/api/document');
+            const data = await response.json();
+            setDocuments(data);
+        } catch (error) {
+            console.error('Error loading documents:', error);
+        }
+    };
+
+    const loadInsights = async () => {
+        try {
+            const response = await fetch('/api/document/analyze-relationships', {
+                method: 'POST'
+            });
+            const data = await response.json();
+            setInsights(data);
+        } catch (error) {
+            console.error('Error loading insights:', error);
+        }
+    };
+
+    const handleFileUpload = async (files) => {
+        if (!files || files.length === 0) return;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            setUploadProgress({ fileName: file.name, progress: 0 });
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/document/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    setUploadProgress({ fileName: file.name, progress: 100, status: 'completed' });
+                    await loadDocuments();
+                    await loadInsights();
+                } else {
+                    setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+            }
+        }
+        
+        setTimeout(() => setUploadProgress(null), 3000);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const files = Array.from(e.dataTransfer.files);
+        handleFileUpload(files);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setDragOver(true);
+    };
+
+    const handleDragLeave = () => {
+        setDragOver(false);
+    };
+
+    const handleSearch = async () => {
+        if (!searchQuery.trim()) return;
+        
+        setLoading(true);
+        try {
+            const response = await fetch('/api/document/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: searchQuery,
+                    documentTypes: selectedDocTypes.length > 0 ? selectedDocTypes : null,
+                    maxResults: 10
+                })
+            });
+            
+            const data = await response.json();
+            setSearchResults(data);
+        } catch (error) {
+            console.error('Search error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleChat = async () => {
+        if (!chatQuery.trim()) return;
+        
+        const userMessage = { role: 'user', content: chatQuery, timestamp: new Date() };
+        setChatMessages(prev => [...prev, userMessage]);
+        setChatQuery('');
+        setLoading(true);
+        
+        try {
+            const response = await fetch('/api/document/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: chatQuery,
+                    maxChunks: 5,
+                    minimumSimilarity: 0.7
+                })
+            });
+            
+            const data = await response.json();
+            const assistantMessage = {
+                role: 'assistant',
+                content: data.response,
+                confidence: data.confidence,
+                sourceDocuments: data.sourceDocuments,
+                timestamp: new Date()
+            };
+            
+            setChatMessages(prev => [...prev, assistantMessage]);
+        } catch (error) {
+            console.error('Chat error:', error);
+            const errorMessage = {
+                role: 'assistant',
+                content: 'Sorry, I encountered an error while processing your question.',
+                timestamp: new Date()
+            };
+            setChatMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteDocument = async (documentId) => {
+        if (!confirm('Are you sure you want to delete this document?')) return;
+        
+        try {
+            await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
+            await loadDocuments();
+            await loadInsights();
+        } catch (error) {
+            console.error('Delete error:', error);
+        }
+    };
+
+    const formatFileSize = (bytes) => {
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        if (bytes === 0) return '0 Bytes';
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    };
+
+    const getDocumentTypeColor = (type) => {
+        const colors = {
+            'Business Requirements': 'bg-blue-100 text-blue-800',
+            'Technical Architecture': 'bg-green-100 text-green-800',
+            'Infrastructure Documentation': 'bg-purple-100 text-purple-800',
+            'Security Documentation': 'bg-red-100 text-red-800',
+            'Data Architecture': 'bg-yellow-100 text-yellow-800',
+            'DevOps Documentation': 'bg-indigo-100 text-indigo-800',
+            'Project Management': 'bg-pink-100 text-pink-800',
+            'Compliance & Governance': 'bg-gray-100 text-gray-800'
+        };
+        return colors[type] || 'bg-gray-100 text-gray-800';
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">Document Intelligence</h1>
+                    <p className="text-gray-600">AI-powered document analysis and insights</p>
+                </div>
+                <div className="flex space-x-2">
+                    <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.txt,.csv"
+                        onChange={(e) => handleFileUpload(e.target.files)}
+                        className="hidden"
+                        id="file-upload"
+                    />
+                    <label htmlFor="file-upload">
+                        <Button className="cursor-pointer">
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload Documents
+                        </Button>
+                    </label>
+                </div>
+            </div>
+
+            {/* Upload Progress */}
+            {uploadProgress && (
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center space-x-2">
+                            {uploadProgress.status === 'completed' ? (
+                                <CheckCircle className="h-5 w-5 text-green-500" />
+                            ) : uploadProgress.status === 'error' ? (
+                                <AlertCircle className="h-5 w-5 text-red-500" />
+                            ) : (
+                                <Clock className="h-5 w-5 text-blue-500" />
+                            )}
+                            <span className="text-sm">
+                                {uploadProgress.status === 'completed' ? 'Uploaded: ' : 
+                                 uploadProgress.status === 'error' ? 'Failed: ' : 'Uploading: '}
+                                {uploadProgress.fileName}
+                            </span>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Drag and Drop Area */}
+            <div
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                }`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+            >
+                <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg mb-2">Drag and drop documents here</p>
+                <p className="text-sm text-gray-500">
+                    Supports PDF, Word, Excel, PowerPoint, and text files
+                </p>
+            </div>
+
+            <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="documents" className="flex items-center">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Documents
+                    </TabsTrigger>
+                    <TabsTrigger value="search" className="flex items-center">
+                        <Search className="h-4 w-4 mr-2" />
+                        Search
+                    </TabsTrigger>
+                    <TabsTrigger value="insights" className="flex items-center">
+                        <Network className="h-4 w-4 mr-2" />
+                        Insights
+                    </TabsTrigger>
+                    <TabsTrigger value="chat" className="flex items-center">
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Chat
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="documents" className="space-y-4">
+                    <div className="grid gap-4">
+                        {documents.map((doc) => (
+                            <Card key={doc.id}>
+                                <CardContent className="pt-6">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center space-x-2 mb-2">
+                                                <h3 className="font-semibold">{doc.fileName}</h3>
+                                                <Badge className={getDocumentTypeColor(doc.documentType)}>
+                                                    {doc.documentType}
+                                                </Badge>
+                                            </div>
+                                            <p className="text-sm text-gray-600 mb-2">{doc.summary}</p>
+                                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                                <span>{formatFileSize(doc.sizeBytes)}</span>
+                                                <span>{doc.chunks?.length || 0} chunks</span>
+                                                <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                                            </div>
+                                            {doc.keyFindings && doc.keyFindings.length > 0 && (
+                                                <div className="mt-2">
+                                                    <p className="text-xs font-medium text-gray-700 mb-1">Key Findings:</p>
+                                                    <ul className="text-xs text-gray-600 space-y-1">
+                                                        {doc.keyFindings.slice(0, 3).map((finding, idx) => (
+                                                            <li key={idx}>• {finding}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            <Button variant="outline" size="sm">
+                                                <Download className="h-4 w-4" />
+                                            </Button>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                onClick={() => handleDeleteDocument(doc.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                        {documents.length === 0 && (
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <p className="text-center text-gray-500">
+                                        No documents uploaded yet. Upload some documents to get started!
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="search" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center">
+                                <Search className="h-5 w-5 mr-2" />
+                                Semantic Document Search
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex space-x-2">
+                                <input
+                                    type="text"
+                                    placeholder="Search documents..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="flex-1 px-3 py-2 border rounded-md"
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                />
+                                <Button onClick={handleSearch} disabled={loading}>
+                                    {loading ? 'Searching...' : 'Search'}
+                                </Button>
+                            </div>
+                            
+                            <div>
+                                <p className="text-sm font-medium mb-2">Filter by document type:</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {documentTypes.map((type) => (
+                                        <Badge
+                                            key={type}
+                                            variant={selectedDocTypes.includes(type) ? "default" : "outline"}
+                                            className="cursor-pointer"
+                                            onClick={() => {
+                                                setSelectedDocTypes(prev => 
+                                                    prev.includes(type)
+                                                        ? prev.filter(t => t !== type)
+                                                        : [...prev, type]
+                                                );
+                                            }}
+                                        >
+                                            {type}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {searchResults && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Search Results</CardTitle>
+                                <p className="text-sm text-gray-600">
+                                    Found {searchResults.totalResults} results in {searchResults.searchTime}ms
+                                    {searchResults.maxSimilarity && (
+                                        <span> • Max similarity: {(searchResults.maxSimilarity * 100).toFixed(1)}%</span>
+                                    )}
+                                </p>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {searchResults.results.map((result) => (
+                                        <div key={result.documentId} className="border-l-4 border-blue-500 pl-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h4 className="font-medium">{result.fileName}</h4>
+                                                <div className="flex items-center space-x-2">
+                                                    <Badge className={getDocumentTypeColor(result.documentType)}>
+                                                        {result.documentType}
+                                                    </Badge>
+                                                    <Badge variant="outline">
+                                                        {(result.similarity * 100).toFixed(1)}% match
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                            <p className="text-sm text-gray-600 mb-2">{result.relevantChunk}</p>
+                                            {result.matchingKeyFindings.length > 0 && (
+                                                <div className="text-xs text-gray-500">
+                                                    Matching findings: {result.matchingKeyFindings.join(', ')}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="insights" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <BarChart3 className="h-5 w-5 mr-2" />
+                                    Document Distribution
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2">
+                                    {Object.entries(
+                                        documents.reduce((acc, doc) => {
+                                            acc[doc.documentType] = (acc[doc.documentType] || 0) + 1;
+                                            return acc;
+                                        }, {})
+                                    ).map(([type, count]) => (
+                                        <div key={type} className="flex items-center justify-between">
+                                            <Badge className={getDocumentTypeColor(type)}>{type}</Badge>
+                                            <span className="text-sm font-medium">{count}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <TrendingUp className="h-5 w-5 mr-2" />
+                                    Processing Stats
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span>Total Documents:</span>
+                                        <span className="font-medium">{documents.length}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Total Chunks:</span>
+                                        <span className="font-medium">
+                                            {documents.reduce((sum, doc) => sum + (doc.chunks?.length || 0), 0)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Total Size:</span>
+                                        <span className="font-medium">
+                                            {formatFileSize(documents.reduce((sum, doc) => sum + doc.sizeBytes, 0))}
+                                        </span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center">
+                                <Network className="h-5 w-5 mr-2" />
+                                Document Relationships
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {insights.map((insight) => (
+                                    <div key={insight.documentId} className="border rounded-lg p-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="font-medium">{insight.fileName}</h4>
+                                            <Badge variant="outline">{insight.analysisCategory}</Badge>
+                                        </div>
+                                        
+                                        {insight.keyThemes.length > 0 && (
+                                            <div className="mb-3">
+                                                <p className="text-xs font-medium text-gray-700 mb-1">Key Themes:</p>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {insight.keyThemes.map((theme, idx) => (
+                                                        <Badge key={idx} variant="outline" className="text-xs">
+                                                            {theme}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {insight.relatedDocuments.length > 0 && (
+                                            <div>
+                                                <p className="text-xs font-medium text-gray-700 mb-1">Related Documents:</p>
+                                                <div className="space-y-1">
+                                                    {insight.relatedDocuments.map((related, idx) => (
+                                                        <div key={idx} className="flex items-center justify-between text-xs">
+                                                            <span>{related.fileName}</span>
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {related.relationshipType}
+                                                            </Badge>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="chat" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center">
+                                <Brain className="h-5 w-5 mr-2" />
+                                Chat with Your Documents
+                            </CardTitle>
+                            <p className="text-sm text-gray-600">
+                                Ask questions about your uploaded documents. I'll search through them to find relevant answers.
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <div className="h-96 overflow-y-auto border rounded-lg p-4 space-y-4">
+                                    {chatMessages.length === 0 ? (
+                                        <div className="text-center text-gray-500">
+                                            <MessageCircle className="h-8 w-8 mx-auto mb-2" />
+                                            <p>Start a conversation about your documents!</p>
+                                            <p className="text-xs mt-1">
+                                                Try asking: "What are the main security risks?" or "Summarize the business requirements"
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        chatMessages.map((message, idx) => (
+                                            <div key={idx} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`max-w-3/4 p-3 rounded-lg ${
+                                                    message.role === 'user' 
+                                                        ? 'bg-blue-500 text-white' 
+                                                        : 'bg-gray-100'
+                                                }`}>
+                                                    <p className="text-sm">{message.content}</p>
+                                                    {message.sourceDocuments && message.sourceDocuments.length > 0 && (
+                                                        <div className="mt-2 pt-2 border-t border-gray-200">
+                                                            <p className="text-xs text-gray-600 mb-1">Sources:</p>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {message.sourceDocuments.map((source, sidx) => (
+                                                                    <Badge key={sidx} variant="outline" className="text-xs">
+                                                                        {source}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                            {message.confidence && (
+                                                                <p className="text-xs text-gray-500 mt-1">
+                                                                    Confidence: {(message.confidence * 100).toFixed(1)}%
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    <p className="text-xs mt-1 opacity-70">
+                                                        {message.timestamp.toLocaleTimeString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                    {loading && (
+                                        <div className="flex justify-start">
+                                            <div className="bg-gray-100 p-3 rounded-lg">
+                                                <p className="text-sm">Thinking...</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="flex space-x-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Ask a question about your documents..."
+                                        value={chatQuery}
+                                        onChange={(e) => setChatQuery(e.target.value)}
+                                        className="flex-1 px-3 py-2 border rounded-md"
+                                        onKeyPress={(e) => e.key === 'Enter' && handleChat()}
+                                        disabled={loading}
+                                    />
+                                    <Button onClick={handleChat} disabled={loading || !chatQuery.trim()}>
+                                        {loading ? 'Thinking...' : 'Send'}
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+};
+
+export default DocumentInsights;

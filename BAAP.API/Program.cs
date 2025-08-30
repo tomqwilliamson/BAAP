@@ -103,6 +103,18 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddScoped<DataSeederService>();
 
+// Configure AI Services
+builder.Services.Configure<AzureOpenAIOptions>(
+    builder.Configuration.GetSection(AzureOpenAIOptions.SectionName));
+builder.Services.Configure<AIAnalysisOptions>(
+    builder.Configuration.GetSection(AIAnalysisOptions.SectionName));
+
+// Register AI Services
+builder.Services.AddScoped<ISemanticKernelService, SemanticKernelService>();
+builder.Services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
+builder.Services.AddScoped<IVectorStorageService, VectorStorageService>();
+builder.Services.AddScoped<IAIAnalysisService, AIAnalysisService>();
+
 // Add SignalR for real-time notifications
 builder.Services.AddSignalR();
 

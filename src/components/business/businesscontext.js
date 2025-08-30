@@ -9,6 +9,8 @@ import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/currency';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { apiService } from '../../services/apiService';
+import { aiAnalysisService } from '../../services/aiAnalysisService';
+import { useAnalysis } from '../../hooks/useAnalysis';
 
 // Generate assessment-specific mock data
 const generateMockDataForAssessment = (assessment, businessDrivers) => {
@@ -379,12 +381,20 @@ const generateMockDataForAssessment = (assessment, businessDrivers) => {
 
 function BusinessContext() {
   const { currentAssessment } = useAssessment();
+  const { startAnalysis, getAnalysisState, isAnalysisRunning } = useAnalysis();
   const [currentView, setCurrentView] = useState('overview'); // overview, gather, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(true);
   const [lastSaveTime, setLastSaveTime] = useState(new Date());
   const [loading, setLoading] = useState(false);
+  const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
+  const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
+  const [aiCapabilities, setAiCapabilities] = useState(null);
+
+  // Get analysis state for this module
+  const analysisState = getAnalysisState('business-context');
+  const isAIAnalyzing = isAnalysisRunning('business-context');
   
   // Business context data structure - will be loaded from assessment
   const [businessData, setBusinessData] = useState({
@@ -625,7 +635,20 @@ Priority Actions:
   // Load assessment data when currentAssessment changes
   useEffect(() => {
     loadAssessmentData();
+    checkAIServiceAvailability();
   }, [currentAssessment]);
+
+  const checkAIServiceAvailability = async () => {
+    try {
+      const capabilities = await aiAnalysisService.getCapabilities();
+      setAiServiceAvailable(capabilities.available);
+      setAiCapabilities(capabilities);
+    } catch (error) {
+      console.error('Failed to check AI service availability:', error);
+      setAiServiceAvailable(false);
+      setAiCapabilities(null);
+    }
+  };
 
   const loadAssessmentData = async () => {
     try {
@@ -960,36 +983,100 @@ Priority Actions:
   // LLM Analysis Integration
   const runLLMAnalysis = async () => {
     setIsAnalyzing(true);
+    setAiAnalysisResults(null);
+    
+    // Start the progress tracking analysis
+    const result = await startAnalysis('business-context');
+    
+    let analysisResults;
+
     try {
-      // Simulate LLM analysis - in real implementation, this would call your LLM service
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Try AI analysis first if available
+      if (aiServiceAvailable) {
+        toast.success('Starting AI-powered business context analysis...', { duration: 3000 });
+        
+        // Transform business data for AI analysis
+        const businessContextRequest = {
+          companyName: businessData.projectInfo.name || currentAssessment?.name || 'Organization',
+          industry: currentAssessment?.industry || 'Technology',
+          businessDrivers: businessData.businessDrivers.map(d => `${d.name}: ${d.description} (Priority: ${d.priority}, Impact: ${d.impact}%)`).join('\n'),
+          timelineRequirements: businessData.projectInfo.duration || currentAssessment?.timeline || 'TBD',
+          budgetConstraints: businessData.projectInfo.totalBudget || currentAssessment?.budget || 'TBD',
+          complianceRequirements: businessData.riskAssessment?.filter(r => r.category?.includes('Compliance')).map(r => r.name).join(', ') || 'Standard enterprise compliance',
+          uploadedDocuments: []
+        };
+        
+        // Call AI analysis service
+        const aiResponse = await aiAnalysisService.analyzeBusinessContext(businessContextRequest);
+        
+        // Format and store AI results
+        const formattedAiResults = aiAnalysisService.formatAnalysisResponse(aiResponse);
+        setAiAnalysisResults(formattedAiResults);
+        
+        analysisResults = {
+          driversAnalysis: formattedAiResults,
+          isAiPowered: true,
+          analysisMode: aiCapabilities?.mode || 'AI-Powered'
+        };
+
+        toast.success('AI analysis completed successfully!', { 
+          duration: 4000,
+          icon: '🤖'
+        });
+
+      } else {
+        // Fall back to simulation mode
+        analysisResults = generateSimulationResults();
+        
+        toast.success('Analysis completed using simulation mode', { 
+          duration: 3000,
+          icon: '📊'
+        });
+      }
+    } catch (error) {
+      console.error('AI analysis failed, falling back to simulation:', error);
+      toast.error('AI analysis failed, using simulation mode', { duration: 3000 });
       
-      // Generate analysis based on available data
-      const hasDrivers = businessData.businessDrivers.length > 0;
-      const hasStakeholders = businessData.stakeholderGroups.length > 0;
-      const hasTimeline = businessData.projectTimeline.length > 0;
-      const hasRisks = businessData.riskAssessment.length > 0;
-      const hasProject = businessData.projectInfo.name;
+      // Fall back to simulation mode
+      analysisResults = generateSimulationResults();
+    }
+
+    setBusinessData(prev => ({
+      ...prev,
+      analysis: analysisResults
+    }));
+    
+    setShowAnalysisResults(true);
+    setIsAnalyzing(false);
+  };
+
+  const generateSimulationResults = () => {
+    // Generate analysis based on available data
+    const hasDrivers = businessData.businessDrivers.length > 0;
+    const hasStakeholders = businessData.stakeholderGroups.length > 0;
+    const hasTimeline = businessData.projectTimeline.length > 0;
+    const hasRisks = businessData.riskAssessment.length > 0;
+    const hasProject = businessData.projectInfo.name;
+    
+    return {
+      driversAnalysis: hasDrivers 
+        ? `Analysis of ${businessData.businessDrivers.length} business driver(s) shows clear organizational focus areas. ${businessData.businessDrivers.filter(d => d.priority === 'Critical' || d.priority === 'High').length > 0 ? 'High-priority drivers indicate urgent business needs that should be addressed immediately.' : 'The balanced priority distribution suggests a well-planned transformation approach.'} Average impact score: ${Math.round(businessData.businessDrivers.reduce((sum, d) => sum + d.impact, 0) / businessData.businessDrivers.length)}% with urgency at ${Math.round(businessData.businessDrivers.reduce((sum, d) => sum + d.urgency, 0) / businessData.businessDrivers.length)}%.`
+        : `Business drivers analysis framework: Organizations typically focus on cost optimization (40%), digital transformation (30%), security compliance (20%), and operational efficiency (10%). Consider identifying your primary drivers in areas such as competitive advantage, regulatory compliance, scalability needs, and innovation requirements.`,
       
-      const mockAnalysis = {
-        driversAnalysis: hasDrivers 
-          ? `Analysis of ${businessData.businessDrivers.length} business driver(s) shows clear organizational focus areas. ${businessData.businessDrivers.filter(d => d.priority === 'Critical' || d.priority === 'High').length > 0 ? 'High-priority drivers indicate urgent business needs that should be addressed immediately.' : 'The balanced priority distribution suggests a well-planned transformation approach.'} Average impact score: ${Math.round(businessData.businessDrivers.reduce((sum, d) => sum + d.impact, 0) / businessData.businessDrivers.length)}% with urgency at ${Math.round(businessData.businessDrivers.reduce((sum, d) => sum + d.urgency, 0) / businessData.businessDrivers.length)}%.`
-          : `Business drivers analysis framework: Organizations typically focus on cost optimization (40%), digital transformation (30%), security compliance (20%), and operational efficiency (10%). Consider identifying your primary drivers in areas such as competitive advantage, regulatory compliance, scalability needs, and innovation requirements.`,
-        
-        stakeholderAnalysis: hasStakeholders 
-          ? `Stakeholder analysis reveals ${businessData.stakeholderGroups.length} key stakeholder group(s) identified. ${businessData.stakeholderGroups.filter(s => s.influence === 'High').length} high-influence stakeholders require special attention for project success. The current stakeholder matrix shows ${businessData.stakeholderGroups.filter(s => s.interest === 'High').length} highly interested parties, which indicates ${businessData.stakeholderGroups.filter(s => s.interest === 'High').length > businessData.stakeholderGroups.length / 2 ? 'strong organizational support' : 'need for increased engagement strategies'}.`
-          : `Stakeholder management framework: Identify key stakeholders across executive leadership (C-level), operational management (directors/VPs), technical teams (architects/leads), and end users. Map each by influence level (high/medium/low) and interest (high/medium/low) to develop targeted engagement strategies.`,
-        
-        timelineAnalysis: hasTimeline 
-          ? `Project timeline consists of ${businessData.projectTimeline.length} planned phase(s). ${hasProject ? `For the "${businessData.projectInfo.name}" project, ` : ''}the phased approach ${businessData.projectTimeline.length > 3 ? 'appears comprehensive with multiple delivery milestones' : 'follows a streamlined delivery model'}. Timeline dependencies should be carefully managed to ensure sequential delivery success.`
-          : `Timeline planning framework: Consider a phased approach with (1) Discovery & Planning (2-3 months), (2) Foundation & Architecture (3-6 months), (3) Implementation & Integration (6-12 months), and (4) Testing & Deployment (2-4 months). Adjust timelines based on organizational complexity and resource availability.`,
-        
-        riskAnalysis: hasRisks 
-          ? `Risk assessment identifies ${businessData.riskAssessment.length} key risk(s). Risk distribution: ${businessData.riskAssessment.filter(r => r.probability === 'High').length} high-probability, ${businessData.riskAssessment.filter(r => r.impact === 'High').length} high-impact risks require immediate mitigation strategies. Categories include: ${[...new Set(businessData.riskAssessment.map(r => r.category))].join(', ')}.`
-          : `Risk management framework: Common transformation risks include technical complexity (40% probability), resource constraints (60% probability), stakeholder resistance (30% probability), and budget overruns (25% probability). Develop mitigation strategies for each category with defined ownership and monitoring processes.`,
-        
-        recommendations: hasDrivers || hasStakeholders || hasTimeline || hasRisks
-          ? `Strategic Recommendations based on current context:
+      stakeholderAnalysis: hasStakeholders 
+        ? `Stakeholder analysis reveals ${businessData.stakeholderGroups.length} key stakeholder group(s) identified. ${businessData.stakeholderGroups.filter(s => s.influence === 'High').length} high-influence stakeholders require special attention for project success. The current stakeholder matrix shows ${businessData.stakeholderGroups.filter(s => s.interest === 'High').length} highly interested parties, which indicates ${businessData.stakeholderGroups.filter(s => s.interest === 'High').length > businessData.stakeholderGroups.length / 2 ? 'strong organizational support' : 'need for increased engagement strategies'}.`
+        : `Stakeholder management framework: Identify key stakeholders across executive leadership (C-level), operational management (directors/VPs), technical teams (architects/leads), and end users. Map each by influence level (high/medium/low) and interest (high/medium/low) to develop targeted engagement strategies.`,
+      
+      timelineAnalysis: hasTimeline 
+        ? `Project timeline consists of ${businessData.projectTimeline.length} planned phase(s). ${hasProject ? `For the "${businessData.projectInfo.name}" project, ` : ''}the phased approach ${businessData.projectTimeline.length > 3 ? 'appears comprehensive with multiple delivery milestones' : 'follows a streamlined delivery model'}. Timeline dependencies should be carefully managed to ensure sequential delivery success.`
+        : `Timeline planning framework: Consider a phased approach with (1) Discovery & Planning (2-3 months), (2) Foundation & Architecture (3-6 months), (3) Implementation & Integration (6-12 months), and (4) Testing & Deployment (2-4 months). Adjust timelines based on organizational complexity and resource availability.`,
+      
+      riskAnalysis: hasRisks 
+        ? `Risk assessment identifies ${businessData.riskAssessment.length} key risk(s). Risk distribution: ${businessData.riskAssessment.filter(r => r.probability === 'High').length} high-probability, ${businessData.riskAssessment.filter(r => r.impact === 'High').length} high-impact risks require immediate mitigation strategies. Categories include: ${[...new Set(businessData.riskAssessment.map(r => r.category))].join(', ')}.`
+        : `Risk management framework: Common transformation risks include technical complexity (40% probability), resource constraints (60% probability), stakeholder resistance (30% probability), and budget overruns (25% probability). Develop mitigation strategies for each category with defined ownership and monitoring processes.`,
+      
+      recommendations: hasDrivers || hasStakeholders || hasTimeline || hasRisks
+        ? `Strategic Recommendations based on current context:
 
 1. ${hasDrivers ? `Address ${businessData.businessDrivers.filter(d => d.priority === 'Critical').length > 0 ? 'critical business drivers first' : 'high-impact drivers systematically'}` : 'Define and prioritize business drivers'}
 2. ${hasStakeholders ? `Leverage ${businessData.stakeholderGroups.filter(s => s.influence === 'High').length} high-influence stakeholder(s) as project champions` : 'Establish stakeholder governance structure'}
@@ -997,7 +1084,7 @@ Priority Actions:
 4. ${hasRisks ? `Implement mitigation for ${businessData.riskAssessment.filter(r => r.impact === 'High').length} high-impact risks` : 'Conduct comprehensive risk assessment'}
 5. Establish change management and communication plans
 6. Define success metrics and regular review cadences`
-          : `Strategic Recommendations for Project Success:
+        : `Strategic Recommendations for Project Success:
 
 1. Conduct comprehensive business context workshop to identify drivers
 2. Map stakeholder influence and develop engagement strategies  
@@ -1006,22 +1093,11 @@ Priority Actions:
 5. Establish governance structure and communication plans
 6. Define success criteria and measurement frameworks
 7. Plan for change management and organizational readiness
-8. Consider pilot approaches for risk mitigation`
-      };
-      
-      setBusinessData(prev => ({
-        ...prev,
-        analysis: mockAnalysis
-      }));
-      
-      setShowAnalysisResults(true);
-      toast.success('Analysis completed successfully!');
-    } catch (error) {
-      console.error('Error running analysis:', error);
-      toast.error('Error running analysis');
-    } finally {
-      setIsAnalyzing(false);
-    }
+8. Consider pilot approaches for risk mitigation`,
+
+      isAiPowered: false,
+      analysisMode: 'Simulation'
+    };
   };
 
   // Chart data preparation
@@ -1870,9 +1946,24 @@ Priority Actions:
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">AI-Powered Analysis</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  AI-Powered Business Context Analysis
+                  {aiServiceAvailable && (
+                    <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {aiCapabilities?.mode || 'AI-Powered'}
+                    </span>
+                  )}
+                  {!aiServiceAvailable && (
+                    <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      Simulation Mode
+                    </span>
+                  )}
+                </h3>
                 <p className="text-gray-500 mt-1">
-                  Generate comprehensive insights from your business context data using advanced AI analysis
+                  {aiServiceAvailable 
+                    ? 'Generate AI-powered strategic insights from your business context data'
+                    : 'Generate strategic insights from your business context data using simulation analysis'
+                  }
                 </p>
               </div>
               <div className="flex space-x-3">
@@ -1894,17 +1985,17 @@ Priority Actions:
                 </button>
                 <button
                   onClick={runLLMAnalysis}
-                  disabled={isAnalyzing}
+                  disabled={isAnalyzing || isAIAnalyzing}
                   className={`flex items-center px-4 py-2 text-white rounded-md transition-colors ${
-                    isAnalyzing
+                    (isAnalyzing || isAIAnalyzing)
                       ? 'bg-gray-300 cursor-not-allowed'
                       : 'bg-purple-600 hover:bg-purple-700 hover:shadow-lg'
                   }`}
                 >
-                  {isAnalyzing ? (
+                  {(isAnalyzing || isAIAnalyzing) ? (
                     <>
                       <Settings className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
+                      {isAIAnalyzing ? `${analysisState.currentStep || 'Analyzing'}...` : 'Analyzing...'}
                     </>
                   ) : (
                     <>
@@ -1930,9 +2021,30 @@ Priority Actions:
             <div className="space-y-6">
               {/* Business Drivers Analysis */}
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Drivers Analysis</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+                  <span>Business Drivers Analysis</span>
+                  {businessData.analysis?.isAiPowered && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <Brain className="h-3 w-3 mr-1" />
+                      AI-Powered
+                    </span>
+                  )}
+                  {businessData.analysis?.isAiPowered === false && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      📊 Simulation
+                    </span>
+                  )}
+                </h3>
                 <div className="prose max-w-none">
-                  <p className="text-gray-700">{businessData.analysis.driversAnalysis}</p>
+                  {businessData.analysis?.isAiPowered ? (
+                    // AI-powered results (may contain markdown formatting)
+                    <div className="whitespace-pre-wrap text-gray-700">
+                      {businessData.analysis?.driversAnalysis}
+                    </div>
+                  ) : (
+                    // Simulation results
+                    <p className="text-gray-700">{businessData.analysis.driversAnalysis}</p>
+                  )}
                 </div>
               </div>
 

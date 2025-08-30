@@ -8,6 +8,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
+import { aiAnalysisService } from '../../services/aiAnalysisService';
+import { useAnalysis } from '../../hooks/useAnalysis';
 
 // Helper functions
 const getCompatibilityTarget = (dbType) => {
@@ -74,11 +76,19 @@ const createTechnologyDistribution = (databases) => {
 
 function DataArchitecture() {
   const { currentAssessment } = useAssessment();
+  const { startAnalysis, getAnalysisState, isAnalysisRunning } = useAnalysis();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
+  const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
+  const [aiCapabilities, setAiCapabilities] = useState(null);
+
+  // Get analysis state for this module
+  const analysisState = getAnalysisState('data-architecture');
+  const isAIAnalyzing = isAnalysisRunning('data-architecture');
   
   const [dataArchData, setDataArchData] = useState({
     microsoftDMA: {
@@ -103,7 +113,20 @@ function DataArchitecture() {
 
   useEffect(() => {
     loadDataArchitectureData();
+    checkAIServiceAvailability();
   }, [currentAssessment]);
+
+  const checkAIServiceAvailability = async () => {
+    try {
+      const capabilities = await aiAnalysisService.getCapabilities();
+      setAiServiceAvailable(capabilities.available);
+      setAiCapabilities(capabilities);
+    } catch (error) {
+      console.error('Failed to check AI service availability:', error);
+      setAiServiceAvailable(false);
+      setAiCapabilities(null);
+    }
+  };
 
   const loadDataArchitectureData = async () => {
     try {
@@ -387,48 +410,109 @@ function DataArchitecture() {
   const runAnalysis = async () => {
     setIsAnalyzing(true);
     setShowAnalysisResults(false);
+    setAiAnalysisResults(null);
     
-    // Simulate analysis processing
-    setTimeout(() => {
-      const analysisResults = {
-        databaseAnalysis: `Microsoft DMA assessment reveals ${dataArchData.microsoftDMA?.databases?.length || 4} databases requiring migration planning:
+    // Start the progress tracking analysis
+    const result = await startAnalysis('data-architecture');
+    
+    let analysisResults;
+
+    try {
+      // Try AI analysis first if available
+      if (aiServiceAvailable) {
+        toast.success('Starting AI-powered data architecture analysis...', { duration: 3000 });
+        
+        // Transform data architecture data for AI analysis
+        const dataArchitectureRequest = {
+          databases: dataArchData.databases.map(db => ({
+            name: db.name,
+            type: db.type,
+            version: db.version,
+            sizeGB: db.size,
+            configuration: { status: db.status, performance: db.performance }
+          })),
+          dataGovernance: 'Enterprise data governance with classification, lineage tracking, and compliance monitoring',
+          dataFlows: dataArchData.integration?.map(i => `${i.from} -> ${i.to}: ${i.description}`).join('; ') || 'ETL pipelines, real-time streaming, batch processing',
+          uploadedDocuments: []
+        };
+        
+        // Call AI analysis service
+        const aiResponse = await aiAnalysisService.analyzeDataArchitecture(dataArchitectureRequest);
+        
+        // Format and store AI results
+        const formattedAiResults = aiAnalysisService.formatAnalysisResponse(aiResponse);
+        setAiAnalysisResults(formattedAiResults);
+        
+        analysisResults = {
+          databaseAnalysis: formattedAiResults,
+          isAiPowered: true,
+          analysisMode: aiCapabilities?.mode || 'AI-Powered'
+        };
+
+        toast.success('AI analysis completed successfully!', { 
+          duration: 4000,
+          icon: '🤖'
+        });
+
+      } else {
+        // Fall back to simulation mode
+        analysisResults = generateSimulationResults();
+        
+        toast.success('Analysis completed using simulation mode', { 
+          duration: 3000,
+          icon: '📊'
+        });
+      }
+    } catch (error) {
+      console.error('AI analysis failed, falling back to simulation:', error);
+      toast.error('AI analysis failed, using simulation mode', { duration: 3000 });
+      
+      // Fall back to simulation mode
+      analysisResults = generateSimulationResults();
+    }
+
+    setDataArchData(prev => ({
+      ...prev,
+      analysis: analysisResults
+    }));
+    
+    setIsAnalyzing(false);
+    setShowAnalysisResults(true);
+  };
+
+  const generateSimulationResults = () => {
+    return {
+      databaseAnalysis: `Microsoft DMA assessment reveals ${dataArchData.microsoftDMA?.databases?.length || 4} databases requiring migration planning:
 
 • ${dataArchData.microsoftDMA?.compatibility?.azureSQLDB || 40}% suitable for Azure SQL Database
 • ${dataArchData.microsoftDMA?.compatibility?.azureSQLMI || 35}% require Azure SQL Managed Instance
 • Legacy SQL Server versions detected with significant compatibility issues
 • Database sizes range from 180 GB to 1.2 TB requiring careful migration planning`,
 
-        migrationAnalysis: `Migration complexity analysis shows mixed readiness levels:
+      migrationAnalysis: `Migration complexity analysis shows mixed readiness levels:
 
 • High readiness databases (>80%): Ready for immediate migration
 • Medium readiness (60-80%): Require minor modifications before migration
 • Low readiness (<60%): Need significant refactoring or version upgrades
 • Critical path: Upgrade SQL Server 2008 instances to supported versions`,
 
-        performanceAnalysis: `Current database performance shows optimization opportunities:
+      performanceAnalysis: `Current database performance shows optimization opportunities:
 
 • SQL Server instances averaging 85% performance efficiency
 • Data volume trending upward at 15% monthly growth
 • Latency improvements of 25ms achieved through recent optimizations
 • Integration patterns show 12 high-complexity ETL processes requiring modernization`,
 
-        modernizationRecommendations: `Recommended data modernization strategy:
+      modernizationRecommendations: `Recommended data modernization strategy:
 
 1. **Phase 1**: Migrate high-readiness databases to Azure SQL Database
 2. **Phase 2**: Upgrade and migrate medium-complexity databases to Azure SQL MI
 3. **Phase 3**: Modernize legacy systems with cloud-native data services
-4. **Implement**: Real-time analytics, automated backup, and disaster recovery solutions`
-      };
+4. **Implement**: Real-time analytics, automated backup, and disaster recovery solutions`,
 
-      setDataArchData(prev => ({
-        ...prev,
-        analysis: analysisResults
-      }));
-      
-      setIsAnalyzing(false);
-      setShowAnalysisResults(true);
-      toast.success('Analysis completed successfully!');
-    }, 3000);
+      isAiPowered: false,
+      analysisMode: 'Simulation'
+    };
   };
 
   const dbColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];

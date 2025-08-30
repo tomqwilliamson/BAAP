@@ -18,7 +18,8 @@ import {
   FileText,
   Settings,
   Users,
-  TrendingUp
+  TrendingUp,
+  Brain
 } from 'lucide-react';
 import classNames from 'classnames';
 
@@ -98,6 +99,12 @@ const navigationItems = [
         href: '/app/recommendations',
         icon: Target,
         description: 'AI-generated improvement suggestions'
+      },
+      {
+        name: 'Document Intelligence',
+        href: '/app/documents',
+        icon: Brain,
+        description: 'AI-powered document analysis and insights'
       }
     ]
   }

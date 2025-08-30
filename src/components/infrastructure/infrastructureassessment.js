@@ -11,6 +11,7 @@ import { formatCurrency } from '../../utils/currency';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { useAnalysis } from '../../hooks/useAnalysis';
+import { aiAnalysisService } from '../../services/aiAnalysisService';
 
 function InfrastructureAssessment() {
   const { currentAssessment } = useAssessment();
@@ -19,6 +20,9 @@ function InfrastructureAssessment() {
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
+  const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
+  const [aiCapabilities, setAiCapabilities] = useState(null);
   
   // Get analysis state for this module
   const analysisState = getAnalysisState('infrastructure');
@@ -49,7 +53,20 @@ function InfrastructureAssessment() {
 
   useEffect(() => {
     loadAssessmentData();
+    checkAIServiceAvailability();
   }, [currentAssessment]);
+
+  const checkAIServiceAvailability = async () => {
+    try {
+      const capabilities = await aiAnalysisService.getCapabilities();
+      setAiServiceAvailable(capabilities.available);
+      setAiCapabilities(capabilities);
+    } catch (error) {
+      console.error('Failed to check AI service availability:', error);
+      setAiServiceAvailable(false);
+      setAiCapabilities(null);
+    }
+  };
 
   const loadAssessmentData = async () => {
     try {
@@ -212,10 +229,66 @@ function InfrastructureAssessment() {
 
   const runAnalysis = async () => {
     setShowAnalysisResults(false);
+    setAiAnalysisResults(null);
     
+    // Start the progress tracking analysis
     const result = await startAnalysis('infrastructure');
     
-    const analysisResults = {
+    let analysisResults;
+
+    // Try AI analysis first if available
+    if (aiServiceAvailable) {
+      try {
+        toast.success('Starting AI-powered infrastructure analysis...', { duration: 3000 });
+        
+        // Transform assessment data for AI analysis
+        const infrastructureRequest = aiAnalysisService.transformInfrastructureData(assessmentData);
+        
+        // Call AI analysis service
+        const aiResponse = await aiAnalysisService.analyzeInfrastructure(infrastructureRequest);
+        
+        // Format and store AI results
+        const formattedAiResults = aiAnalysisService.formatAnalysisResponse(aiResponse);
+        setAiAnalysisResults(formattedAiResults);
+        
+        analysisResults = {
+          infrastructureAnalysis: formattedAiResults,
+          isAiPowered: true,
+          analysisMode: aiCapabilities?.mode || 'AI-Powered'
+        };
+
+        toast.success('AI analysis completed successfully!', { 
+          duration: 4000,
+          icon: '🤖'
+        });
+
+      } catch (error) {
+        console.error('AI analysis failed, falling back to simulation:', error);
+        toast.error('AI analysis failed, using simulation mode', { duration: 3000 });
+        
+        // Fall back to simulation mode
+        analysisResults = generateSimulationResults();
+      }
+    } else {
+      // Use simulation results when AI is not available
+      analysisResults = generateSimulationResults();
+      
+      toast.success('Analysis completed using simulation mode', { 
+        duration: 3000,
+        icon: '📊'
+      });
+    }
+
+    setAssessmentData(prev => ({
+      ...prev,
+      analysis: analysisResults
+    }));
+    
+    setShowAnalysisResults(true);
+  };
+
+  const generateSimulationResults = () => {
+    return {
       infrastructureAnalysis: `Based on the assessment of ${assessmentData.azureMigrate?.servers?.length || 5} servers, your infrastructure shows mixed cloud readiness. Key findings:
 
 • ${assessmentData.azureMigrate?.readiness?.ready || 45}% of applications are cloud-ready with minimal modifications
@@ -241,15 +314,11 @@ function InfrastructureAssessment() {
 1. **Phase 1**: Migrate ${assessmentData.azureMigrate?.readiness?.ready || 45}% cloud-ready applications via lift-and-shift
 2. **Phase 2**: Refactor medium-complexity applications for cloud optimization  
 3. **Phase 3**: Rebuild legacy systems with modern architecture patterns
-4. **Implement**: Container orchestration, auto-scaling, and monitoring solutions`
-    };
+4. **Implement**: Container orchestration, auto-scaling, and monitoring solutions`,
 
-    setAssessmentData(prev => ({
-      ...prev,
-      analysis: analysisResults
-    }));
-    
-    setShowAnalysisResults(true);
+      isAiPowered: false,
+      analysisMode: 'Simulation'
+    };
   };
 
   const hostingColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
@@ -811,9 +880,24 @@ function InfrastructureAssessment() {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">AI-Powered Infrastructure Analysis</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    AI-Powered Infrastructure Analysis
+                    {aiServiceAvailable && (
+                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {aiCapabilities?.mode || 'AI-Powered'}
+                      </span>
+                    )}
+                    {!aiServiceAvailable && (
+                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Simulation Mode
+                      </span>
+                    )}
+                  </h2>
                   <p className="text-sm text-gray-600 mt-1">
-                    Run comprehensive analysis on your uploaded data and Azure Migrate assessment
+                    {aiServiceAvailable 
+                      ? 'Run AI-powered comprehensive analysis on your infrastructure data'
+                      : 'Run simulation analysis on your uploaded data and Azure Migrate assessment'
+                    }
                   </p>
                 </div>
                 <button
@@ -846,16 +930,37 @@ function InfrastructureAssessment() {
                 {/* Infrastructure Analysis */}
                 <div className="bg-white rounded-lg shadow-sm">
                   <div className="px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                      <Server className="h-5 w-5 mr-2 text-blue-600" />
-                      Infrastructure Analysis
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Server className="h-5 w-5 mr-2 text-blue-600" />
+                        Infrastructure Analysis
+                      </div>
+                      {assessmentData.analysis?.isAiPowered && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <Brain className="h-3 w-3 mr-1" />
+                          AI-Powered
+                        </span>
+                      )}
+                      {assessmentData.analysis?.isAiPowered === false && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          📊 Simulation
+                        </span>
+                      )}
                     </h3>
                   </div>
                   <div className="p-6">
                     <div className="prose max-w-none text-gray-700">
-                      {assessmentData.analysis?.infrastructureAnalysis?.split('\\n').map((line, index) => (
-                        <p key={index} className="mb-2">{line}</p>
-                      ))}
+                      {assessmentData.analysis?.isAiPowered ? (
+                        // AI-powered results (may contain markdown formatting)
+                        <div className="whitespace-pre-wrap">
+                          {assessmentData.analysis?.infrastructureAnalysis}
+                        </div>
+                      ) : (
+                        // Simulation results
+                        assessmentData.analysis?.infrastructureAnalysis?.split('\n').map((line, index) => (
+                          <p key={index} className="mb-2">{line}</p>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
