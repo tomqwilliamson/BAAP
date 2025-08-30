@@ -47,7 +47,8 @@ function Layout() {
                 <Route path="/architecture-review" element={<ArchitectureReview />} />
                 <Route path="/cloud-readiness" element={<CloudReadiness />} />
                 <Route path="/recommendations" element={<Recommendations />} />
-                <Route path="/documents" element={<DocumentInsights />} />
+                <Route path="/aria-assistant" element={<DocumentInsights />} />
+                <Route path="/documents" element={<DocumentInsights />} /> {/* Legacy redirect */}
               </Routes>
             </AssessmentSelectionGuard>
           </div>

@@ -101,10 +101,10 @@ const navigationItems = [
         description: 'AI-generated improvement suggestions'
       },
       {
-        name: 'Document Intelligence',
-        href: '/app/documents',
+        name: 'ARIA-AI Assessment Assistant',
+        href: '/app/aria-assistant',
         icon: Brain,
-        description: 'AI-powered document analysis and insights'
+        description: 'Intelligent assistant for assessment guidance and insights'
       }
     ]
   }

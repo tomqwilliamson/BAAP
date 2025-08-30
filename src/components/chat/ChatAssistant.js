@@ -122,7 +122,7 @@ const ChatAssistant = () => {
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-blue-600 text-white rounded-t-lg">
         <div className="flex items-center space-x-2">
           <Bot className="h-5 w-5" />
-          <h3 className="font-semibold">ARIA - AI Assessment Assistant</h3>
+          <h3 className="font-semibold">ARIA-AI Assessment Assistant</h3>
         </div>
         <div className="flex items-center space-x-2">
           <button

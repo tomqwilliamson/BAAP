@@ -8,8 +8,7 @@ import {
     Search, 
     TrendingUp, 
     Network, 
-    Brain, 
-    MessageCircle,
+    Brain,
     Upload,
     Trash2,
     Download,
@@ -24,14 +23,12 @@ const DocumentInsights = () => {
     const [documents, setDocuments] = useState([]);
     const [insights, setInsights] = useState([]);
     const [searchResults, setSearchResults] = useState(null);
-    const [chatMessages, setChatMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(null);
     const [selectedTab, setSelectedTab] = useState('documents');
     
     // Form states
     const [searchQuery, setSearchQuery] = useState('');
-    const [chatQuery, setChatQuery] = useState('');
     const [selectedDocTypes, setSelectedDocTypes] = useState([]);
     const [dragOver, setDragOver] = useState(false);
 
@@ -145,47 +142,6 @@ const DocumentInsights = () => {
         }
     };
 
-    const handleChat = async () => {
-        if (!chatQuery.trim()) return;
-        
-        const userMessage = { role: 'user', content: chatQuery, timestamp: new Date() };
-        setChatMessages(prev => [...prev, userMessage]);
-        setChatQuery('');
-        setLoading(true);
-        
-        try {
-            const response = await fetch('/api/document/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    query: chatQuery,
-                    maxChunks: 5,
-                    minimumSimilarity: 0.7
-                })
-            });
-            
-            const data = await response.json();
-            const assistantMessage = {
-                role: 'assistant',
-                content: data.response,
-                confidence: data.confidence,
-                sourceDocuments: data.sourceDocuments,
-                timestamp: new Date()
-            };
-            
-            setChatMessages(prev => [...prev, assistantMessage]);
-        } catch (error) {
-            console.error('Chat error:', error);
-            const errorMessage = {
-                role: 'assistant',
-                content: 'Sorry, I encountered an error while processing your question.',
-                timestamp: new Date()
-            };
-            setChatMessages(prev => [...prev, errorMessage]);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleDeleteDocument = async (documentId) => {
         if (!confirm('Are you sure you want to delete this document?')) return;
@@ -224,8 +180,8 @@ const DocumentInsights = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Document Intelligence</h1>
-                    <p className="text-gray-600">AI-powered document analysis and insights</p>
+                    <h1 className="text-2xl font-bold">ARIA-AI Assessment Assistant</h1>
+                    <p className="text-gray-600">Intelligent assistant for assessment guidance and insights</p>
                 </div>
                 <div className="flex space-x-2">
                     <input
@@ -284,7 +240,7 @@ const DocumentInsights = () => {
             </div>
 
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="documents" className="flex items-center">
                         <FileText className="h-4 w-4 mr-2" />
                         Documents
@@ -296,10 +252,6 @@ const DocumentInsights = () => {
                     <TabsTrigger value="insights" className="flex items-center">
                         <Network className="h-4 w-4 mr-2" />
                         Insights
-                    </TabsTrigger>
-                    <TabsTrigger value="chat" className="flex items-center">
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Chat
                     </TabsTrigger>
                 </TabsList>
 
@@ -555,88 +507,6 @@ const DocumentInsights = () => {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="chat" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center">
-                                <Brain className="h-5 w-5 mr-2" />
-                                Chat with Your Documents
-                            </CardTitle>
-                            <p className="text-sm text-gray-600">
-                                Ask questions about your uploaded documents. I'll search through them to find relevant answers.
-                            </p>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div className="h-96 overflow-y-auto border rounded-lg p-4 space-y-4">
-                                    {chatMessages.length === 0 ? (
-                                        <div className="text-center text-gray-500">
-                                            <MessageCircle className="h-8 w-8 mx-auto mb-2" />
-                                            <p>Start a conversation about your documents!</p>
-                                            <p className="text-xs mt-1">
-                                                Try asking: "What are the main security risks?" or "Summarize the business requirements"
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        chatMessages.map((message, idx) => (
-                                            <div key={idx} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                                <div className={`max-w-3/4 p-3 rounded-lg ${
-                                                    message.role === 'user' 
-                                                        ? 'bg-blue-500 text-white' 
-                                                        : 'bg-gray-100'
-                                                }`}>
-                                                    <p className="text-sm">{message.content}</p>
-                                                    {message.sourceDocuments && message.sourceDocuments.length > 0 && (
-                                                        <div className="mt-2 pt-2 border-t border-gray-200">
-                                                            <p className="text-xs text-gray-600 mb-1">Sources:</p>
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {message.sourceDocuments.map((source, sidx) => (
-                                                                    <Badge key={sidx} variant="outline" className="text-xs">
-                                                                        {source}
-                                                                    </Badge>
-                                                                ))}
-                                                            </div>
-                                                            {message.confidence && (
-                                                                <p className="text-xs text-gray-500 mt-1">
-                                                                    Confidence: {(message.confidence * 100).toFixed(1)}%
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    <p className="text-xs mt-1 opacity-70">
-                                                        {message.timestamp.toLocaleTimeString()}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                    {loading && (
-                                        <div className="flex justify-start">
-                                            <div className="bg-gray-100 p-3 rounded-lg">
-                                                <p className="text-sm">Thinking...</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <div className="flex space-x-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Ask a question about your documents..."
-                                        value={chatQuery}
-                                        onChange={(e) => setChatQuery(e.target.value)}
-                                        className="flex-1 px-3 py-2 border rounded-md"
-                                        onKeyPress={(e) => e.key === 'Enter' && handleChat()}
-                                        disabled={loading}
-                                    />
-                                    <Button onClick={handleChat} disabled={loading || !chatQuery.trim()}>
-                                        {loading ? 'Thinking...' : 'Send'}
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
             </Tabs>
         </div>
     );
