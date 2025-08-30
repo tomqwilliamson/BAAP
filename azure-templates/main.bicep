@@ -28,6 +28,12 @@ param repositoryUrl string = ''
 @secure()
 param githubToken string = ''
 
+@description('Azure OpenAI Service Model Deployment Name')
+param openAiDeploymentName string = 'gpt-35-turbo'
+
+@description('Azure OpenAI Service API Version')
+param openAiApiVersion string = '2023-05-15'
+
 // Variables
 var environmentConfig = {
   dev: {
@@ -48,6 +54,10 @@ var environmentConfig = {
     skuName: 'P1V3'
     skuTier: 'PremiumV3'
     sqlSkuName: 'S2'
+    openAiSku: {
+      name: 'S0'
+      tier: 'Standard'
+    }
     sqlSkuTier: 'Standard'
     sqlSkuCapacity: 50
   }
@@ -668,6 +678,42 @@ output keyVaultName string = keyVault.name
 output storageAccountName string = storageAccount.name
 output applicationInsightsInstrumentationKey string = applicationInsights.properties.InstrumentationKey
 output appConfigurationEndpoint string = appConfiguration.properties.endpoint
+// Azure OpenAI Service
+resource openAiService 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
+  name: '${appName}-openai-${environment}'
+  location: location
+  sku: environmentConfig[environment].openAiSku
+  kind: 'OpenAI'
+  properties: {
+    customSubDomainName: toLower('${appName}-openai-${environment}')
+    publicNetworkAccess: 'Enabled'
+    networkAcls: {
+      defaultAction: 'Allow'
+      virtualNetworkRules: []
+      ipRules: []
+    }
+  }
+}
+
+// OpenAI Model Deployment
+resource openAiModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
+  parent: openAiService
+  name: openAiDeploymentName
+  sku: {
+    name: 'Standard'
+    capacity: 1
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'gpt-35-turbo'
+      version: '0613'
+    }
+  }
+}
+
+output openAiEndpoint string = openAiService.properties.endpoint
+output openAiName string = openAiService.name
 output staticWebAppDeploymentToken string = staticWebApp.listSecrets().properties.apiKey
 output staticWebAppDefaultHostname string = staticWebApp.properties.defaultHostname
 output appServiceName string = appService.name
