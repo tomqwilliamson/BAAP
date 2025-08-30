@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authorization;
 namespace BAAP.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
 [Route("api/business-drivers")]
 //[Authorize]
 public class BusinessDriversController : ControllerBase
@@ -21,7 +20,7 @@ public class BusinessDriversController : ControllerBase
         _logger = logger;
     }
 
-    // GET: api/businessdrivers/assessment/{assessmentId}
+    // GET: api/business-drivers/assessment/{assessmentId}
     [HttpGet("assessment/{assessmentId}")]
     public async Task<ActionResult> GetBusinessDrivers(int assessmentId)
     {
@@ -68,7 +67,7 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // PUT: api/businessdrivers/assessment/{assessmentId}/update
+    // PUT: api/business-drivers/assessment/{assessmentId}/update
     [HttpPut("assessment/{assessmentId}/update")]
     public async Task<ActionResult> UpdateBusinessDrivers(int assessmentId, [FromBody] UpdateBusinessDriversRequest request)
     {
@@ -131,7 +130,7 @@ public class BusinessDriversController : ControllerBase
         return await UpdateBusinessDrivers(assessmentId, request);
     }
 
-    // GET: api/businessdrivers/{id}
+    // GET: api/business-drivers/{id}
     [HttpGet("{id}")]
     public async Task<ActionResult> GetBusinessDriver(int id)
     {
@@ -171,7 +170,7 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // POST: api/businessdrivers
+    // POST: api/business-drivers
     [HttpPost]
     public async Task<ActionResult> CreateBusinessDriver([FromBody] CreateBusinessDriverRequest request)
     {
@@ -216,7 +215,7 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // PUT: api/businessdrivers/{id}
+    // PUT: api/business-drivers/{id}
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateBusinessDriver(int id, [FromBody] UpdateBusinessDriverRequest request)
     {
@@ -252,7 +251,7 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // DELETE: api/businessdrivers/{id}
+    // DELETE: api/business-drivers/{id}
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteBusinessDriver(int id)
     {
@@ -276,7 +275,7 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // POST: api/businessdrivers/bulk-import
+    // POST: api/business-drivers/bulk-import
     [HttpPost("bulk-import")]
     public async Task<ActionResult> BulkImportBusinessDrivers([FromBody] BulkImportBusinessDriversRequest request)
     {
@@ -342,7 +341,7 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // PUT: api/businessdrivers/assessment/{assessmentId}/replace
+    // PUT: api/business-drivers/assessment/{assessmentId}/replace
     [HttpPut("assessment/{assessmentId}/replace")]
     public async Task<ActionResult> UpdateAssessmentBusinessDrivers(int assessmentId, [FromBody] UpdateAssessmentBusinessDriversRequest request)
     {
@@ -394,7 +393,7 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // PUT: api/businessdrivers/context/{assessmentId}
+    // PUT: api/business-drivers/context/{assessmentId}
     [HttpPut("context/{assessmentId}")]
     public async Task<ActionResult> UpdateBusinessContext(int assessmentId, [FromBody] UpdateBusinessContextRequest request)
     {
@@ -425,7 +424,7 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // GET: api/businessdrivers/context/{assessmentId}
+    // GET: api/business-drivers/context/{assessmentId}
     [HttpGet("context/{assessmentId}")]
     public async Task<ActionResult> GetBusinessContext(int assessmentId)
     {
@@ -454,7 +453,7 @@ public class BusinessDriversController : ControllerBase
         }
     }
 
-    // GET: api/businessdrivers/templates
+    // GET: api/business-drivers/templates
     [HttpGet("templates")]
     public ActionResult GetBusinessDriverTemplates()
     {
