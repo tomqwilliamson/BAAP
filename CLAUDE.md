@@ -102,7 +102,7 @@ npm test
 - **Phase 2**: Enhance remaining 7 modules with AI integration
 - **Phase 3**: Advanced document analysis with embeddings and vector search
 - **Phase 4**: Custom AI models for industry-specific recommendations
-- **Phase 5**: Integration with Azure Migrate and other Microsoft assessment tools
+- **Intelligence Services**: Integration with Azure Migrate and other Microsoft assessment tools
 
 ### Security Considerations
 - AI API keys stored securely in Azure Key Vault
