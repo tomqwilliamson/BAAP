@@ -68,18 +68,18 @@ const AnalyticsDashboard = () => {
     const loadDashboardData = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`/api/monitoring/dashboard/${selectedDashboard}?timeRange=${selectedTimeRange}`);
+            const response = await fetch(`/api/intelligence/dashboard/${selectedDashboard}?timeRange=${selectedTimeRange}`);
             const data = await response.json();
             setDashboardData(data);
             setLastUpdated(new Date());
 
             // Load alerts
-            const alertsResponse = await fetch('/api/monitoring/alerts/active');
+            const alertsResponse = await fetch('/api/intelligence/alerts/active');
             const alertsData = await alertsResponse.json();
             setAlerts(alertsData);
 
             // Load KPIs
-            const kpiResponse = await fetch(`/api/monitoring/kpis?period=${selectedTimeRange}`);
+            const kpiResponse = await fetch(`/api/intelligence/kpis?period=${selectedTimeRange}`);
             const kpiData = await kpiResponse.json();
             setKpis(kpiData);
             

@@ -66,6 +66,20 @@ public class IntelligenceController : ControllerBase
         return Ok(timeline);
     }
 
+    [HttpGet("alerts/active")]
+    public async Task<IActionResult> GetActiveAlerts()
+    {
+        var alerts = await _monitoringService.GetActiveAlertsAsync();
+        return Ok(alerts);
+    }
+
+    [HttpGet("kpis")]
+    public async Task<IActionResult> GetKpis([FromQuery] string period = "7d")
+    {
+        var kpis = await _monitoringService.GetKpisAsync(period);
+        return Ok(kpis);
+    }
+
     [HttpGet("health")]
     public IActionResult GetHealth()
     {

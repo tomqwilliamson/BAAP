@@ -54,4 +54,20 @@ public class CleanMonitoringService : IMonitoringServiceClean
     {
         // Implementation placeholder
     }
+
+    public async Task<List<AlertNotification>> GetActiveAlertsAsync()
+    {
+        return new List<AlertNotification>();
+    }
+
+    public async Task<List<object>> GetKpisAsync(string period)
+    {
+        return new List<object>
+        {
+            new { Name = "System Health", Value = 95, Unit = "%", Trend = "up" },
+            new { Name = "Active Assessments", Value = 12, Unit = "count", Trend = "stable" },
+            new { Name = "Processing Queue", Value = 3, Unit = "items", Trend = "down" },
+            new { Name = "Response Time", Value = 150, Unit = "ms", Trend = "up" }
+        };
+    }
 }
