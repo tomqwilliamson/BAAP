@@ -64,14 +64,18 @@ export function AssessmentProvider({ children }) {
 
   const loadAssessment = async (id) => {
     try {
+      console.log('ASSESSMENT CONTEXT: Loading assessment with ID:', id);
       dispatch({ type: 'SET_LOADING', payload: true });
       const assessment = await apiService.getAssessment(id);
+      console.log('ASSESSMENT CONTEXT: Loaded assessment:', assessment?.name);
       dispatch({ type: 'SET_CURRENT_ASSESSMENT', payload: assessment });
       
       // Load applications for this assessment
       const applications = await apiService.getApplications({ assessmentId: id });
+      console.log('ASSESSMENT CONTEXT: Loaded applications for assessment:', applications?.length, 'applications');
       dispatch({ type: 'SET_APPLICATIONS', payload: applications });
     } catch (error) {
+      console.error('ASSESSMENT CONTEXT: Error loading assessment:', error);
       dispatch({ type: 'SET_ERROR', payload: error.message });
     }
   };

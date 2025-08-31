@@ -24,6 +24,9 @@ public class BaapDbContext : DbContext
     public DbSet<DatabaseInstance> DatabaseInstances { get; set; } = null!;
     public DbSet<SecurityVulnerability> SecurityVulnerabilities { get; set; } = null!;
     public DbSet<ComplianceFramework> ComplianceFrameworks { get; set; } = null!;
+    public DbSet<BudgetAllocation> BudgetAllocations { get; set; } = null!;
+    public DbSet<ProjectTimelineItem> ProjectTimelineItems { get; set; } = null!;
+    public DbSet<BusinessContextRisk> BusinessContextRisks { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -100,6 +103,24 @@ public class BaapDbContext : DbContext
             .HasOne(cf => cf.Assessment)
             .WithMany()
             .HasForeignKey(cf => cf.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BudgetAllocation>()
+            .HasOne(ba => ba.Assessment)
+            .WithMany()
+            .HasForeignKey(ba => ba.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProjectTimelineItem>()
+            .HasOne(pti => pti.Assessment)
+            .WithMany()
+            .HasForeignKey(pti => pti.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BusinessContextRisk>()
+            .HasOne(bcr => bcr.Assessment)
+            .WithMany()
+            .HasForeignKey(bcr => bcr.AssessmentId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Configure decimal precision for currency fields

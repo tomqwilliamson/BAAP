@@ -2,15 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building, Users, Target, TrendingUp, DollarSign, Calendar, FileText, AlertCircle,
-  Plus, Edit3, Save, X, Trash2, Brain, Download, Upload, Eye, EyeOff, Settings
+  Plus, Edit3, Save, X, Trash2, Brain, Download, Upload, Eye, EyeOff, Settings,
+  CheckCircle, Clock, Network, BarChart3
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
+import { debounce } from 'lodash';
 import { formatCurrency } from '../../utils/currency';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { apiService } from '../../services/apiService';
 import { aiAnalysisService } from '../../services/aiAnalysisService';
+import businessContextService from '../../services/businessContextService';
 import { useAnalysis } from '../../hooks/useAnalysis';
+import { API_BASE_URL } from '../../services/api';
 
 // Generate assessment-specific mock data
 const generateMockDataForAssessment = (assessment, businessDrivers) => {
@@ -380,7 +388,7 @@ const generateMockDataForAssessment = (assessment, businessDrivers) => {
 };
 
 function BusinessContext() {
-  const { currentAssessment } = useAssessment();
+  const { currentAssessment, loadAssessment } = useAssessment();
   const { startAnalysis, getAnalysisState, isAnalysisRunning } = useAnalysis();
   const [currentView, setCurrentView] = useState('overview'); // overview, gather, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(true);
@@ -389,8 +397,16 @@ function BusinessContext() {
   const [lastSaveTime, setLastSaveTime] = useState(new Date());
   const [loading, setLoading] = useState(false);
   const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
+  const [usingDatabaseData, setUsingDatabaseData] = useState(false);
   const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
   const [aiCapabilities, setAiCapabilities] = useState(null);
+  
+  // Document management states
+  const [documents, setDocuments] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [selectedDocumentTab, setSelectedDocumentTab] = useState('documents');
+  const [dragOver, setDragOver] = useState(false);
 
   // Get analysis state for this module
   const analysisState = getAnalysisState('business-context');
@@ -636,6 +652,8 @@ Priority Actions:
   useEffect(() => {
     loadAssessmentData();
     checkAIServiceAvailability();
+    loadDocuments();
+    loadInsights();
   }, [currentAssessment]);
 
   const checkAIServiceAvailability = async () => {
@@ -648,6 +666,277 @@ Priority Actions:
       setAiServiceAvailable(false);
       setAiCapabilities(null);
     }
+  };
+
+  // Save budget allocation to database with debouncing
+  const saveBudgetAllocation = async (budgetData) => {
+    if (!currentAssessment?.id) return;
+    
+    try {
+      await businessContextService.saveBudgetAllocation(currentAssessment.id, budgetData);
+      console.log('Budget allocation saved to database');
+    } catch (error) {
+      console.error('Failed to save budget allocation:', error);
+      toast.error('Failed to save budget allocation');
+    }
+  };
+
+  // Debounced save function
+  const debouncedSaveBudget = React.useCallback(
+    debounce((budgetData) => {
+      saveBudgetAllocation(budgetData);
+    }, 1000),
+    [currentAssessment?.id]
+  );
+
+  // Document management functions
+  const documentTypes = [
+    'Business Requirements',
+    'Strategic Documents', 
+    'Business Process Documentation',
+    'Stakeholder Analysis',
+    'Market Research',
+    'Financial Planning',
+    'Project Charter',
+    'Business Case Documentation'
+  ];
+
+  const loadDocuments = async () => {
+    // Check localStorage for document API unavailability
+    const documentUnavailableKey = 'baap_document_api_unavailable';
+    const stored = localStorage.getItem(documentUnavailableKey);
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        const now = Date.now();
+        // If stored timestamp is within 1 minute, skip API call
+        if (now - data.timestamp < 60000) {
+          console.warn('Document API recently unavailable, using empty documents');
+          setDocuments([]);
+          return;
+        }
+      } catch (error) {
+        // Invalid storage data, continue with API call
+      }
+    }
+    
+    try {
+      // Use Files controller endpoint for assessment files
+      const assessmentId = currentAssessment?.id || 1; // Default to 1 if no assessment
+      const response = await fetch(`${API_BASE_URL}/Files/assessment/${assessmentId}?category=General,Requirements`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn('Files API not available, using empty documents');
+          // Save unavailability state to localStorage
+          localStorage.setItem(documentUnavailableKey, JSON.stringify({ timestamp: Date.now() }));
+          setDocuments([]);
+          return;
+        }
+        throw new Error(`Failed to load documents: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      // The Files API returns { summary, files } structure
+      if (data && data.files && Array.isArray(data.files)) {
+        // Map Files API response to expected document structure
+        const businessDocs = data.files.map(file => ({
+          id: file.id,
+          name: file.originalFileName,
+          documentType: file.category || 'General',
+          category: 'business',
+          uploadedBy: file.uploadedBy,
+          uploadedDate: file.uploadedDate,
+          fileSize: file.fileSize,
+          contentType: file.contentType,
+          description: file.description
+        }));
+        setDocuments(businessDocs);
+      } else {
+        console.warn('Files API returned unexpected data structure, using empty documents');
+        setDocuments([]);
+      }
+    } catch (error) {
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        console.warn('Document API not available, using empty documents');
+        // Save unavailability state to localStorage
+        localStorage.setItem(documentUnavailableKey, JSON.stringify({ timestamp: Date.now() }));
+        setDocuments([]);
+      } else if (error.message.includes('Unexpected token') || error.name === 'SyntaxError') {
+        console.warn('Document API returned invalid JSON (likely HTML error page), using empty documents');
+        // Save unavailability state to localStorage
+        localStorage.setItem(documentUnavailableKey, JSON.stringify({ timestamp: Date.now() }));
+        setDocuments([]);
+      } else {
+        console.error('Error loading business documents:', error);
+        setDocuments([]);
+      }
+    }
+  };
+
+  const loadInsights = async () => {
+    // Check localStorage for insights API unavailability
+    const insightsUnavailableKey = 'baap_insights_api_unavailable';
+    const stored = localStorage.getItem(insightsUnavailableKey);
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        const now = Date.now();
+        // If stored timestamp is within 1 minute, skip API call
+        if (now - data.timestamp < 60000) {
+          console.warn('Document insights API recently unavailable, using empty insights');
+          setInsights([]);
+          return;
+        }
+      } catch (error) {
+        // Invalid storage data, continue with API call
+      }
+    }
+    
+    try {
+      // Use Intelligence recommendations endpoint for insights
+      const assessmentId = currentAssessment?.id || 'default';
+      const response = await fetch(`${API_BASE_URL}/Intelligence/recommendations/${assessmentId}`, {
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn('Document insights API not available, using empty insights');
+          // Save unavailability state to localStorage
+          localStorage.setItem(insightsUnavailableKey, JSON.stringify({ timestamp: Date.now() }));
+          setInsights([]);
+          return;
+        }
+        throw new Error(`Failed to load insights: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      // Transform Intelligence API response to insights format
+      if (data) {
+        const businessInsights = [{
+          id: 1,
+          documentId: 1,
+          fileName: 'Business Analysis Report',
+          analysisCategory: 'Business',
+          documentType: 'Business Requirements',
+          insight: 'AI-powered business analysis recommendations available',
+          confidence: 0.9,
+          keyThemes: ['Digital Transformation', 'Cloud Migration', 'Business Optimization'],
+          relatedDocuments: [],
+          recommendations: data
+        }];
+        setInsights(businessInsights);
+      } else {
+        console.warn('Intelligence API returned unexpected data, using empty insights');
+        setInsights([]);
+      }
+    } catch (error) {
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        console.warn('Document insights API not available, using empty insights');
+        // Save unavailability state to localStorage
+        localStorage.setItem(insightsUnavailableKey, JSON.stringify({ timestamp: Date.now() }));
+        setInsights([]);
+      } else if (error.message.includes('Unexpected token') || error.name === 'SyntaxError') {
+        console.warn('Document insights API returned invalid JSON (likely HTML error page), using empty insights');
+        // Save unavailability state to localStorage
+        localStorage.setItem(insightsUnavailableKey, JSON.stringify({ timestamp: Date.now() }));
+        setInsights([]);
+      } else {
+        console.error('Error loading business insights:', error);
+        setInsights([]);
+      }
+    }
+  };
+
+  const handleDocumentUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress({ fileName: file.name, progress: 0 });
+      
+      try {
+        const formData = new FormData();
+        formData.append('File', file);
+        formData.append('Category', 'Requirements');
+        formData.append('Description', 'Business requirements document');
+        formData.append('AssessmentId', currentAssessment?.id || 1);
+        
+        const response = await fetch(`${API_BASE_URL}/Files/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          setUploadProgress({ fileName: file.name, progress: 100, status: 'completed' });
+          await loadDocuments();
+          await loadInsights();
+          toast.success(`${file.name} uploaded successfully`);
+        } else {
+          setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+          toast.error(`Failed to upload ${file.name}`);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+        toast.error(`Error uploading ${file.name}`);
+      }
+    }
+    
+    setTimeout(() => setUploadProgress(null), 3000);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    handleDocumentUpload(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    try {
+      await fetch(`${API_BASE_URL}/Files/${documentId}`, { method: 'DELETE' });
+      await loadDocuments();
+      await loadInsights();
+      toast.success('Document deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Error deleting document');
+    }
+  };
+
+  const getDocumentTypeColor = (type) => {
+    const colors = {
+      'Business Requirements': 'bg-blue-100 text-blue-800',
+      'Strategic Documents': 'bg-purple-100 text-purple-800',
+      'Business Process Documentation': 'bg-green-100 text-green-800',
+      'Stakeholder Analysis': 'bg-orange-100 text-orange-800',
+      'Market Research': 'bg-pink-100 text-pink-800',
+      'Financial Planning': 'bg-yellow-100 text-yellow-800',
+      'Project Charter': 'bg-indigo-100 text-indigo-800',
+      'Business Case Documentation': 'bg-gray-100 text-gray-800'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const loadAssessmentData = async () => {
@@ -665,31 +954,97 @@ Priority Actions:
           duration: currentAssessment.timeline || '',
           totalBudget: currentAssessment.budget ? formatCurrency(currentAssessment.budget) : ''
         };
+        
+        console.log('LOADING: Current assessment data:', {
+          id: currentAssessment.id,
+          name: currentAssessment.name,
+          type: currentAssessment.type,
+          description: currentAssessment.description,
+          businessObjective: currentAssessment.businessObjective,
+          timeline: currentAssessment.timeline,
+          budget: currentAssessment.budget
+        });
+        console.log('LOADING: Mapped projectInfo:', projectInfo);
 
         // Load business drivers for this assessment
         let businessDrivers = [];
-        let hasStoredDrivers = false;
+        let stakeholderGroups = [];
+        let hasStoredData = false;
+        
         try {
           const driversResponse = await apiService.getBusinessDrivers(currentAssessment.id);
           businessDrivers = driversResponse.businessDrivers || [];
-          hasStoredDrivers = businessDrivers.length > 0;
           console.log('LOADING: Business drivers loaded:', businessDrivers.length);
         } catch (error) {
-          console.log('LOADING: No business drivers found for this assessment, will use mock data');
+          console.log('LOADING: No business drivers found for this assessment');
           businessDrivers = [];
-          hasStoredDrivers = false;
         }
 
-        // Generate assessment-specific mock data
-        const assessmentSpecificData = generateMockDataForAssessment(currentAssessment, businessDrivers);
-        
-        // Update the business data with assessment-specific data
-        setBusinessData({
-          ...assessmentSpecificData,
-          projectInfo,
-          // Only override business drivers if we have stored data, otherwise keep mock data
-          businessDrivers: hasStoredDrivers ? businessDrivers : assessmentSpecificData.businessDrivers
-        });
+        try {
+          const stakeholdersResponse = await apiService.getStakeholders(currentAssessment.id);
+          stakeholderGroups = stakeholdersResponse.stakeholders || [];
+          console.log('LOADING: Stakeholders loaded:', stakeholderGroups.length);
+        } catch (error) {
+          console.log('LOADING: No stakeholders found for this assessment');
+          stakeholderGroups = [];
+        }
+
+        hasStoredData = businessDrivers.length > 0 || stakeholderGroups.length > 0;
+
+        // Load budget allocation from database
+        let budgetAllocation = null;
+        try {
+          budgetAllocation = await businessContextService.getBudgetAllocation(currentAssessment.id);
+          console.log('LOADING: Budget allocation loaded from database:', budgetAllocation);
+        } catch (error) {
+          console.warn('LOADING: Failed to load budget allocation from database, using fallback');
+          const assessmentSpecificData = generateMockDataForAssessment(currentAssessment, businessDrivers);
+          budgetAllocation = assessmentSpecificData.budgetAllocation || {
+            assessment: 0,
+            implementation: 0,
+            maintenance: 0,
+            training: 0
+          };
+        }
+
+        if (hasStoredData) {
+          // Use database data - prioritize real data over simulation
+          console.log('LOADING: Using database data');
+          setUsingDatabaseData(true);
+          const assessmentSpecificData = generateMockDataForAssessment(currentAssessment, businessDrivers);
+          setBusinessData({
+            projectInfo,
+            businessDrivers,
+            stakeholderGroups,
+            projectTimeline: [], // Will be loaded from database separately
+            budgetAllocation: {
+              assessment: budgetAllocation?.assessmentCost || budgetAllocation?.assessment || 0,
+              implementation: budgetAllocation?.implementation || 0,
+              maintenance: budgetAllocation?.maintenance || 0,
+              training: budgetAllocation?.training || 0,
+              contingency: budgetAllocation?.contingency || 0
+            },
+            risks: assessmentSpecificData.risks || []
+          });
+          console.log('LOADING: Set businessData with database budget allocation');
+        } else {
+          // No database data found - use assessment-specific simulation data as fallback
+          console.log('LOADING: No database data found, using simulation data for assessment', currentAssessment.id);
+          setUsingDatabaseData(false);
+          const assessmentSpecificData = generateMockDataForAssessment(currentAssessment, []);
+          setBusinessData({
+            ...assessmentSpecificData,
+            projectInfo,
+            budgetAllocation: {
+              assessment: budgetAllocation?.assessmentCost || budgetAllocation?.assessment || assessmentSpecificData.budgetAllocation?.assessment || 0,
+              implementation: budgetAllocation?.implementation || assessmentSpecificData.budgetAllocation?.implementation || 0,
+              maintenance: budgetAllocation?.maintenance || assessmentSpecificData.budgetAllocation?.maintenance || 0,
+              training: budgetAllocation?.training || assessmentSpecificData.budgetAllocation?.training || 0,
+              contingency: budgetAllocation?.contingency || assessmentSpecificData.budgetAllocation?.contingency || 0
+            }
+          });
+          console.log('LOADING: Set businessData with simulation + database budget');
+        }
 
         setDataSaved(true);
         setLastSaveTime(new Date());
@@ -783,14 +1138,43 @@ Priority Actions:
         console.log('BIZ SAVE: Assessment update result:', updateResult);
 
         // Save business drivers to database
-        if (businessData.businessDrivers.length > 0) {
+        if (businessData?.businessDrivers?.length > 0) {
           const driversResult = await apiService.updateBusinessDrivers(currentAssessment.id, {
             businessDrivers: businessData.businessDrivers
           });
           console.log('BIZ SAVE: Business drivers update result:', driversResult);
         }
 
+        // Save stakeholders to database
+        if (businessData?.stakeholderGroups?.length > 0) {
+          // For each stakeholder, add them to the assessment
+          for (const stakeholder of businessData.stakeholderGroups) {
+            try {
+              if (stakeholder.id && stakeholder.id > 0 && !stakeholder.id.toString().startsWith('new_')) {
+                // Update existing stakeholder
+                await apiService.updateStakeholder(stakeholder.id, stakeholder);
+                console.log('BIZ SAVE: Updated stakeholder:', stakeholder.name || stakeholder.role);
+              } else {
+                // Add new stakeholder
+                await apiService.addStakeholder(currentAssessment.id, {
+                  ...stakeholder,
+                  assessmentId: currentAssessment.id
+                });
+                console.log('BIZ SAVE: Added new stakeholder:', stakeholder.name || stakeholder.role);
+              }
+            } catch (error) {
+              console.error('BIZ SAVE: Error saving stakeholder:', stakeholder.name || stakeholder.role, error);
+            }
+          }
+        }
+
         console.log('BIZ SAVE: Data saved to database and localStorage successfully');
+        setUsingDatabaseData(true); // Now using database data since we just saved it
+        
+        // Reload the current assessment to get the updated data in context
+        console.log('BIZ SAVE: Reloading assessment to refresh context data');
+        await loadAssessment(currentAssessment.id);
+        
         toast.success('Business context data saved to database successfully');
       } else {
         console.log('BIZ SAVE: No current assessment found - currentAssessment is:', currentAssessment);
@@ -852,7 +1236,7 @@ Priority Actions:
     };
     setBusinessData(prev => ({
       ...prev,
-      businessDrivers: [...prev.businessDrivers, newDriver]
+      businessDrivers: [...(prev?.businessDrivers || []), newDriver]
     }));
     setEditingDriver(newDriver.id);
     setDataSaved(false); // Mark as unsaved when data changes
@@ -861,7 +1245,7 @@ Priority Actions:
   const updateBusinessDriver = (id, updates) => {
     setBusinessData(prev => ({
       ...prev,
-      businessDrivers: prev.businessDrivers.map(driver =>
+      businessDrivers: (prev?.businessDrivers || []).map(driver =>
         driver.id === id ? { ...driver, ...updates } : driver
       )
     }));
@@ -871,7 +1255,7 @@ Priority Actions:
   const deleteBusinessDriver = (id) => {
     setBusinessData(prev => ({
       ...prev,
-      businessDrivers: prev.businessDrivers.filter(driver => driver.id !== id)
+      businessDrivers: (prev?.businessDrivers || []).filter(driver => driver.id !== id)
     }));
   };
 
@@ -889,7 +1273,7 @@ Priority Actions:
     };
     setBusinessData(prev => ({
       ...prev,
-      stakeholderGroups: [...prev.stakeholderGroups, newStakeholder]
+      stakeholderGroups: [...(prev?.stakeholderGroups || []), newStakeholder]
     }));
     setEditingStakeholder(newStakeholder.id);
   };
@@ -897,7 +1281,7 @@ Priority Actions:
   const updateStakeholder = (id, updates) => {
     setBusinessData(prev => ({
       ...prev,
-      stakeholderGroups: prev.stakeholderGroups.map(stakeholder =>
+      stakeholderGroups: (prev?.stakeholderGroups || []).map(stakeholder =>
         stakeholder.id === id ? { ...stakeholder, ...updates } : stakeholder
       )
     }));
@@ -906,7 +1290,7 @@ Priority Actions:
   const deleteStakeholder = (id) => {
     setBusinessData(prev => ({
       ...prev,
-      stakeholderGroups: prev.stakeholderGroups.filter(stakeholder => stakeholder.id !== id)
+      stakeholderGroups: (prev?.stakeholderGroups || []).filter(stakeholder => stakeholder.id !== id)
     }));
   };
 
@@ -924,7 +1308,7 @@ Priority Actions:
     };
     setBusinessData(prev => ({
       ...prev,
-      projectTimeline: [...prev.projectTimeline, newItem]
+      projectTimeline: [...(prev?.projectTimeline || []), newItem]
     }));
     setEditingTimelineItem(newItem.id);
   };
@@ -932,7 +1316,7 @@ Priority Actions:
   const updateTimelineItem = (id, updates) => {
     setBusinessData(prev => ({
       ...prev,
-      projectTimeline: prev.projectTimeline.map(item =>
+      projectTimeline: (prev?.projectTimeline || []).map(item =>
         item.id === id ? { ...item, ...updates } : item
       )
     }));
@@ -941,7 +1325,7 @@ Priority Actions:
   const deleteTimelineItem = (id) => {
     setBusinessData(prev => ({
       ...prev,
-      projectTimeline: prev.projectTimeline.filter(item => item.id !== id)
+      projectTimeline: (prev?.projectTimeline || []).filter(item => item.id !== id)
     }));
   };
 
@@ -959,7 +1343,7 @@ Priority Actions:
     };
     setBusinessData(prev => ({
       ...prev,
-      riskAssessment: [...prev.riskAssessment, newRisk]
+      riskAssessment: [...(prev?.riskAssessment || []), newRisk]
     }));
     setEditingRisk(newRisk.id);
   };
@@ -967,7 +1351,7 @@ Priority Actions:
   const updateRisk = (id, updates) => {
     setBusinessData(prev => ({
       ...prev,
-      riskAssessment: prev.riskAssessment.map(risk =>
+      riskAssessment: (prev?.riskAssessment || []).map(risk =>
         risk.id === id ? { ...risk, ...updates } : risk
       )
     }));
@@ -976,7 +1360,7 @@ Priority Actions:
   const deleteRisk = (id) => {
     setBusinessData(prev => ({
       ...prev,
-      riskAssessment: prev.riskAssessment.filter(risk => risk.id !== id)
+      riskAssessment: (prev?.riskAssessment || []).filter(risk => risk.id !== id)
     }));
   };
 
@@ -999,10 +1383,10 @@ Priority Actions:
         const businessContextRequest = {
           companyName: businessData.projectInfo.name || currentAssessment?.name || 'Organization',
           industry: currentAssessment?.industry || 'Technology',
-          businessDrivers: businessData.businessDrivers.map(d => `${d.name}: ${d.description} (Priority: ${d.priority}, Impact: ${d.impact}%)`).join('\n'),
+          businessDrivers: (businessData?.businessDrivers || []).map(d => `${d.name}: ${d.description} (Priority: ${d.priority}, Impact: ${d.impact}%)`).join('\n'),
           timelineRequirements: businessData.projectInfo.duration || currentAssessment?.timeline || 'TBD',
           budgetConstraints: businessData.projectInfo.totalBudget || currentAssessment?.budget || 'TBD',
-          complianceRequirements: businessData.riskAssessment?.filter(r => r.category?.includes('Compliance')).map(r => r.name).join(', ') || 'Standard enterprise compliance',
+          complianceRequirements: businessData?.riskAssessment?.filter(r => r.category?.includes('Compliance')).map(r => r.name).join(', ') || 'Standard enterprise compliance',
           uploadedDocuments: []
         };
         
@@ -1052,36 +1436,36 @@ Priority Actions:
 
   const generateSimulationResults = () => {
     // Generate analysis based on available data
-    const hasDrivers = businessData.businessDrivers.length > 0;
-    const hasStakeholders = businessData.stakeholderGroups.length > 0;
-    const hasTimeline = businessData.projectTimeline.length > 0;
-    const hasRisks = businessData.riskAssessment.length > 0;
-    const hasProject = businessData.projectInfo.name;
+    const hasDrivers = businessData?.businessDrivers?.length > 0;
+    const hasStakeholders = businessData?.stakeholderGroups?.length > 0;
+    const hasTimeline = businessData?.projectTimeline?.length > 0;
+    const hasRisks = businessData?.riskAssessment?.length > 0;
+    const hasProject = businessData?.projectInfo?.name;
     
     return {
       driversAnalysis: hasDrivers 
-        ? `Analysis of ${businessData.businessDrivers.length} business driver(s) shows clear organizational focus areas. ${businessData.businessDrivers.filter(d => d.priority === 'Critical' || d.priority === 'High').length > 0 ? 'High-priority drivers indicate urgent business needs that should be addressed immediately.' : 'The balanced priority distribution suggests a well-planned transformation approach.'} Average impact score: ${Math.round(businessData.businessDrivers.reduce((sum, d) => sum + d.impact, 0) / businessData.businessDrivers.length)}% with urgency at ${Math.round(businessData.businessDrivers.reduce((sum, d) => sum + d.urgency, 0) / businessData.businessDrivers.length)}%.`
+        ? `Analysis of ${businessData?.businessDrivers?.length || 0} business driver(s) shows clear organizational focus areas. ${businessData?.businessDrivers?.filter(d => d.priority === 'Critical' || d.priority === 'High').length > 0 ? 'High-priority drivers indicate urgent business needs that should be addressed immediately.' : 'The balanced priority distribution suggests a well-planned transformation approach.'} Average impact score: ${Math.round(businessData?.businessDrivers?.reduce((sum, d) => sum + d.impact, 0) / (businessData?.businessDrivers?.length || 1))}% with urgency at ${Math.round(businessData?.businessDrivers?.reduce((sum, d) => sum + d.urgency, 0) / (businessData?.businessDrivers?.length || 1))}%.`
         : `Business drivers analysis framework: Organizations typically focus on cost optimization (40%), digital transformation (30%), security compliance (20%), and operational efficiency (10%). Consider identifying your primary drivers in areas such as competitive advantage, regulatory compliance, scalability needs, and innovation requirements.`,
       
       stakeholderAnalysis: hasStakeholders 
-        ? `Stakeholder analysis reveals ${businessData.stakeholderGroups.length} key stakeholder group(s) identified. ${businessData.stakeholderGroups.filter(s => s.influence === 'High').length} high-influence stakeholders require special attention for project success. The current stakeholder matrix shows ${businessData.stakeholderGroups.filter(s => s.interest === 'High').length} highly interested parties, which indicates ${businessData.stakeholderGroups.filter(s => s.interest === 'High').length > businessData.stakeholderGroups.length / 2 ? 'strong organizational support' : 'need for increased engagement strategies'}.`
+        ? `Stakeholder analysis reveals ${businessData?.stakeholderGroups?.length || 0} key stakeholder group(s) identified. ${businessData?.stakeholderGroups?.filter(s => s.influence === 'High').length || 0} high-influence stakeholders require special attention for project success. The current stakeholder matrix shows ${businessData?.stakeholderGroups?.filter(s => s.interest === 'High').length || 0} highly interested parties, which indicates ${(businessData?.stakeholderGroups?.filter(s => s.interest === 'High').length || 0) > (businessData?.stakeholderGroups?.length || 1) / 2 ? 'strong organizational support' : 'need for increased engagement strategies'}.`
         : `Stakeholder management framework: Identify key stakeholders across executive leadership (C-level), operational management (directors/VPs), technical teams (architects/leads), and end users. Map each by influence level (high/medium/low) and interest (high/medium/low) to develop targeted engagement strategies.`,
       
       timelineAnalysis: hasTimeline 
-        ? `Project timeline consists of ${businessData.projectTimeline.length} planned phase(s). ${hasProject ? `For the "${businessData.projectInfo.name}" project, ` : ''}the phased approach ${businessData.projectTimeline.length > 3 ? 'appears comprehensive with multiple delivery milestones' : 'follows a streamlined delivery model'}. Timeline dependencies should be carefully managed to ensure sequential delivery success.`
+        ? `Project timeline consists of ${businessData?.projectTimeline?.length || 0} planned phase(s). ${hasProject ? `For the "${businessData?.projectInfo?.name}" project, ` : ''}the phased approach ${(businessData?.projectTimeline?.length || 0) > 3 ? 'appears comprehensive with multiple delivery milestones' : 'follows a streamlined delivery model'}. Timeline dependencies should be carefully managed to ensure sequential delivery success.`
         : `Timeline planning framework: Consider a phased approach with (1) Discovery & Planning (2-3 months), (2) Foundation & Architecture (3-6 months), (3) Implementation & Integration (6-12 months), and (4) Testing & Deployment (2-4 months). Adjust timelines based on organizational complexity and resource availability.`,
       
       riskAnalysis: hasRisks 
-        ? `Risk assessment identifies ${businessData.riskAssessment.length} key risk(s). Risk distribution: ${businessData.riskAssessment.filter(r => r.probability === 'High').length} high-probability, ${businessData.riskAssessment.filter(r => r.impact === 'High').length} high-impact risks require immediate mitigation strategies. Categories include: ${[...new Set(businessData.riskAssessment.map(r => r.category))].join(', ')}.`
+        ? `Risk assessment identifies ${businessData?.riskAssessment?.length || 0} key risk(s). Risk distribution: ${businessData?.riskAssessment?.filter(r => r.probability === 'High').length || 0} high-probability, ${businessData?.riskAssessment?.filter(r => r.impact === 'High').length || 0} high-impact risks require immediate mitigation strategies. Categories include: ${[...new Set(businessData?.riskAssessment?.map(r => r.category) || [])].join(', ')}.`
         : `Risk management framework: Common transformation risks include technical complexity (40% probability), resource constraints (60% probability), stakeholder resistance (30% probability), and budget overruns (25% probability). Develop mitigation strategies for each category with defined ownership and monitoring processes.`,
       
       recommendations: hasDrivers || hasStakeholders || hasTimeline || hasRisks
         ? `Strategic Recommendations based on current context:
 
-1. ${hasDrivers ? `Address ${businessData.businessDrivers.filter(d => d.priority === 'Critical').length > 0 ? 'critical business drivers first' : 'high-impact drivers systematically'}` : 'Define and prioritize business drivers'}
-2. ${hasStakeholders ? `Leverage ${businessData.stakeholderGroups.filter(s => s.influence === 'High').length} high-influence stakeholder(s) as project champions` : 'Establish stakeholder governance structure'}
-3. ${hasTimeline ? `Execute ${businessData.projectTimeline.length}-phase delivery plan with milestone reviews` : 'Develop detailed project timeline with dependencies'}
-4. ${hasRisks ? `Implement mitigation for ${businessData.riskAssessment.filter(r => r.impact === 'High').length} high-impact risks` : 'Conduct comprehensive risk assessment'}
+1. ${hasDrivers ? `Address ${businessData?.businessDrivers?.filter(d => d.priority === 'Critical').length > 0 ? 'critical business drivers first' : 'high-impact drivers systematically'}` : 'Define and prioritize business drivers'}
+2. ${hasStakeholders ? `Leverage ${businessData?.stakeholderGroups?.filter(s => s.influence === 'High').length || 0} high-influence stakeholder(s) as project champions` : 'Establish stakeholder governance structure'}
+3. ${hasTimeline ? `Execute ${businessData?.projectTimeline?.length || 0}-phase delivery plan with milestone reviews` : 'Develop detailed project timeline with dependencies'}
+4. ${hasRisks ? `Implement mitigation for ${businessData?.riskAssessment?.filter(r => r.impact === 'High').length || 0} high-impact risks` : 'Conduct comprehensive risk assessment'}
 5. Establish change management and communication plans
 6. Define success metrics and regular review cadences`
         : `Strategic Recommendations for Project Success:
@@ -1178,8 +1562,8 @@ Priority Actions:
                 : 'text-blue-100 hover:text-white hover:bg-blue-700'
             }`}
           >
-            <Edit3 className="h-4 w-4 inline mr-2" />
-            Workshop Data
+            <Upload className="h-4 w-4 inline mr-2" />
+            Data Sources
           </button>
           <button
             onClick={() => setCurrentView('analyze')}
@@ -1227,11 +1611,19 @@ Priority Actions:
             />
           </label>
         </div>
-        <div className="text-sm text-gray-500">
-          {dataSaved && lastSaveTime 
-            ? `Last saved: ${lastSaveTime.toLocaleString()}`
-            : 'Not saved yet'
-          }
+        <div className="flex flex-col space-y-1 text-sm">
+          <div className="text-gray-500">
+            {dataSaved && lastSaveTime 
+              ? `Last saved: ${lastSaveTime.toLocaleString()}`
+              : 'Not saved yet'
+            }
+          </div>
+          <div className={`flex items-center space-x-1 text-xs ${usingDatabaseData ? 'text-green-600' : 'text-orange-600'}`}>
+            <div className={`w-2 h-2 rounded-full ${usingDatabaseData ? 'bg-green-500' : 'bg-orange-500'}`}></div>
+            <span>
+              {usingDatabaseData ? 'Database Data' : 'Simulation Data'}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -1245,7 +1637,7 @@ Priority Actions:
                 <Target className="h-8 w-8 text-blue-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Business Drivers</p>
-                  <p className="text-2xl font-bold text-gray-900">{businessData.businessDrivers.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{businessData?.businessDrivers?.length || 0}</p>
                 </div>
               </div>
             </div>
@@ -1255,7 +1647,7 @@ Priority Actions:
                 <Users className="h-8 w-8 text-green-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Stakeholder Groups</p>
-                  <p className="text-2xl font-bold text-gray-900">{businessData.stakeholderGroups.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{businessData?.stakeholderGroups?.length || 0}</p>
                 </div>
               </div>
             </div>
@@ -1265,7 +1657,7 @@ Priority Actions:
                 <Calendar className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Timeline Items</p>
-                  <p className="text-2xl font-bold text-gray-900">{businessData.projectTimeline.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{businessData?.projectTimeline?.length || 0}</p>
                 </div>
               </div>
             </div>
@@ -1275,14 +1667,14 @@ Priority Actions:
                 <AlertCircle className="h-8 w-8 text-orange-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Identified Risks</p>
-                  <p className="text-2xl font-bold text-gray-900">{businessData.riskAssessment.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{businessData?.riskAssessment?.length || 0}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Charts */}
-          {businessData.businessDrivers.length > 0 && (
+          {businessData?.businessDrivers?.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Drivers Impact vs Urgency</h3>
@@ -1323,7 +1715,7 @@ Priority Actions:
             </div>
           )}
 
-          {businessData.businessDrivers.length === 0 && (
+          {(!businessData?.businessDrivers || businessData?.businessDrivers?.length === 0) && (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Data Available</h3>
@@ -1340,9 +1732,239 @@ Priority Actions:
         </div>
       )}
 
-      {/* Workshop Data Gathering View */}
+      {/* Data Sources View */}
       {currentView === 'gather' && (
         <div className="space-y-6">
+          
+          {/* Upload Progress */}
+          {uploadProgress && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  {uploadProgress.status === 'completed' ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : uploadProgress.status === 'error' ? (
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                  ) : (
+                    <Clock className="h-5 w-5 text-blue-500" />
+                  )}
+                  <span className="text-sm">
+                    {uploadProgress.status === 'completed' ? 'Uploaded: ' : 
+                     uploadProgress.status === 'error' ? 'Failed: ' : 'Uploading: '}
+                    {uploadProgress.fileName}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Drag and Drop Area */}
+          <div
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+              dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+            }`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-lg mb-2">Drag and drop business documents here</p>
+            <p className="text-sm text-gray-500">
+              Business requirements • Strategic documents • Process documentation • Excel templates
+            </p>
+          </div>
+
+          <Tabs value={selectedDocumentTab} onValueChange={setSelectedDocumentTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="documents" className="flex items-center">
+                <FileText className="h-4 w-4 mr-2" />
+                Documents
+              </TabsTrigger>
+              <TabsTrigger value="insights" className="flex items-center">
+                <Network className="h-4 w-4 mr-2" />
+                Insights
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="documents" className="space-y-4">
+              <div className="grid gap-4">
+                {documents.map((doc) => (
+                  <Card key={doc.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-semibold">{doc.fileName}</h3>
+                            <Badge className={getDocumentTypeColor(doc.documentType)}>
+                              {doc.documentType}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{doc.summary}</p>
+                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                            <span>{formatFileSize(doc.sizeBytes)}</span>
+                            <span>{doc.chunks?.length || 0} chunks</span>
+                            <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                          </div>
+                          {doc.keyFindings && doc.keyFindings.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-medium text-gray-700 mb-1">Key Findings:</p>
+                              <ul className="text-xs text-gray-600 space-y-1">
+                                {doc.keyFindings.slice(0, 3).map((finding, idx) => (
+                                  <li key={idx}>• {finding}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteDocument(doc.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {documents.length === 0 && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-center text-gray-500">
+                        No business documents uploaded yet. Upload some documents to get started!
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="insights" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <BarChart3 className="h-5 w-5 mr-2" />
+                      Document Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {Object.entries(
+                        documents.reduce((acc, doc) => {
+                          acc[doc.documentType] = (acc[doc.documentType] || 0) + 1;
+                          return acc;
+                        }, {})
+                      ).map(([type, count]) => (
+                        <div key={type} className="flex items-center justify-between">
+                          <Badge className={getDocumentTypeColor(type)}>{type}</Badge>
+                          <span className="text-sm font-medium">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <TrendingUp className="h-5 w-5 mr-2" />
+                      Processing Stats
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Total Documents:</span>
+                        <span className="font-medium">{documents.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total Chunks:</span>
+                        <span className="font-medium">
+                          {documents.reduce((sum, doc) => sum + (doc.chunks?.length || 0), 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total Size:</span>
+                        <span className="font-medium">
+                          {formatFileSize(documents.reduce((sum, doc) => sum + doc.sizeBytes, 0))}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Network className="h-5 w-5 mr-2" />
+                    Document Relationships
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {insights.map((insight) => (
+                      <div key={insight.documentId} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium">{insight.fileName}</h4>
+                          <Badge variant="outline">{insight.analysisCategory}</Badge>
+                        </div>
+                        
+                        {insight.keyThemes && insight.keyThemes.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-medium text-gray-700 mb-1">Key Themes:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {insight.keyThemes.map((theme, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {theme}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {insight.relatedDocuments && insight.relatedDocuments.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-gray-700 mb-1">Related Documents:</p>
+                            <div className="space-y-1">
+                              {insight.relatedDocuments.map((related, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-xs">
+                                  <span>{related.fileName}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {related.relationshipType}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {insights.length === 0 && (
+                      <p className="text-center text-gray-500 py-4">
+                        No document insights available yet. Upload documents to see relationships and analysis.
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* Manual Entry Section - Preserve ALL existing functionality */}
+          <div className="bg-blue-50 rounded-lg p-6 border-t-4 border-blue-500">
+            <h3 className="text-lg font-semibold text-blue-900 mb-4">Manual Data Entry</h3>
+            <p className="text-blue-700 mb-4">
+              You can also manually enter business context information using the forms below. This data will be combined with any uploaded documents for comprehensive AI analysis.
+            </p>
+          </div>
+          
           {/* Project Information */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Information</h3>
@@ -1352,10 +1974,13 @@ Priority Actions:
                 <input
                   type="text"
                   value={businessData.projectInfo.name}
-                  onChange={(e) => setBusinessData(prev => ({
-                    ...prev,
-                    projectInfo: { ...prev.projectInfo, name: e.target.value }
-                  }))}
+                  onChange={(e) => {
+                    setBusinessData(prev => ({
+                      ...prev,
+                      projectInfo: { ...prev.projectInfo, name: e.target.value }
+                    }));
+                    setDataSaved(false);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter project name"
                 />
@@ -1365,10 +1990,13 @@ Priority Actions:
                 <input
                   type="text"
                   value={businessData.projectInfo.duration}
-                  onChange={(e) => setBusinessData(prev => ({
-                    ...prev,
-                    projectInfo: { ...prev.projectInfo, duration: e.target.value }
-                  }))}
+                  onChange={(e) => {
+                    setBusinessData(prev => ({
+                      ...prev,
+                      projectInfo: { ...prev.projectInfo, duration: e.target.value }
+                    }));
+                    setDataSaved(false);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., 12 months"
                 />
@@ -1377,10 +2005,13 @@ Priority Actions:
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea
                   value={businessData.projectInfo.description}
-                  onChange={(e) => setBusinessData(prev => ({
-                    ...prev,
-                    projectInfo: { ...prev.projectInfo, description: e.target.value }
-                  }))}
+                  onChange={(e) => {
+                    setBusinessData(prev => ({
+                      ...prev,
+                      projectInfo: { ...prev.projectInfo, description: e.target.value }
+                    }));
+                    setDataSaved(false);
+                  }}
                   rows="3"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Brief project description"
@@ -1391,10 +2022,13 @@ Priority Actions:
                 <input
                   type="text"
                   value={businessData.projectInfo.totalBudget}
-                  onChange={(e) => setBusinessData(prev => ({
-                    ...prev,
-                    projectInfo: { ...prev.projectInfo, totalBudget: e.target.value }
-                  }))}
+                  onChange={(e) => {
+                    setBusinessData(prev => ({
+                      ...prev,
+                      projectInfo: { ...prev.projectInfo, totalBudget: e.target.value }
+                    }));
+                    setDataSaved(false);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., 2500000"
                 />
@@ -1415,7 +2049,7 @@ Priority Actions:
               </button>
             </div>
             <div className="p-6">
-              {businessData.businessDrivers.length === 0 ? (
+              {(!businessData?.businessDrivers || businessData?.businessDrivers?.length === 0) ? (
                 <p className="text-gray-500 text-center py-4">No business drivers added yet. Click "Add Driver" to start.</p>
               ) : (
                 <div className="space-y-4">
@@ -1535,11 +2169,11 @@ Priority Actions:
               </button>
             </div>
             <div className="p-6">
-              {businessData.stakeholderGroups.length === 0 ? (
+              {(!businessData?.stakeholderGroups || businessData?.stakeholderGroups?.length === 0) ? (
                 <p className="text-gray-500 text-center py-4">No stakeholders added yet. Click "Add Stakeholder" to start.</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {businessData.stakeholderGroups.map((stakeholder) => (
+                  {(businessData?.stakeholderGroups || []).map((stakeholder) => (
                     <div key={stakeholder.id} className="border border-gray-200 rounded-lg p-4">
                       {editingStakeholder === stakeholder.id ? (
                         <div className="space-y-3">
@@ -1648,10 +2282,15 @@ Priority Actions:
                 <input
                   type="number"
                   value={businessData.budgetAllocation.assessment}
-                  onChange={(e) => setBusinessData(prev => ({
-                    ...prev,
-                    budgetAllocation: { ...prev.budgetAllocation, assessment: parseInt(e.target.value) || 0 }
-                  }))}
+                  onChange={(e) => {
+                    const newValue = parseInt(e.target.value) || 0;
+                    const updatedBudget = { ...businessData.budgetAllocation, assessment: newValue };
+                    setBusinessData(prev => ({
+                      ...prev,
+                      budgetAllocation: updatedBudget
+                    }));
+                    debouncedSaveBudget(updatedBudget);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0"
                 />
@@ -1661,10 +2300,15 @@ Priority Actions:
                 <input
                   type="number"
                   value={businessData.budgetAllocation.implementation}
-                  onChange={(e) => setBusinessData(prev => ({
-                    ...prev,
-                    budgetAllocation: { ...prev.budgetAllocation, implementation: parseInt(e.target.value) || 0 }
-                  }))}
+                  onChange={(e) => {
+                    const newValue = parseInt(e.target.value) || 0;
+                    const updatedBudget = { ...businessData.budgetAllocation, implementation: newValue };
+                    setBusinessData(prev => ({
+                      ...prev,
+                      budgetAllocation: updatedBudget
+                    }));
+                    debouncedSaveBudget(updatedBudget);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0"
                 />
@@ -1674,10 +2318,15 @@ Priority Actions:
                 <input
                   type="number"
                   value={businessData.budgetAllocation.maintenance}
-                  onChange={(e) => setBusinessData(prev => ({
-                    ...prev,
-                    budgetAllocation: { ...prev.budgetAllocation, maintenance: parseInt(e.target.value) || 0 }
-                  }))}
+                  onChange={(e) => {
+                    const newValue = parseInt(e.target.value) || 0;
+                    const updatedBudget = { ...businessData.budgetAllocation, maintenance: newValue };
+                    setBusinessData(prev => ({
+                      ...prev,
+                      budgetAllocation: updatedBudget
+                    }));
+                    debouncedSaveBudget(updatedBudget);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0"
                 />
@@ -1687,10 +2336,15 @@ Priority Actions:
                 <input
                   type="number"
                   value={businessData.budgetAllocation.training}
-                  onChange={(e) => setBusinessData(prev => ({
-                    ...prev,
-                    budgetAllocation: { ...prev.budgetAllocation, training: parseInt(e.target.value) || 0 }
-                  }))}
+                  onChange={(e) => {
+                    const newValue = parseInt(e.target.value) || 0;
+                    const updatedBudget = { ...businessData.budgetAllocation, training: newValue };
+                    setBusinessData(prev => ({
+                      ...prev,
+                      budgetAllocation: updatedBudget
+                    }));
+                    debouncedSaveBudget(updatedBudget);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0"
                 />
@@ -1711,11 +2365,11 @@ Priority Actions:
               </button>
             </div>
             <div className="p-6">
-              {businessData.projectTimeline.length === 0 ? (
+              {(!businessData?.projectTimeline || businessData?.projectTimeline?.length === 0) ? (
                 <p className="text-gray-500 text-center py-4">No timeline items added yet. Click "Add Phase" to start.</p>
               ) : (
                 <div className="space-y-4">
-                  {businessData.projectTimeline.map((item, index) => (
+                  {(businessData?.projectTimeline || []).map((item, index) => (
                     <div key={item.id} className="border border-gray-200 rounded-lg p-4">
                       {editingTimelineItem === item.id ? (
                         <div className="space-y-3">
@@ -1822,11 +2476,11 @@ Priority Actions:
               </button>
             </div>
             <div className="p-6">
-              {businessData.riskAssessment.length === 0 ? (
+              {(!businessData?.riskAssessment || businessData?.riskAssessment?.length === 0) ? (
                 <p className="text-gray-500 text-center py-4">No risks added yet. Click "Add Risk" to start.</p>
               ) : (
                 <div className="space-y-4">
-                  {businessData.riskAssessment.map((risk) => (
+                  {(businessData?.riskAssessment || []).map((risk) => (
                     <div key={risk.id} className="border border-gray-200 rounded-lg p-4">
                       {editingRisk === risk.id ? (
                         <div className="space-y-3">
@@ -2007,7 +2661,7 @@ Priority Actions:
               </div>
             </div>
 
-            {businessData.businessDrivers.length === 0 && (
+            {(!businessData?.businessDrivers || businessData?.businessDrivers?.length === 0) && (
               <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
                 <p className="text-blue-800 text-sm">
                   <strong>Tip:</strong> For best results, add business context data in the "Workshop Data" section before running analysis. The analysis will work with any available data or provide a general assessment framework.

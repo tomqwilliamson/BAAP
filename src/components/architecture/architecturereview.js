@@ -3,9 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   Layers, Box, Zap, Link, Database, Shield, Monitor, GitBranch, Github, 
   Plus, Edit3, Save, X, Trash2, Brain, Download, Upload, Eye, EyeOff, Settings,
-  Search, RefreshCw, AlertCircle, CheckCircle, Clock, Code, Package
+  Search, RefreshCw, AlertCircle, CheckCircle, Clock, Code, Package, FileText,
+  Network, BarChart3, TrendingUp
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line } from 'recharts';
+import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
@@ -25,6 +30,13 @@ function ArchitectureReview() {
   const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
   const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
   const [aiCapabilities, setAiCapabilities] = useState(null);
+  
+  // Document management states
+  const [documents, setDocuments] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [selectedDocumentTab, setSelectedDocumentTab] = useState('documents');
+  const [dragOver, setDragOver] = useState(false);
 
   // Get analysis state for this module
   const analysisState = getAnalysisState('architecture');
@@ -79,6 +91,8 @@ function ArchitectureReview() {
   useEffect(() => {
     loadArchitectureData();
     checkAIServiceAvailability();
+    loadDocuments();
+    loadInsights();
   }, [currentAssessment]);
 
   const checkAIServiceAvailability = async () => {
@@ -91,6 +105,152 @@ function ArchitectureReview() {
       setAiServiceAvailable(false);
       setAiCapabilities(null);
     }
+  };
+
+  // Document management functions
+  const documentTypes = [
+    'Architecture Documentation',
+    'Source Code Files', 
+    'API Documentation',
+    'Database Schemas',
+    'Configuration Files',
+    'Design Documents',
+    'Technical Specifications',
+    'Code Repository Exports'
+  ];
+
+  const loadDocuments = async () => {
+    try {
+      const response = await fetch('/api/document');
+      const data = await response.json();
+      // Filter for architecture-related documents
+      const architectureDocs = data.filter(doc => 
+        doc.documentType === 'Architecture Documentation' || 
+        doc.documentType === 'Source Code Files' ||
+        doc.documentType === 'API Documentation' ||
+        doc.category === 'architecture'
+      );
+      setDocuments(architectureDocs);
+    } catch (error) {
+      console.error('Error loading architecture documents:', error);
+    }
+  };
+
+  const loadInsights = async () => {
+    try {
+      const response = await fetch('/api/document/analyze-relationships', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      // Filter insights for architecture-related documents
+      const architectureInsights = data.filter(insight => 
+        insight.analysisCategory === 'Architecture' ||
+        insight.documentType === 'Architecture Documentation'
+      );
+      setInsights(architectureInsights);
+    } catch (error) {
+      console.error('Error loading architecture insights:', error);
+    }
+  };
+
+  const handleDocumentUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress({ fileName: file.name, progress: 0 });
+      
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        // Detect file type for better categorization
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        let documentType = 'Architecture Documentation';
+        if (['js', 'ts', 'cs', 'java', 'py', 'cpp', 'c', 'h', 'php', 'rb', 'go'].includes(fileExtension)) {
+          documentType = 'Source Code Files';
+        } else if (['json', 'xml', 'yml', 'yaml', 'config', 'ini'].includes(fileExtension)) {
+          documentType = 'Configuration Files';
+        } else if (['sql', 'ddl'].includes(fileExtension)) {
+          documentType = 'Database Schemas';
+        }
+        
+        formData.append('documentType', documentType);
+        formData.append('category', 'architecture');
+        
+        const response = await fetch('/api/document/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          setUploadProgress({ fileName: file.name, progress: 100, status: 'completed' });
+          await loadDocuments();
+          await loadInsights();
+          toast.success(`${file.name} uploaded successfully`);
+        } else {
+          setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+          toast.error(`Failed to upload ${file.name}`);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+        toast.error(`Error uploading ${file.name}`);
+      }
+    }
+    
+    setTimeout(() => setUploadProgress(null), 3000);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    handleDocumentUpload(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    try {
+      await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
+      await loadDocuments();
+      await loadInsights();
+      toast.success('Document deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Error deleting document');
+    }
+  };
+
+  const getDocumentTypeColor = (type) => {
+    const colors = {
+      'Architecture Documentation': 'bg-blue-100 text-blue-800',
+      'Source Code Files': 'bg-green-100 text-green-800',
+      'API Documentation': 'bg-purple-100 text-purple-800',
+      'Database Schemas': 'bg-orange-100 text-orange-800',
+      'Configuration Files': 'bg-yellow-100 text-yellow-800',
+      'Design Documents': 'bg-pink-100 text-pink-800',
+      'Technical Specifications': 'bg-indigo-100 text-indigo-800',
+      'Code Repository Exports': 'bg-gray-100 text-gray-800'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const loadArchitectureData = () => {
@@ -540,8 +700,8 @@ function ArchitectureReview() {
                 : 'text-purple-100 hover:text-white hover:bg-purple-700'
             }`}
           >
-            <GitBranch className="h-4 w-4 inline mr-2" />
-            Repository
+            <Upload className="h-4 w-4 inline mr-2" />
+            Data Sources
           </button>
           <button
             onClick={() => setCurrentView('analyze')}
@@ -711,9 +871,239 @@ function ArchitectureReview() {
         </div>
       )}
 
-      {/* Repository View */}
+      {/* Data Sources View */}
       {currentView === 'repository' && (
         <div className="space-y-6">
+          
+          {/* Upload Progress */}
+          {uploadProgress && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  {uploadProgress.status === 'completed' ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : uploadProgress.status === 'error' ? (
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                  ) : (
+                    <Clock className="h-5 w-5 text-blue-500" />
+                  )}
+                  <span className="text-sm">
+                    {uploadProgress.status === 'completed' ? 'Uploaded: ' : 
+                     uploadProgress.status === 'error' ? 'Failed: ' : 'Uploading: '}
+                    {uploadProgress.fileName}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Drag and Drop Area */}
+          <div
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+              dragOver ? 'border-purple-500 bg-purple-50' : 'border-gray-300'
+            }`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-lg mb-2">Drag and drop architecture files here</p>
+            <p className="text-sm text-gray-500">
+              Source code • Architecture docs • API specs • Config files • Database schemas
+            </p>
+          </div>
+
+          <Tabs value={selectedDocumentTab} onValueChange={setSelectedDocumentTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="documents" className="flex items-center">
+                <FileText className="h-4 w-4 mr-2" />
+                Documents
+              </TabsTrigger>
+              <TabsTrigger value="insights" className="flex items-center">
+                <Network className="h-4 w-4 mr-2" />
+                Insights
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="documents" className="space-y-4">
+              <div className="grid gap-4">
+                {documents.map((doc) => (
+                  <Card key={doc.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-semibold">{doc.fileName}</h3>
+                            <Badge className={getDocumentTypeColor(doc.documentType)}>
+                              {doc.documentType}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{doc.summary}</p>
+                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                            <span>{formatFileSize(doc.sizeBytes)}</span>
+                            <span>{doc.chunks?.length || 0} chunks</span>
+                            <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                          </div>
+                          {doc.keyFindings && doc.keyFindings.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-medium text-gray-700 mb-1">Key Findings:</p>
+                              <ul className="text-xs text-gray-600 space-y-1">
+                                {doc.keyFindings.slice(0, 3).map((finding, idx) => (
+                                  <li key={idx}>• {finding}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteDocument(doc.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {documents.length === 0 && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-center text-gray-500">
+                        No architecture documents uploaded yet. Upload some code files or documentation to get started!
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="insights" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <BarChart3 className="h-5 w-5 mr-2" />
+                      Document Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {Object.entries(
+                        documents.reduce((acc, doc) => {
+                          acc[doc.documentType] = (acc[doc.documentType] || 0) + 1;
+                          return acc;
+                        }, {})
+                      ).map(([type, count]) => (
+                        <div key={type} className="flex items-center justify-between">
+                          <Badge className={getDocumentTypeColor(type)}>{type}</Badge>
+                          <span className="text-sm font-medium">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <TrendingUp className="h-5 w-5 mr-2" />
+                      Processing Stats
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Total Documents:</span>
+                        <span className="font-medium">{documents.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total Chunks:</span>
+                        <span className="font-medium">
+                          {documents.reduce((sum, doc) => sum + (doc.chunks?.length || 0), 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total Size:</span>
+                        <span className="font-medium">
+                          {formatFileSize(documents.reduce((sum, doc) => sum + doc.sizeBytes, 0))}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Network className="h-5 w-5 mr-2" />
+                    Document Relationships
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {insights.map((insight) => (
+                      <div key={insight.documentId} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium">{insight.fileName}</h4>
+                          <Badge variant="outline">{insight.analysisCategory}</Badge>
+                        </div>
+                        
+                        {insight.keyThemes && insight.keyThemes.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-medium text-gray-700 mb-1">Key Themes:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {insight.keyThemes.map((theme, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {theme}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {insight.relatedDocuments && insight.relatedDocuments.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-gray-700 mb-1">Related Documents:</p>
+                            <div className="space-y-1">
+                              {insight.relatedDocuments.map((related, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-xs">
+                                  <span>{related.fileName}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {related.relationshipType}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {insights.length === 0 && (
+                      <p className="text-center text-gray-500 py-4">
+                        No document insights available yet. Upload documents to see relationships and analysis.
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* Repository Integration Section - Preserve ALL existing functionality */}
+          <div className="bg-purple-50 rounded-lg p-6 border-t-4 border-purple-500">
+            <h3 className="text-lg font-semibold text-purple-900 mb-4">Repository Integration</h3>
+            <p className="text-purple-700 mb-4">
+              You can also connect directly to your code repository for automated analysis. This data will be combined with any uploaded documents for comprehensive AI analysis.
+            </p>
+          </div>
+          
           {/* Repository Connection */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Repository Connection</h3>

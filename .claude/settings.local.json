@@ -65,7 +65,9 @@
       "Bash(cmd /c:*)",
       "Bash(az sql server ad-admin delete:*)",
       "Bash(az webapp config show:*)",
-      "Bash(ren:*)"
+      "Bash(ren:*)",
+      "Bash(dir:*)",
+      "Bash(del \"C:\\Users\\twilliamson\\source\\repos\\BAAP\\BAAP.API\\Models\\BusinessRisk.cs\")"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"

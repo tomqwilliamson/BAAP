@@ -284,8 +284,16 @@ export const apiService = {
         return await assessmentService.getApplications(params);
       } catch (error) {
         console.warn('API call failed, falling back to mock data:', error);
+        // Filter by assessment ID if provided
+        if (params.assessmentId) {
+          return mockData.portfolioSummary.filter(app => app.assessment.id === parseInt(params.assessmentId));
+        }
         return mockData.portfolioSummary;
       }
+    }
+    // Filter by assessment ID if provided
+    if (params.assessmentId) {
+      return mockData.portfolioSummary.filter(app => app.assessment.id === parseInt(params.assessmentId));
     }
     return mockData.portfolioSummary;
   },
