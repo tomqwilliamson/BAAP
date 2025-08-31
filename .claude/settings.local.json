@@ -67,7 +67,9 @@
       "Bash(az webapp config show:*)",
       "Bash(ren:*)",
       "Bash(dir:*)",
-      "Bash(del \"C:\\Users\\twilliamson\\source\\repos\\BAAP\\BAAP.API\\Models\\BusinessRisk.cs\")"
+      "Bash(del \"C:\\Users\\twilliamson\\source\\repos\\BAAP\\BAAP.API\\Models\\BusinessRisk.cs\")",
+      "Bash(del \"C:\\Users\\twilliamson\\source\\repos\\BAAP\\BAAP.API\\bin\\Debug\\net8.0\\BAAP.API.exe\")",
+      "Bash(sqlcmd:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"

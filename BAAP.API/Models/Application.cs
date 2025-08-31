@@ -28,6 +28,12 @@ public class Application
     public int SecurityRating { get; set; } = 0;
     public int CloudReadinessScore { get; set; } = 0;
     
+    // Dashboard metrics
+    public int CriticalIssues { get; set; } = 0;
+    public int SecurityIssues { get; set; } = 0;
+    public int CriticalFindings { get; set; } = 0;
+    public int HighFindings { get; set; } = 0;
+    
     public decimal? EstimatedMigrationCost { get; set; }
     public decimal? MonthlyCost { get; set; }
     

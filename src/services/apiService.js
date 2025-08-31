@@ -3,15 +3,19 @@ import { assessmentService } from './assessmentservice';
 import { configurationService } from './configurationService';
 
 let USE_API = process.env.REACT_APP_USE_API === 'true';
+console.log('🔧 Initial USE_API from environment:', process.env.REACT_APP_USE_API, '-> USE_API:', USE_API);
 
 // Initialize configuration
 const initializeConfiguration = async () => {
   try {
     const features = await configurationService.getFeatureFlags();
-    USE_API = features.UseApi;
+    USE_API = features.useApi;
     console.log('🔧 Configuration initialized. USE_API:', USE_API);
   } catch (error) {
     console.warn('⚠️ Failed to load configuration, using environment variable:', error.message);
+    // Keep the environment variable value if API call fails
+    USE_API = process.env.REACT_APP_USE_API === 'true';
+    console.log('🔧 Using environment variable. USE_API:', USE_API);
   }
 };
 

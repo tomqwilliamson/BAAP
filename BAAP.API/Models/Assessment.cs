@@ -26,6 +26,16 @@ public class Assessment
     public int SecurityScore { get; set; } = 0;
     public int CloudReadinessScore { get; set; } = 0;
     
+    // Category scores for dashboard
+    public int CodeQualityScore { get; set; } = 0;
+    public int InfrastructureScore { get; set; } = 0;
+    public int DevOpsMaturityScore { get; set; } = 0;
+    public int DatabaseOptimizationScore { get; set; } = 0;
+    public int DocumentationScore { get; set; } = 0;
+    
+    // Application count for dashboard metrics
+    public int ApplicationCount { get; set; } = 0;
+    
     public string? Type { get; set; }
     public string? Scope { get; set; }
     public string? BusinessObjective { get; set; }

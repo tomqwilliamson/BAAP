@@ -20,8 +20,8 @@ import businessContextService from '../../services/businessContextService';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { API_BASE_URL } from '../../services/api';
 
-// Generate assessment-specific mock data
-const generateMockDataForAssessment = (assessment, businessDrivers) => {
+// Generate assessment-specific mock data - DISABLED (using database only)
+/* const generateMockDataForAssessment = (assessment, businessDrivers) => {
   const assessmentId = assessment.id;
   
   // E-Commerce Platform (Assessment 1)
@@ -385,7 +385,7 @@ const generateMockDataForAssessment = (assessment, businessDrivers) => {
       }
     };
   }
-};
+}; */
 
 function BusinessContext() {
   const { currentAssessment, loadAssessment } = useAssessment();
@@ -991,73 +991,69 @@ Priority Actions:
 
         hasStoredData = businessDrivers.length > 0 || stakeholderGroups.length > 0;
 
-        // Load budget allocation from database
-        let budgetAllocation = null;
+        // Load budget allocation from database (no fallback to simulation)
+        let budgetAllocation = {
+          assessment: 0,
+          implementation: 0,
+          maintenance: 0,
+          training: 0,
+          contingency: 0
+        };
+        
         try {
-          budgetAllocation = await businessContextService.getBudgetAllocation(currentAssessment.id);
-          console.log('LOADING: Budget allocation loaded from database:', budgetAllocation);
-        } catch (error) {
-          console.warn('LOADING: Failed to load budget allocation from database, using fallback');
-          const assessmentSpecificData = generateMockDataForAssessment(currentAssessment, businessDrivers);
-          budgetAllocation = assessmentSpecificData.budgetAllocation || {
-            assessment: 0,
-            implementation: 0,
-            maintenance: 0,
-            training: 0
+          const dbBudget = await businessContextService.getBudgetAllocation(currentAssessment.id);
+          console.log('LOADING: Budget allocation loaded from database:', dbBudget);
+          budgetAllocation = {
+            assessment: dbBudget?.assessmentCost || 0,
+            implementation: dbBudget?.implementation || 0,
+            maintenance: dbBudget?.maintenance || 0,
+            training: dbBudget?.training || 0,
+            contingency: dbBudget?.contingency || 0
           };
+        } catch (error) {
+          console.warn('LOADING: Failed to load budget allocation from database, using empty values');
         }
 
-        if (hasStoredData) {
-          // Use database data - prioritize real data over simulation
-          console.log('LOADING: Using database data');
-          setUsingDatabaseData(true);
-          const assessmentSpecificData = generateMockDataForAssessment(currentAssessment, businessDrivers);
-          setBusinessData({
-            projectInfo,
-            businessDrivers,
-            stakeholderGroups,
-            projectTimeline: [], // Will be loaded from database separately
-            budgetAllocation: {
-              assessment: budgetAllocation?.assessmentCost || budgetAllocation?.assessment || 0,
-              implementation: budgetAllocation?.implementation || 0,
-              maintenance: budgetAllocation?.maintenance || 0,
-              training: budgetAllocation?.training || 0,
-              contingency: budgetAllocation?.contingency || 0
-            },
-            risks: assessmentSpecificData.risks || []
-          });
-          console.log('LOADING: Set businessData with database budget allocation');
-        } else {
-          // No database data found - use assessment-specific simulation data as fallback
-          console.log('LOADING: No database data found, using simulation data for assessment', currentAssessment.id);
-          setUsingDatabaseData(false);
-          const assessmentSpecificData = generateMockDataForAssessment(currentAssessment, []);
-          setBusinessData({
-            ...assessmentSpecificData,
-            projectInfo,
-            budgetAllocation: {
-              assessment: budgetAllocation?.assessmentCost || budgetAllocation?.assessment || assessmentSpecificData.budgetAllocation?.assessment || 0,
-              implementation: budgetAllocation?.implementation || assessmentSpecificData.budgetAllocation?.implementation || 0,
-              maintenance: budgetAllocation?.maintenance || assessmentSpecificData.budgetAllocation?.maintenance || 0,
-              training: budgetAllocation?.training || assessmentSpecificData.budgetAllocation?.training || 0,
-              contingency: budgetAllocation?.contingency || assessmentSpecificData.budgetAllocation?.contingency || 0
-            }
-          });
-          console.log('LOADING: Set businessData with simulation + database budget');
+        // Load timeline and risks from database as well
+        let projectTimeline = [];
+        let risks = [];
+        
+        try {
+          projectTimeline = await businessContextService.getProjectTimeline(currentAssessment.id);
+          console.log('LOADING: Project timeline loaded from database:', projectTimeline.length, 'items');
+        } catch (error) {
+          console.warn('LOADING: Failed to load project timeline from database');
         }
+        
+        try {
+          risks = await businessContextService.getBusinessRisks(currentAssessment.id);
+          console.log('LOADING: Business risks loaded from database:', risks.length, 'items');
+        } catch (error) {
+          console.warn('LOADING: Failed to load business risks from database');
+        }
+
+        // Always use database data only - no simulation fallback
+        console.log('LOADING: Using database-only mode');
+        setUsingDatabaseData(true);
+        
+        setBusinessData({
+          projectInfo,
+          businessDrivers,
+          stakeholderGroups,
+          projectTimeline: projectTimeline,
+          budgetAllocation: budgetAllocation,
+          risks: risks,
+          riskAssessment: risks // Map to both fields for compatibility
+        });
+        console.log('LOADING: Set businessData with database-only data');
 
         setDataSaved(true);
         setLastSaveTime(new Date());
         console.log('LOADING: Assessment data loaded successfully');
       } else {
-        // No assessment selected - load from localStorage as fallback or show empty
-        console.log('LOADING: No current assessment selected');
-        const savedData = localStorage.getItem('businessContextData');
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          setBusinessData(parsed);
-        } else {
-          // Set to empty/default state
+        // No assessment selected - show empty state (no localStorage fallback)
+        console.log('LOADING: No current assessment selected, showing empty state');
+        // Set to empty/default state
           setBusinessData({
             projectInfo: {
               name: '',
@@ -1085,7 +1081,6 @@ Priority Actions:
             }
           });
         }
-      }
     } catch (error) {
       console.error('LOADING ERROR: Error loading assessment data:', error);
       toast.error('Error loading assessment data');

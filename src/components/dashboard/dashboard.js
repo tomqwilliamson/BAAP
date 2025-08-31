@@ -18,77 +18,31 @@ function Dashboard() {
     loadDashboardData();
   }, [currentAssessment, assessments]); // Add assessments as dependency
 
+  // DISABLED MOCK DATA - using database-only mode
   const generateCategoryScores = (assessmentId) => {
-    // E-Commerce Platform (Assessment 1)
-    if (assessmentId === 1) {
-      return {
-        codeQuality: 82,
-        security: 75,
-        infrastructure: 88,
-        devOpsMaturity: 78,
-        databaseOptimization: 85,
-        documentation: 72
-      };
-    }
-    // Financial Services Security (Assessment 2) 
-    else if (assessmentId === 2) {
-      return {
-        codeQuality: 70,
-        security: 58, // Lower due to legacy systems
-        infrastructure: 65, // Mainframe challenges
-        devOpsMaturity: 62, // Conservative approach
-        databaseOptimization: 68,
-        documentation: 85 // Strong compliance docs
-      };
-    }
-    // Cloud Migration Readiness (Assessment 3)
-    else {
-      return {
-        codeQuality: 95,
-        security: 88,
-        infrastructure: 92,
-        devOpsMaturity: 94, // Excellent CI/CD
-        databaseOptimization: 90,
-        documentation: 87
-      };
-    }
+    // Return empty scores - these should come from database
+    return {
+      codeQuality: 0,
+      security: 0,
+      infrastructure: 0,
+      devOpsMaturity: 0,
+      databaseOptimization: 0,
+      documentation: 0
+    };
   };
 
   const generateTrendsData = (assessmentId) => {
-    // E-Commerce Platform (Assessment 1)
-    if (assessmentId === 1) {
-      return [
-        { month: 'Sep', score: 68, readiness: 65, issues: 32 },
-        { month: 'Oct', score: 72, readiness: 68, issues: 28 },
-        { month: 'Nov', score: 75, readiness: 72, issues: 24 },
-        { month: 'Dec', score: 78, readiness: 76, issues: 20 },
-        { month: 'Jan', score: 82, readiness: 80, issues: 15 }
-      ];
-    }
-    // Financial Services Security (Assessment 2)
-    else if (assessmentId === 2) {
-      return [
-        { month: 'Sep', score: 45, readiness: 35, issues: 65 },
-        { month: 'Oct', score: 48, readiness: 38, issues: 58 },
-        { month: 'Nov', score: 52, readiness: 42, issues: 52 },
-        { month: 'Dec', score: 55, readiness: 45, issues: 48 },
-        { month: 'Jan', score: 58, readiness: 47, issues: 44 }
-      ];
-    }
-    // Cloud Migration Readiness (Assessment 3)
-    else {
-      return [
-        { month: 'Sep', score: 88, readiness: 85, issues: 12 },
-        { month: 'Oct', score: 90, readiness: 87, issues: 10 },
-        { month: 'Nov', score: 92, readiness: 90, issues: 8 },
-        { month: 'Dec', score: 94, readiness: 92, issues: 6 },
-        { month: 'Jan', score: 95, readiness: 94, issues: 4 }
-      ];
-    }
+    // DISABLED MOCK DATA - return empty trends data
+    return [];
   };
 
   const loadDashboardData = async () => {
     try {
+      console.log('DASHBOARD: Starting loadDashboardData', { 
+        currentAssessmentId: currentAssessment?.id,
+        assessmentsLoading, 
+        assessmentsCount: assessments.length 
+      });
       setLoading(true);
       
       // Wait for assessments to be loaded before proceeding
@@ -102,42 +56,95 @@ function Dashboard() {
         // Load assessment-specific data
         console.log('DASHBOARD: Loading data for assessment ID:', currentAssessment.id);
         
-        // Generate assessment-specific portfolio data
-        const portfolioData = generateAssessmentSpecificData(currentAssessment, 'portfolio');
+        // DISABLED MOCK DATA - skip portfolio data generation
+        const portfolioData = null;
         
-        // Load applications for this assessment (with fallback to generated data)
-        let applications;
+        // Load applications for this assessment (database only, no fallback)
+        let applications = [];
         try {
-          applications = await apiService.getApplications({ assessmentId: currentAssessment.id });
+          console.log('DASHBOARD: Fetching applications for assessment:', currentAssessment.id);
+          const result = await apiService.getApplications({ assessmentId: currentAssessment.id });
+          
+          // Ensure we always have an array
+          applications = Array.isArray(result) ? result : [];
+          console.log('DASHBOARD: Loaded applications:', applications.length, 'applications');
+          console.log('DASHBOARD: Applications type:', typeof result, 'isArray:', Array.isArray(result));
         } catch (error) {
-          console.log('Using generated portfolio data as fallback');
-          applications = portfolioData?.applications?.map(app => ({
-            id: Math.floor(Math.random() * 1000),
-            name: app.name,
-            criticalIssues: app.complexity === 'High' || app.complexity === 'Very High' ? 2 : 0,
-            securityIssues: app.criticality === 'Critical' ? 3 : 1
-          })) || [];
+          console.error('DASHBOARD: Failed to load applications from database:', error);
+          console.warn('DASHBOARD: Using empty array for applications');
+          applications = [];
         }
         
-        // Calculate assessment-specific metrics using portfolio data
-        const assessmentMetrics = {
-          totalApplications: portfolioData?.metrics?.totalApplications || applications.length || currentAssessment.applicationCount || 0,
-          averageScore: Math.round((portfolioData?.applications?.reduce((sum, app) => sum + app.cloudReadiness, 0) || 0) / (portfolioData?.applications?.length || 1)) || currentAssessment.overallScore || 0,
-          criticalIssues: applications.reduce((sum, app) => sum + (app.criticalIssues || 0), 0) || portfolioData?.metrics?.criticalApps || 0,
-          potentialSavings: currentAssessment.potentialSavings || 0,
-          assessmentProgress: currentAssessment.status === 'Completed' ? 100 : currentAssessment.status === 'InProgress' ? 75 : 25,
-          securityIssues: applications.reduce((sum, app) => sum + (app.securityIssues || 0), 0),
-          cloudReadiness: currentAssessment.cloudReadinessScore || 0
-        };
+        // Calculate assessment-specific metrics using database data only
+        let assessmentMetrics;
+        try {
+          console.log('DASHBOARD: Calculating metrics with:', { 
+            applicationsCount: applications?.length || 0,
+            currentAssessment: {
+              id: currentAssessment.id,
+              name: currentAssessment.name,
+              overallScore: currentAssessment.overallScore,
+              status: currentAssessment.status
+            }
+          });
+          
+          // Ensure applications is always an array for reduce operations
+          const safeApplications = Array.isArray(applications) ? applications : [];
+          
+          assessmentMetrics = {
+            totalApplications: safeApplications.length || 0,
+            averageScore: currentAssessment?.overallScore || 0,
+            criticalIssues: safeApplications.reduce((sum, app) => sum + (app?.criticalIssues || app?.criticalFindings || 0), 0),
+            potentialSavings: currentAssessment?.potentialSavings || 0,
+            assessmentProgress: currentAssessment?.status === 'Completed' ? 100 : currentAssessment?.status === 'InProgress' ? 75 : 25,
+            securityIssues: safeApplications.reduce((sum, app) => sum + (app?.securityIssues || ((app?.criticalFindings || 0) + (app?.highFindings || 0))), 0),
+            cloudReadiness: currentAssessment?.cloudReadinessScore || 0
+          };
+          
+          console.log('DASHBOARD: Calculated metrics:', assessmentMetrics);
+        } catch (error) {
+          console.error('DASHBOARD: Error calculating metrics:', error);
+          assessmentMetrics = {
+            totalApplications: 0,
+            averageScore: 0,
+            criticalIssues: 0,
+            potentialSavings: 0,
+            assessmentProgress: 0,
+            securityIssues: 0,
+            cloudReadiness: 0
+          };
+        }
 
-        // Generate assessment-specific category scores
-        const categoryScores = generateCategoryScores(currentAssessment.id);
+        // Get assessment-specific category scores from database
+        let categoryScores;
+        try {
+          categoryScores = {
+            codeQuality: currentAssessment?.codeQualityScore || 0,
+            security: currentAssessment?.securityScore || 0,
+            infrastructure: currentAssessment?.infrastructureScore || 0,
+            devOpsMaturity: currentAssessment?.devOpsMaturityScore || 0,
+            databaseOptimization: currentAssessment?.databaseOptimizationScore || 0,
+            documentation: currentAssessment?.documentationScore || 0
+          };
+          
+          console.log('DASHBOARD: Category scores:', categoryScores);
+        } catch (error) {
+          console.error('DASHBOARD: Error getting category scores:', error);
+          categoryScores = {
+            codeQuality: 0,
+            security: 0,
+            infrastructure: 0,
+            devOpsMaturity: 0,
+            databaseOptimization: 0,
+            documentation: 0
+          };
+        }
 
         const dashboardWithExtras = {
           metrics: assessmentMetrics,
           applications: applications,
           categoryScores: categoryScores,
-          trends: portfolioData?.trends || generateTrendsData(currentAssessment.id),
+          trends: generateTrendsData(currentAssessment.id), // Will return empty array
           currentAssessment: currentAssessment,
           recentAssessments: assessments.map(assessment => ({
             id: assessment.id,
@@ -200,12 +207,12 @@ function Dashboard() {
             totalMigrationCost: totalMigrationCost || 0
           },
           categoryScores: {
-            codeQuality: 85,
-            security: 78,
-            infrastructure: 92,
-            devOpsMaturity: 74,
-            databaseOptimization: 81,
-            documentation: 69
+            codeQuality: 0,
+            security: 0,
+            infrastructure: 0,
+            devOpsMaturity: 0,
+            databaseOptimization: 0,
+            documentation: 0
           },
           recentAssessments: assessments.map(assessment => ({
             id: assessment.id,
@@ -214,14 +221,7 @@ function Dashboard() {
             applicationCount: assessment.applicationCount || 0,
             createdAt: assessment.createdDate
           })),
-          trends: [
-            { month: 'Jan', score: 68 },
-            { month: 'Feb', score: 72 },
-            { month: 'Mar', score: 75 },
-            { month: 'Apr', score: 78 },
-            { month: 'May', score: 74 },
-            { month: 'Jun', score: 82 }
-          ]
+          trends: []
         };
         
         setDashboardData(dashboardWithExtras);

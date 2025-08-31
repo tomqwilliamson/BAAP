@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using BAAP.API.Data;
 
 namespace BAAP.API.Controllers;
 
@@ -172,6 +173,79 @@ public class ConfigurationController : ControllerBase
         {
             _logger.LogError(ex, "Error retrieving diagnostics");
             return Problem("Unable to retrieve diagnostics", statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Update sample data for testing dashboard (development only)
+    /// </summary>
+    [HttpPost("update-sample-data")]
+    public async Task<IActionResult> UpdateSampleData([FromServices] BaapDbContext context)
+    {
+        try
+        {
+            // Update category scores for assessments
+            var assessment1 = await context.Assessments.FindAsync(1);
+            if (assessment1 != null)
+            {
+                assessment1.CodeQualityScore = 85;
+                assessment1.InfrastructureScore = 92;
+                assessment1.DevOpsMaturityScore = 74;
+                assessment1.DatabaseOptimizationScore = 81;
+                assessment1.DocumentationScore = 69;
+                assessment1.ApplicationCount = 6;
+            }
+
+            var assessment2 = await context.Assessments.FindAsync(2);
+            if (assessment2 != null)
+            {
+                assessment2.CodeQualityScore = 62;
+                assessment2.InfrastructureScore = 58;
+                assessment2.DevOpsMaturityScore = 45;
+                assessment2.DatabaseOptimizationScore = 72;
+                assessment2.DocumentationScore = 55;
+                assessment2.ApplicationCount = 4;
+            }
+
+            var assessment3 = await context.Assessments.FindAsync(3);
+            if (assessment3 != null)
+            {
+                assessment3.CodeQualityScore = 88;
+                assessment3.InfrastructureScore = 94;
+                assessment3.DevOpsMaturityScore = 91;
+                assessment3.DatabaseOptimizationScore = 89;
+                assessment3.DocumentationScore = 82;
+                assessment3.ApplicationCount = 2;
+            }
+
+            // Update some application metrics
+            var app1 = await context.Applications.FindAsync(1);
+            if (app1 != null)
+            {
+                app1.CriticalIssues = 2;
+                app1.SecurityIssues = 3;
+                app1.CriticalFindings = 2;
+                app1.HighFindings = 1;
+            }
+
+            var app2 = await context.Applications.FindAsync(2);
+            if (app2 != null)
+            {
+                app2.CriticalIssues = 1;
+                app2.SecurityIssues = 2;
+                app2.CriticalFindings = 1;
+                app2.HighFindings = 1;
+            }
+
+            await context.SaveChangesAsync();
+
+            _logger.LogInformation("Sample data updated successfully");
+            return Ok(new { message = "Sample data updated successfully", timestamp = DateTime.UtcNow });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating sample data");
+            return Problem("Unable to update sample data", statusCode: 500);
         }
     }
 }

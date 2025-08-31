@@ -47,7 +47,7 @@ class ConfigurationService {
           InstrumentationKey: ''
         },
         Features: {
-          UseApi: process.env.REACT_APP_USE_API === 'true',
+          useApi: process.env.REACT_APP_USE_API === 'true',
           EnableAnalytics: true,
           EnableChatAssistant: false
         },
@@ -80,7 +80,7 @@ class ConfigurationService {
       
       // Fallback feature flags
       this.features = {
-        UseApi: process.env.REACT_APP_USE_API === 'true',
+        useApi: process.env.REACT_APP_USE_API === 'true',
         EnableAnalytics: true,
         EnableChatAssistant: false,
         EnableAdvancedReporting: false,

@@ -90,7 +90,8 @@ export const assessmentService = {
     const queryParams = new URLSearchParams(params).toString();
     const url = queryParams ? `/applications?${queryParams}` : '/applications';
     const response = await apiClient.get(url);
-    return response.data;
+    // API returns {data: [...], pagination: {...}}, we need just the data array
+    return response.data.data || response.data;
   },
 
   async getApplication(id) {
