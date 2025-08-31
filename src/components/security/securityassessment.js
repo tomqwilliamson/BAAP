@@ -2,9 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, AlertTriangle, CheckCircle, Upload, Download, Save, FileText, Image,
-  Brain, RefreshCw, Clock, Activity, Database, Server, Wifi, Monitor
+  Brain, RefreshCw, Clock, Activity, Database, Server, Wifi, Monitor, Trash2,
+  TrendingUp, Network, BarChart3
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
@@ -73,6 +78,13 @@ function SecurityAssessment() {
   const [dataSaved, setDataSaved] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
   
+  // Document management states
+  const [documents, setDocuments] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [selectedDocumentTab, setSelectedDocumentTab] = useState('documents');
+  const [dragOver, setDragOver] = useState(false);
+  
   const [securityData, setSecurityData] = useState({
     crossAssessment: {
       infrastructureRisks: [],
@@ -103,7 +115,144 @@ function SecurityAssessment() {
 
   useEffect(() => {
     loadSecurityData();
+    loadDocuments();
+    loadInsights();
   }, [currentAssessment]);
+
+  // Document management functions
+  const documentTypes = [
+    'Security Documentation',
+    'Vulnerability Reports', 
+    'Compliance Reports',
+    'SIEM Reports',
+    'Network Documentation',
+    'Incident Response',
+    'Risk Assessment',
+    'Audit Documentation'
+  ];
+
+  const loadDocuments = async () => {
+    try {
+      const response = await fetch('/api/document');
+      const data = await response.json();
+      // Filter for security-related documents
+      const securityDocs = data.filter(doc => 
+        doc.documentType === 'Security Documentation' || 
+        doc.documentType === 'Vulnerability Reports' ||
+        doc.documentType === 'Compliance Reports' ||
+        doc.category === 'security'
+      );
+      setDocuments(securityDocs);
+    } catch (error) {
+      console.error('Error loading security documents:', error);
+    }
+  };
+
+  const loadInsights = async () => {
+    try {
+      const response = await fetch('/api/document/analyze-relationships', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      // Filter insights for security-related documents
+      const securityInsights = data.filter(insight => 
+        insight.analysisCategory === 'Security' ||
+        insight.documentType === 'Security Documentation'
+      );
+      setInsights(securityInsights);
+    } catch (error) {
+      console.error('Error loading security insights:', error);
+    }
+  };
+
+  const handleDocumentUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress({ fileName: file.name, progress: 0 });
+      
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('documentType', 'Security Documentation');
+        formData.append('category', 'security');
+        
+        const response = await fetch('/api/document/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          setUploadProgress({ fileName: file.name, progress: 100, status: 'completed' });
+          await loadDocuments();
+          await loadInsights();
+          toast.success(`${file.name} uploaded successfully`);
+        } else {
+          setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+          toast.error(`Failed to upload ${file.name}`);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+        toast.error(`Error uploading ${file.name}`);
+      }
+    }
+    
+    setTimeout(() => setUploadProgress(null), 3000);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    handleDocumentUpload(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    try {
+      await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
+      await loadDocuments();
+      await loadInsights();
+      toast.success('Document deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Error deleting document');
+    }
+  };
+
+  const getDocumentTypeColor = (type) => {
+    const colors = {
+      'Security Documentation': 'bg-red-100 text-red-800',
+      'Vulnerability Reports': 'bg-orange-100 text-orange-800',
+      'Compliance Reports': 'bg-green-100 text-green-800',
+      'SIEM Reports': 'bg-blue-100 text-blue-800',
+      'Network Documentation': 'bg-purple-100 text-purple-800',
+      'Incident Response': 'bg-yellow-100 text-yellow-800',
+      'Risk Assessment': 'bg-pink-100 text-pink-800',
+      'Audit Documentation': 'bg-gray-100 text-gray-800'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const loadSecurityData = async () => {
     try {
@@ -291,14 +440,6 @@ function SecurityAssessment() {
     });
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   const exportAssessment = () => {
     const dataStr = JSON.stringify(securityData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -466,6 +607,13 @@ function SecurityAssessment() {
                   Saved {new Date(lastSaveTime).toLocaleTimeString()}
                 </div>
               )}
+              <button
+                onClick={exportAssessment}
+                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </button>
               <button
                 onClick={saveAssessment}
                 className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
@@ -797,32 +945,6 @@ function SecurityAssessment() {
         {/* Data Sources (Repo) View */}
         {currentView === 'repo' && (
           <div className="space-y-6">
-            
-            {/* Import/Export Actions */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Data Management</h2>
-                <div className="flex space-x-3">
-                  <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Import Assessment
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={importAssessment}
-                      className="hidden"
-                    />
-                  </label>
-                  <button
-                    onClick={exportAssessment}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export Assessment
-                  </button>
-                </div>
-              </div>
-            </div>
 
             {/* File Upload Section */}
             <div className="bg-white shadow-lg rounded-lg">
@@ -838,16 +960,6 @@ function SecurityAssessment() {
                     <Shield className="h-10 w-10 text-red-500 mx-auto mb-3" />
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Vulnerability Scans</h4>
                     <p className="text-xs text-gray-600 mb-3">Nessus, OpenVAS, Qualys</p>
-                    <label className="cursor-pointer bg-red-600 text-white px-3 py-1.5 rounded text-xs hover:bg-red-700">
-                      Upload
-                      <input
-                        type="file"
-                        multiple
-                        accept=".xml,.json,.csv,.nessus"
-                        onChange={(e) => handleFileUpload(e, 'vulnerability-scan')}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
 
                   {/* SIEM Exports */}
@@ -855,16 +967,6 @@ function SecurityAssessment() {
                     <Monitor className="h-10 w-10 text-blue-500 mx-auto mb-3" />
                     <h4 className="text-sm font-medium text-gray-900 mb-2">SIEM Exports</h4>
                     <p className="text-xs text-gray-600 mb-3">Splunk, QRadar, Sentinel</p>
-                    <label className="cursor-pointer bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-700">
-                      Upload
-                      <input
-                        type="file"
-                        multiple
-                        accept=".json,.xml,.csv,.log"
-                        onChange={(e) => handleFileUpload(e, 'siem')}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
 
                   {/* Access & Network Logs */}
@@ -872,16 +974,6 @@ function SecurityAssessment() {
                     <Wifi className="h-10 w-10 text-green-500 mx-auto mb-3" />
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Network & Access</h4>
                     <p className="text-xs text-gray-600 mb-3">Firewall, VPN, IDS/IPS</p>
-                    <label className="cursor-pointer bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700">
-                      Upload
-                      <input
-                        type="file"
-                        multiple
-                        accept=".log,.txt,.csv,.pcap"
-                        onChange={(e) => handleFileUpload(e, 'network')}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
 
                   {/* Endpoint & Server Logs */}
@@ -889,16 +981,6 @@ function SecurityAssessment() {
                     <Server className="h-10 w-10 text-purple-500 mx-auto mb-3" />
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Endpoint & Server</h4>
                     <p className="text-xs text-gray-600 mb-3">EDR, AV, System logs</p>
-                    <label className="cursor-pointer bg-purple-600 text-white px-3 py-1.5 rounded text-xs hover:bg-purple-700">
-                      Upload
-                      <input
-                        type="file"
-                        multiple
-                        accept=".log,.evtx,.txt,.json"
-                        onChange={(e) => handleFileUpload(e, 'endpoint')}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
                 </div>
 
@@ -909,16 +991,6 @@ function SecurityAssessment() {
                     <FileText className="h-10 w-10 text-gray-400 mx-auto mb-3" />
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Application & Patch Logs</h4>
                     <p className="text-xs text-gray-600 mb-3">App logs, patch management, backup logs</p>
-                    <label className="cursor-pointer bg-gray-600 text-white px-3 py-1.5 rounded text-xs hover:bg-gray-700">
-                      Upload
-                      <input
-                        type="file"
-                        multiple
-                        accept=".log,.txt,.csv,.json"
-                        onChange={(e) => handleFileUpload(e, 'application')}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
 
                   {/* Physical Security */}
@@ -926,16 +998,6 @@ function SecurityAssessment() {
                     <Image className="h-10 w-10 text-gray-400 mx-auto mb-3" />
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Physical Security</h4>
                     <p className="text-xs text-gray-600 mb-3">Badge access, camera logs, facility reports</p>
-                    <label className="cursor-pointer bg-gray-600 text-white px-3 py-1.5 rounded text-xs hover:bg-gray-700">
-                      Upload
-                      <input
-                        type="file"
-                        multiple
-                        accept=".csv,.log,.pdf,.jpg,.png"
-                        onChange={(e) => handleFileUpload(e, 'physical')}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
 
                   {/* Compliance Reports */}
@@ -943,20 +1005,231 @@ function SecurityAssessment() {
                     <CheckCircle className="h-10 w-10 text-gray-400 mx-auto mb-3" />
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Compliance Reports</h4>
                     <p className="text-xs text-gray-600 mb-3">Audit reports, compliance scans</p>
-                    <label className="cursor-pointer bg-gray-600 text-white px-3 py-1.5 rounded text-xs hover:bg-gray-700">
-                      Upload
-                      <input
-                        type="file"
-                        multiple
-                        accept=".pdf,.docx,.xlsx,.json"
-                        onChange={(e) => handleFileUpload(e, 'compliance')}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Upload Progress */}
+            {uploadProgress && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2">
+                    {uploadProgress.status === 'completed' ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : uploadProgress.status === 'error' ? (
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-blue-500" />
+                    )}
+                    <span className="text-sm">
+                      {uploadProgress.status === 'completed' ? 'Uploaded: ' : 
+                       uploadProgress.status === 'error' ? 'Failed: ' : 'Uploading: '}
+                      {uploadProgress.fileName}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Drag and Drop Area */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg mb-2">Or drag and drop security documents here</p>
+              <p className="text-sm text-gray-500">
+                Vulnerability scans • SIEM exports • Security logs • Compliance reports
+              </p>
+            </div>
+
+            <Tabs value={selectedDocumentTab} onValueChange={setSelectedDocumentTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="documents" className="flex items-center">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Documents
+                </TabsTrigger>
+                <TabsTrigger value="insights" className="flex items-center">
+                  <Network className="h-4 w-4 mr-2" />
+                  Insights
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="documents" className="space-y-4">
+                <div className="grid gap-4">
+                  {documents.map((doc) => (
+                    <Card key={doc.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="font-semibold">{doc.fileName}</h3>
+                              <Badge className={getDocumentTypeColor(doc.documentType)}>
+                                {doc.documentType}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{doc.summary}</p>
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span>{formatFileSize(doc.sizeBytes)}</span>
+                              <span>{doc.chunks?.length || 0} chunks</span>
+                              <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                            </div>
+                            {doc.keyFindings && doc.keyFindings.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-gray-700 mb-1">Key Findings:</p>
+                                <ul className="text-xs text-gray-600 space-y-1">
+                                  {doc.keyFindings.slice(0, 3).map((finding, idx) => (
+                                    <li key={idx}>• {finding}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteDocument(doc.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {documents.length === 0 && (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <p className="text-center text-gray-500">
+                          No security documents uploaded yet. Upload some documents to get started!
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="insights" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <BarChart3 className="h-5 w-5 mr-2" />
+                        Document Distribution
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {Object.entries(
+                          documents.reduce((acc, doc) => {
+                            acc[doc.documentType] = (acc[doc.documentType] || 0) + 1;
+                            return acc;
+                          }, {})
+                        ).map(([type, count]) => (
+                          <div key={type} className="flex items-center justify-between">
+                            <Badge className={getDocumentTypeColor(type)}>{type}</Badge>
+                            <span className="text-sm font-medium">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <TrendingUp className="h-5 w-5 mr-2" />
+                        Processing Stats
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Total Documents:</span>
+                          <span className="font-medium">{documents.length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Chunks:</span>
+                          <span className="font-medium">
+                            {documents.reduce((sum, doc) => sum + (doc.chunks?.length || 0), 0)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Size:</span>
+                          <span className="font-medium">
+                            {formatFileSize(documents.reduce((sum, doc) => sum + doc.sizeBytes, 0))}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Network className="h-5 w-5 mr-2" />
+                      Document Relationships
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {insights.map((insight) => (
+                        <div key={insight.documentId} className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium">{insight.fileName}</h4>
+                            <Badge variant="outline">{insight.analysisCategory}</Badge>
+                          </div>
+                          
+                          {insight.keyThemes.length > 0 && (
+                            <div className="mb-3">
+                              <p className="text-xs font-medium text-gray-700 mb-1">Key Themes:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {insight.keyThemes.map((theme, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    {theme}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {insight.relatedDocuments.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-700 mb-1">Related Documents:</p>
+                              <div className="space-y-1">
+                                {insight.relatedDocuments.map((related, idx) => (
+                                  <div key={idx} className="flex items-center justify-between text-xs">
+                                    <span>{related.fileName}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {related.relationshipType}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {insights.length === 0 && (
+                        <p className="text-center text-gray-500 py-4">
+                          No document insights available yet. Upload documents to see relationships and analysis.
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
 
             {/* Uploaded Files Table */}
             <div className="bg-white shadow-lg rounded-lg">

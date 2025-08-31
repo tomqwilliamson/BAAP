@@ -5,7 +5,6 @@ import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { 
     FileText, 
-    Search, 
     TrendingUp, 
     Network, 
     Brain,
@@ -22,14 +21,11 @@ import {
 const DocumentInsights = () => {
     const [documents, setDocuments] = useState([]);
     const [insights, setInsights] = useState([]);
-    const [searchResults, setSearchResults] = useState(null);
     const [loading, setLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(null);
     const [selectedTab, setSelectedTab] = useState('documents');
     
     // Form states
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedDocTypes, setSelectedDocTypes] = useState([]);
     const [dragOver, setDragOver] = useState(false);
 
     const documentTypes = [
@@ -118,29 +114,6 @@ const DocumentInsights = () => {
         setDragOver(false);
     };
 
-    const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
-        
-        setLoading(true);
-        try {
-            const response = await fetch('/api/document/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    query: searchQuery,
-                    documentTypes: selectedDocTypes.length > 0 ? selectedDocTypes : null,
-                    maxResults: 10
-                })
-            });
-            
-            const data = await response.json();
-            setSearchResults(data);
-        } catch (error) {
-            console.error('Search error:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
 
     const handleDeleteDocument = async (documentId) => {
@@ -240,14 +213,10 @@ const DocumentInsights = () => {
             </div>
 
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="documents" className="flex items-center">
                         <FileText className="h-4 w-4 mr-2" />
                         Documents
-                    </TabsTrigger>
-                    <TabsTrigger value="search" className="flex items-center">
-                        <Search className="h-4 w-4 mr-2" />
-                        Search
                     </TabsTrigger>
                     <TabsTrigger value="insights" className="flex items-center">
                         <Network className="h-4 w-4 mr-2" />
@@ -313,92 +282,7 @@ const DocumentInsights = () => {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="search" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center">
-                                <Search className="h-5 w-5 mr-2" />
-                                Semantic Document Search
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex space-x-2">
-                                <input
-                                    type="text"
-                                    placeholder="Search documents..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="flex-1 px-3 py-2 border rounded-md"
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                />
-                                <Button onClick={handleSearch} disabled={loading}>
-                                    {loading ? 'Searching...' : 'Search'}
-                                </Button>
-                            </div>
-                            
-                            <div>
-                                <p className="text-sm font-medium mb-2">Filter by document type:</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {documentTypes.map((type) => (
-                                        <Badge
-                                            key={type}
-                                            variant={selectedDocTypes.includes(type) ? "default" : "outline"}
-                                            className="cursor-pointer"
-                                            onClick={() => {
-                                                setSelectedDocTypes(prev => 
-                                                    prev.includes(type)
-                                                        ? prev.filter(t => t !== type)
-                                                        : [...prev, type]
-                                                );
-                                            }}
-                                        >
-                                            {type}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
 
-                    {searchResults && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Search Results</CardTitle>
-                                <p className="text-sm text-gray-600">
-                                    Found {searchResults.totalResults} results in {searchResults.searchTime}ms
-                                    {searchResults.maxSimilarity && (
-                                        <span> • Max similarity: {(searchResults.maxSimilarity * 100).toFixed(1)}%</span>
-                                    )}
-                                </p>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {searchResults.results.map((result) => (
-                                        <div key={result.documentId} className="border-l-4 border-blue-500 pl-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="font-medium">{result.fileName}</h4>
-                                                <div className="flex items-center space-x-2">
-                                                    <Badge className={getDocumentTypeColor(result.documentType)}>
-                                                        {result.documentType}
-                                                    </Badge>
-                                                    <Badge variant="outline">
-                                                        {(result.similarity * 100).toFixed(1)}% match
-                                                    </Badge>
-                                                </div>
-                                            </div>
-                                            <p className="text-sm text-gray-600 mb-2">{result.relevantChunk}</p>
-                                            {result.matchingKeyFindings.length > 0 && (
-                                                <div className="text-xs text-gray-500">
-                                                    Matching findings: {result.matchingKeyFindings.join(', ')}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                </TabsContent>
 
                 <TabsContent value="insights" className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

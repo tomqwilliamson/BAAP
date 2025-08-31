@@ -99,12 +99,6 @@ const navigationItems = [
         href: '/app/recommendations',
         icon: Target,
         description: 'AI-generated improvement suggestions'
-      },
-      {
-        name: 'ARIA-AI Assessment Assistant',
-        href: '/app/aria-assistant',
-        icon: Brain,
-        description: 'Intelligent assistant for assessment guidance and insights'
       }
     ]
   }

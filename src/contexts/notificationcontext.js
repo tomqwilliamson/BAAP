@@ -31,8 +31,10 @@ export const NotificationProvider = ({ children }) => {
       }
     }
 
-    // Connect to SignalR hub
-    notificationService.start();
+    // Connect to SignalR hub (only if enabled)
+    if (notificationService.isEnabled) {
+      notificationService.start();
+    }
 
     // Handle real-time notifications
     const cleanup = notificationService.onNotification((notification) => {

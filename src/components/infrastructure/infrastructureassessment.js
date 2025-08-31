@@ -3,9 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   Cloud, Server, Database, Zap, Activity, HardDrive, Wifi, Shield, 
   Upload, Download, Save, FileText, Image, BarChart3, AlertTriangle,
-  CheckCircle, Clock, DollarSign, Users, Settings, RefreshCw, Brain
+  CheckCircle, Clock, DollarSign, Users, Settings, RefreshCw, Brain,
+  Trash2, TrendingUp, Network, Filter
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
+import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/currency';
 import { useAssessment } from '../../contexts/assessmentcontext';
@@ -23,6 +28,13 @@ function InfrastructureAssessment() {
   const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
   const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
   const [aiCapabilities, setAiCapabilities] = useState(null);
+  
+  // Document management states
+  const [documents, setDocuments] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [selectedDocumentTab, setSelectedDocumentTab] = useState('documents');
+  const [dragOver, setDragOver] = useState(false);
   
   // Get analysis state for this module
   const analysisState = getAnalysisState('infrastructure');
@@ -54,6 +66,8 @@ function InfrastructureAssessment() {
   useEffect(() => {
     loadAssessmentData();
     checkAIServiceAvailability();
+    loadDocuments();
+    loadInsights();
   }, [currentAssessment]);
 
   const checkAIServiceAvailability = async () => {
@@ -66,6 +80,132 @@ function InfrastructureAssessment() {
       setAiServiceAvailable(false);
       setAiCapabilities(null);
     }
+  };
+
+  // Document management functions
+  const documentTypes = [
+    'Infrastructure Documentation',
+    'Technical Architecture', 
+    'Business Requirements',
+    'Security Documentation',
+    'Data Architecture',
+    'DevOps Documentation',
+    'Project Management',
+    'Compliance & Governance'
+  ];
+
+  const loadDocuments = async () => {
+    try {
+      const response = await fetch('/api/document');
+      const data = await response.json();
+      // Filter for infrastructure-related documents
+      const infrastructureDocs = data.filter(doc => 
+        doc.documentType === 'Infrastructure Documentation' || 
+        doc.documentType === 'Technical Architecture' ||
+        doc.category === 'infrastructure'
+      );
+      setDocuments(infrastructureDocs);
+    } catch (error) {
+      console.error('Error loading infrastructure documents:', error);
+    }
+  };
+
+  const loadInsights = async () => {
+    try {
+      const response = await fetch('/api/document/analyze-relationships', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      // Filter insights for infrastructure-related documents
+      const infrastructureInsights = data.filter(insight => 
+        insight.analysisCategory === 'Infrastructure' ||
+        insight.documentType === 'Infrastructure Documentation'
+      );
+      setInsights(infrastructureInsights);
+    } catch (error) {
+      console.error('Error loading infrastructure insights:', error);
+    }
+  };
+
+  const handleDocumentUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress({ fileName: file.name, progress: 0 });
+      
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('documentType', 'Infrastructure Documentation');
+        formData.append('category', 'infrastructure');
+        
+        const response = await fetch('/api/document/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          setUploadProgress({ fileName: file.name, progress: 100, status: 'completed' });
+          await loadDocuments();
+          await loadInsights();
+          toast.success(`${file.name} uploaded successfully`);
+        } else {
+          setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+          toast.error(`Failed to upload ${file.name}`);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+        toast.error(`Error uploading ${file.name}`);
+      }
+    }
+    
+    setTimeout(() => setUploadProgress(null), 3000);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    handleDocumentUpload(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    try {
+      await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
+      await loadDocuments();
+      await loadInsights();
+      toast.success('Document deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Error deleting document');
+    }
+  };
+
+  const getDocumentTypeColor = (type) => {
+    const colors = {
+      'Business Requirements': 'bg-blue-100 text-blue-800',
+      'Technical Architecture': 'bg-green-100 text-green-800',
+      'Infrastructure Documentation': 'bg-purple-100 text-purple-800',
+      'Security Documentation': 'bg-red-100 text-red-800',
+      'Data Architecture': 'bg-yellow-100 text-yellow-800',
+      'DevOps Documentation': 'bg-indigo-100 text-indigo-800',
+      'Project Management': 'bg-pink-100 text-pink-800',
+      'Compliance & Governance': 'bg-gray-100 text-gray-800'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
   const loadAssessmentData = async () => {
@@ -363,6 +503,13 @@ function InfrastructureAssessment() {
                   Saved {new Date(lastSaveTime).toLocaleTimeString()}
                 </div>
               )}
+              <button
+                onClick={exportAssessment}
+                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </button>
               <button
                 onClick={saveAssessment}
                 className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
@@ -725,38 +872,34 @@ function InfrastructureAssessment() {
         {/* Data Sources (Repo) View */}
         {currentView === 'repo' && (
           <div className="space-y-6">
-            
-            {/* Import/Export Actions */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Data Management</h2>
-                <div className="flex space-x-3">
-                  <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Import Assessment
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={importAssessment}
-                      className="hidden"
-                    />
-                  </label>
-                  <button
-                    onClick={exportAssessment}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export Assessment
-                  </button>
-                </div>
-              </div>
-            </div>
 
-            {/* File Upload Section */}
+            {/* Upload Progress */}
+            {uploadProgress && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2">
+                    {uploadProgress.status === 'completed' ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : uploadProgress.status === 'error' ? (
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-blue-500" />
+                    )}
+                    <span className="text-sm">
+                      {uploadProgress.status === 'completed' ? 'Uploaded: ' : 
+                       uploadProgress.status === 'error' ? 'Failed: ' : 'Uploading: '}
+                      {uploadProgress.fileName}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Document Type Guidance */}
             <div className="bg-white shadow-lg rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Data Source Integration</h3>
-                <p className="text-sm text-gray-600">Upload Azure Migrate data, log files, documentation, and architecture diagrams</p>
+                <h3 className="text-lg font-semibold text-gray-900">Infrastructure Data Source Integration</h3>
+                <p className="text-sm text-gray-600">Upload specific infrastructure documents for comprehensive analysis</p>
               </div>
               <div className="p-6 space-y-6">
                 {/* Upload Areas */}
@@ -765,110 +908,224 @@ function InfrastructureAssessment() {
                   <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center bg-blue-50">
                     <Cloud className="h-12 w-12 text-blue-500 mx-auto mb-4" />
                     <h4 className="text-lg font-medium text-gray-900 mb-2">Azure Migrate</h4>
-                    <p className="text-sm text-gray-600 mb-4">Upload Azure Migrate assessment data</p>
-                    <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
-                      Select Files
-                      <input
-                        type="file"
-                        multiple
-                        accept=".json,.csv,.xlsx"
-                        onChange={(e) => handleFileUpload(e, 'azure-migrate')}
-                        className="hidden"
-                      />
-                    </label>
+                    <p className="text-sm text-gray-600 mb-4">Upload Azure Migrate assessment data, server inventory, readiness reports</p>
                   </div>
 
-                  {/* Log Files */}
+                  {/* Performance Logs */}
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">Log Files</h4>
-                    <p className="text-sm text-gray-600 mb-4">Upload server logs, performance metrics</p>
-                    <label className="cursor-pointer bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">
-                      Select Files
-                      <input
-                        type="file"
-                        multiple
-                        accept=".txt,.log,.csv"
-                        onChange={(e) => handleFileUpload(e, 'log')}
-                        className="hidden"
-                      />
-                    </label>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">Performance Data</h4>
+                    <p className="text-sm text-gray-600 mb-4">Server logs, performance metrics, monitoring reports, capacity data</p>
                   </div>
 
                   {/* Architecture Diagrams */}
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">Architecture Diagrams</h4>
-                    <p className="text-sm text-gray-600 mb-4">Upload system diagrams and documentation</p>
-                    <label className="cursor-pointer bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700">
-                      Select Files
-                      <input
-                        type="file"
-                        multiple
-                        accept=".png,.jpg,.jpeg,.pdf,.vsd,.docx"
-                        onChange={(e) => handleFileUpload(e, 'diagram')}
-                        className="hidden"
-                      />
-                    </label>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">Architecture Docs</h4>
+                    <p className="text-sm text-gray-600 mb-4">Infrastructure diagrams, network topology, system documentation</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Uploaded Files Table */}
-            <div className="bg-white shadow-lg rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Uploaded Files</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {assessmentData.uploadedFiles?.map((file, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {file.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                          {file.type}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {file.size}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {file.uploadDate}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            file.status === 'Processed' ? 'bg-green-100 text-green-800' :
-                            file.status === 'Processing' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {file.status === 'Processing' && <RefreshCw className="w-3 h-3 mr-1 animate-spin" />}
-                            {file.status}
-                          </span>
-                        </td>
-                      </tr>
-                    )) || []}
-                    {(!assessmentData.uploadedFiles || assessmentData.uploadedFiles.length === 0) && (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                          No files uploaded yet. Upload your data sources to begin analysis.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+            {/* Drag and Drop Area */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg mb-2">Or drag and drop infrastructure documents here</p>
+              <p className="text-sm text-gray-500">
+                Azure Migrate data • Performance logs • Architecture diagrams • Documentation
+              </p>
             </div>
+
+            <Tabs value={selectedDocumentTab} onValueChange={setSelectedDocumentTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="documents" className="flex items-center">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Documents
+                </TabsTrigger>
+                <TabsTrigger value="insights" className="flex items-center">
+                  <Network className="h-4 w-4 mr-2" />
+                  Insights
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="documents" className="space-y-4">
+                <div className="grid gap-4">
+                  {documents.map((doc) => (
+                    <Card key={doc.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="font-semibold">{doc.fileName}</h3>
+                              <Badge className={getDocumentTypeColor(doc.documentType)}>
+                                {doc.documentType}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{doc.summary}</p>
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span>{formatFileSize(doc.sizeBytes)}</span>
+                              <span>{doc.chunks?.length || 0} chunks</span>
+                              <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                            </div>
+                            {doc.keyFindings && doc.keyFindings.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-gray-700 mb-1">Key Findings:</p>
+                                <ul className="text-xs text-gray-600 space-y-1">
+                                  {doc.keyFindings.slice(0, 3).map((finding, idx) => (
+                                    <li key={idx}>• {finding}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteDocument(doc.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {documents.length === 0 && (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <p className="text-center text-gray-500">
+                          No infrastructure documents uploaded yet. Upload some documents to get started!
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="insights" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <BarChart3 className="h-5 w-5 mr-2" />
+                        Document Distribution
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {Object.entries(
+                          documents.reduce((acc, doc) => {
+                            acc[doc.documentType] = (acc[doc.documentType] || 0) + 1;
+                            return acc;
+                          }, {})
+                        ).map(([type, count]) => (
+                          <div key={type} className="flex items-center justify-between">
+                            <Badge className={getDocumentTypeColor(type)}>{type}</Badge>
+                            <span className="text-sm font-medium">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <TrendingUp className="h-5 w-5 mr-2" />
+                        Processing Stats
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Total Documents:</span>
+                          <span className="font-medium">{documents.length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Chunks:</span>
+                          <span className="font-medium">
+                            {documents.reduce((sum, doc) => sum + (doc.chunks?.length || 0), 0)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Size:</span>
+                          <span className="font-medium">
+                            {formatFileSize(documents.reduce((sum, doc) => sum + doc.sizeBytes, 0))}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Network className="h-5 w-5 mr-2" />
+                      Document Relationships
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {insights.map((insight) => (
+                        <div key={insight.documentId} className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium">{insight.fileName}</h4>
+                            <Badge variant="outline">{insight.analysisCategory}</Badge>
+                          </div>
+                          
+                          {insight.keyThemes.length > 0 && (
+                            <div className="mb-3">
+                              <p className="text-xs font-medium text-gray-700 mb-1">Key Themes:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {insight.keyThemes.map((theme, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    {theme}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {insight.relatedDocuments.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-700 mb-1">Related Documents:</p>
+                              <div className="space-y-1">
+                                {insight.relatedDocuments.map((related, idx) => (
+                                  <div key={idx} className="flex items-center justify-between text-xs">
+                                    <span>{related.fileName}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {related.relationshipType}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {insights.length === 0 && (
+                        <p className="text-center text-gray-500 py-4">
+                          No document insights available yet. Upload documents to see relationships and analysis.
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 

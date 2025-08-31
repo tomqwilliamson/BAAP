@@ -2,9 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   GitBranch, Play, Zap, Monitor, Package, Gauge, Upload, Download, Save, FileText, Image,
-  Shield, Brain, RefreshCw, Clock, Users, Code, AlertTriangle, CheckCircle, Activity
+  Shield, Brain, RefreshCw, Clock, Users, Code, AlertTriangle, CheckCircle, Activity,
+  Trash2, TrendingUp, Network, Filter
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell } from 'recharts';
+import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
@@ -16,6 +21,13 @@ function DevOpsAssessment() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  
+  // Document management states
+  const [documents, setDocuments] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [selectedDocumentTab, setSelectedDocumentTab] = useState('documents');
+  const [dragOver, setDragOver] = useState(false);
   
   const [devopsData, setDevopsData] = useState({
     github: {
@@ -34,7 +46,6 @@ function DevOpsAssessment() {
     cicd: {},
     automation: [],
     monitoring: {},
-    uploadedFiles: [],
     analysis: {
       devopsAnalysis: '',
       pipelineAnalysis: '',
@@ -46,6 +57,8 @@ function DevOpsAssessment() {
 
   useEffect(() => {
     loadDevOpsData();
+    loadDocuments();
+    loadInsights();
   }, [currentAssessment]);
 
   const loadDevOpsData = async () => {
@@ -136,10 +149,6 @@ function DevOpsAssessment() {
           dashboards: 12,
           uptime: 99.2
         },
-        uploadedFiles: [
-          { name: 'github-export.json', type: 'github', size: '4.2 MB', uploadDate: '2024-01-15', status: 'Processed' },
-          { name: 'azure-devops-data.json', type: 'azure-devops', size: '6.8 MB', uploadDate: '2024-01-14', status: 'Processed' }
-        ],
         analysis: assessmentSpecificData?.analysis || {
           devopsAnalysis: '',
           pipelineAnalysis: '',
@@ -155,32 +164,131 @@ function DevOpsAssessment() {
     }
   };
 
-  const handleFileUpload = (event, fileType) => {
-    const files = Array.from(event.target.files);
-    files.forEach(file => {
-      const newFile = {
-        name: file.name,
-        type: fileType,
-        size: formatFileSize(file.size),
-        uploadDate: new Date().toISOString().split('T')[0],
-        status: 'Processing'
-      };
-      
-      setDevopsData(prev => ({
-        ...prev,
-        uploadedFiles: [...prev.uploadedFiles, newFile]
-      }));
+  // Document management functions
+  const documentTypes = [
+    'DevOps Documentation',
+    'Technical Architecture', 
+    'Business Requirements',
+    'Infrastructure Documentation',
+    'Security Documentation',
+    'Data Architecture',
+    'Project Management',
+    'Compliance & Governance'
+  ];
 
-      // Simulate processing
-      setTimeout(() => {
-        setDevopsData(prev => ({
-          ...prev,
-          uploadedFiles: prev.uploadedFiles.map(f => 
-            f.name === file.name ? { ...f, status: 'Processed' } : f
-          )
-        }));
-      }, 2000);
-    });
+  const loadDocuments = async () => {
+    try {
+      const response = await fetch('/api/document');
+      const data = await response.json();
+      // Filter for devops-related documents
+      const devopsDocs = data.filter(doc => 
+        doc.documentType === 'DevOps Documentation' || 
+        doc.documentType === 'Technical Architecture' ||
+        doc.category === 'devops'
+      );
+      setDocuments(devopsDocs);
+    } catch (error) {
+      console.error('Error loading devops documents:', error);
+    }
+  };
+
+  const loadInsights = async () => {
+    try {
+      const response = await fetch('/api/document/analyze-relationships', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      // Filter insights for devops-related documents
+      const devopsInsights = data.filter(insight => 
+        insight.analysisCategory === 'DevOps' ||
+        insight.analysisCategory === 'Development' ||
+        insight.documentType === 'DevOps Documentation'
+      );
+      setInsights(devopsInsights);
+    } catch (error) {
+      console.error('Error loading devops insights:', error);
+    }
+  };
+
+  const handleDocumentUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress({ fileName: file.name, progress: 0 });
+      
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('documentType', 'DevOps Documentation');
+        formData.append('category', 'devops');
+        
+        const response = await fetch('/api/document/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          setUploadProgress({ fileName: file.name, progress: 100, status: 'completed' });
+          await loadDocuments();
+          await loadInsights();
+          toast.success(`${file.name} uploaded successfully`);
+        } else {
+          setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+          toast.error(`Failed to upload ${file.name}`);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
+        toast.error(`Error uploading ${file.name}`);
+      }
+    }
+    
+    setTimeout(() => setUploadProgress(null), 3000);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    handleDocumentUpload(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    try {
+      await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
+      await loadDocuments();
+      await loadInsights();
+      toast.success('Document deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Error deleting document');
+    }
+  };
+
+  const getDocumentTypeColor = (type) => {
+    const colors = {
+      'Business Requirements': 'bg-blue-100 text-blue-800',
+      'Technical Architecture': 'bg-green-100 text-green-800',
+      'Infrastructure Documentation': 'bg-purple-100 text-purple-800',
+      'Security Documentation': 'bg-red-100 text-red-800',
+      'Data Architecture': 'bg-yellow-100 text-yellow-800',
+      'DevOps Documentation': 'bg-indigo-100 text-indigo-800',
+      'Project Management': 'bg-pink-100 text-pink-800',
+      'Compliance & Governance': 'bg-gray-100 text-gray-800'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
   const formatFileSize = (bytes) => {
@@ -190,6 +298,7 @@ function DevOpsAssessment() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
 
   const exportAssessment = () => {
     const dataStr = JSON.stringify(devopsData, null, 2);
@@ -201,21 +310,6 @@ function DevOpsAssessment() {
     link.click();
   };
 
-  const importAssessment = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const importedData = JSON.parse(e.target.result);
-          setDevopsData(importedData);
-        } catch (error) {
-          alert('Error importing file: Invalid JSON format');
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
 
   const saveAssessment = () => {
     setDataSaved(true);
@@ -533,17 +627,21 @@ function DevOpsAssessment() {
             {/* Import/Export Actions */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Data Management</h2>
+                <h2 className="text-lg font-semibold text-gray-900">DevOps Document Management</h2>
                 <div className="flex space-x-3">
-                  <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Import Assessment
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={importAssessment}
-                      className="hidden"
-                    />
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.txt,.csv,.json,.yml,.yaml,.xml,.zip"
+                    onChange={(e) => handleDocumentUpload(e.target.files)}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload">
+                    <Button className="cursor-pointer">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Documents
+                    </Button>
                   </label>
                   <button
                     onClick={exportAssessment}
@@ -556,123 +654,190 @@ function DevOpsAssessment() {
               </div>
             </div>
 
-            {/* File Upload Section */}
+            {/* Upload Progress */}
+            {uploadProgress && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2">
+                    {uploadProgress.status === 'completed' ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : uploadProgress.status === 'error' ? (
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-blue-500" />
+                    )}
+                    <span className="text-sm">
+                      {uploadProgress.status === 'completed' ? 'Uploaded: ' : 
+                       uploadProgress.status === 'error' ? 'Failed: ' : 'Uploading: '}
+                      {uploadProgress.fileName}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Document Type Guidance */}
             <div className="bg-white shadow-lg rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Data Source Integration</h3>
-                <p className="text-sm text-gray-600">Upload GitHub exports, Azure DevOps data, logs, and pipeline diagrams</p>
+                <h3 className="text-lg font-semibold text-gray-900">DevOps Data Source Integration</h3>
+                <p className="text-sm text-gray-600">Upload specific DevOps documents for comprehensive analysis</p>
               </div>
               <div className="p-6 space-y-6">
                 {/* Upload Areas */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* GitHub Data */}
+                  {/* GitHub Export Data */}
                   <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center bg-blue-50">
                     <Code className="h-12 w-12 text-blue-500 mx-auto mb-4" />
                     <h4 className="text-lg font-medium text-gray-900 mb-2">GitHub Export</h4>
-                    <p className="text-sm text-gray-600 mb-4">Upload GitHub repository and workflow data</p>
-                    <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
-                      Select Files
-                      <input
-                        type="file"
-                        multiple
-                        accept=".json,.csv,.zip"
-                        onChange={(e) => handleFileUpload(e, 'github')}
-                        className="hidden"
-                      />
-                    </label>
+                    <p className="text-sm text-gray-600 mb-4">Repository data, workflow history, pull requests, code quality metrics, branch protection rules</p>
                   </div>
 
                   {/* Azure DevOps Data */}
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <GitBranch className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h4 className="text-lg font-medium text-gray-900 mb-2">Azure DevOps</h4>
-                    <p className="text-sm text-gray-600 mb-4">Upload pipeline data, work items, test results</p>
-                    <label className="cursor-pointer bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">
-                      Select Files
-                      <input
-                        type="file"
-                        multiple
-                        accept=".json,.xml,.csv"
-                        onChange={(e) => handleFileUpload(e, 'azure-devops')}
-                        className="hidden"
-                      />
-                    </label>
+                    <p className="text-sm text-gray-600 mb-4">Pipeline definitions, build/release history, work items, test results, board configurations</p>
                   </div>
 
-                  {/* Pipeline Diagrams & Logs */}
+                  {/* Logs & Diagrams */}
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h4 className="text-lg font-medium text-gray-900 mb-2">Logs & Diagrams</h4>
-                    <p className="text-sm text-gray-600 mb-4">Upload build logs, pipeline diagrams</p>
-                    <label className="cursor-pointer bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700">
-                      Select Files
-                      <input
-                        type="file"
-                        multiple
-                        accept=".txt,.log,.png,.jpg,.pdf,.yml,.yaml"
-                        onChange={(e) => handleFileUpload(e, 'logs')}
-                        className="hidden"
-                      />
-                    </label>
+                    <p className="text-sm text-gray-600 mb-4">Build logs, deployment logs, pipeline diagrams, monitoring dashboards, YAML definitions</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Uploaded Files Table */}
-            <div className="bg-white shadow-lg rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Uploaded Files</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {devopsData.uploadedFiles?.map((file, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {file.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                          {file.type}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {file.size}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {file.uploadDate}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            file.status === 'Processed' ? 'bg-green-100 text-green-800' :
-                            file.status === 'Processing' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {file.status === 'Processing' && <RefreshCw className="w-3 h-3 mr-1 animate-spin" />}
-                            {file.status}
-                          </span>
-                        </td>
-                      </tr>
-                    )) || []}
-                    {(!devopsData.uploadedFiles || devopsData.uploadedFiles.length === 0) && (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                          No files uploaded yet. Upload your data sources to begin analysis.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+            {/* Drag and Drop Area */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg mb-2">Or drag and drop DevOps documents here</p>
+              <p className="text-sm text-gray-500">
+                GitHub exports • Azure DevOps data • Pipeline logs • YAML files • Diagrams
+              </p>
             </div>
+
+            <Tabs value={selectedDocumentTab} onValueChange={setSelectedDocumentTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="documents" className="flex items-center">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Documents
+                </TabsTrigger>
+                <TabsTrigger value="insights" className="flex items-center">
+                  <Network className="h-4 w-4 mr-2" />
+                  Insights
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="documents" className="space-y-4">
+                <div className="grid gap-4">
+                  {documents.map((doc) => (
+                    <Card key={doc.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="font-semibold">{doc.fileName}</h3>
+                              <Badge className={getDocumentTypeColor(doc.documentType)}>
+                                {doc.documentType}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{doc.summary}</p>
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span>{formatFileSize(doc.sizeBytes)}</span>
+                              <span>{doc.chunks?.length || 0} chunks</span>
+                              <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                            </div>
+                            {doc.keyFindings && doc.keyFindings.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-gray-700 mb-1">Key Findings:</p>
+                                <ul className="text-xs text-gray-600 space-y-1">
+                                  {doc.keyFindings.slice(0, 3).map((finding, idx) => (
+                                    <li key={idx}>• {finding}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteDocument(doc.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {documents.length === 0 && (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <p className="text-center text-gray-500">
+                          No DevOps documents uploaded yet. Upload some documents to get started!
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="insights" className="space-y-4">
+                <div className="grid gap-4">
+                  {insights.map((insight, index) => (
+                    <Card key={index}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start space-x-3">
+                          <div className={`p-2 rounded-lg ${
+                            insight.analysisCategory === 'DevOps' ? 'bg-blue-100' :
+                            insight.analysisCategory === 'Development' ? 'bg-green-100' :
+                            'bg-gray-100'
+                          }`}>
+                            <Network className={`h-4 w-4 ${
+                              insight.analysisCategory === 'DevOps' ? 'text-blue-600' :
+                              insight.analysisCategory === 'Development' ? 'text-green-600' :
+                              'text-gray-600'
+                            }`} />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold mb-1">{insight.insight}</h3>
+                            <p className="text-sm text-gray-600 mb-2">{insight.description}</p>
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span>Category: {insight.analysisCategory}</span>
+                              <span>Confidence: {insight.confidence}%</span>
+                              <span>Documents: {insight.relatedDocuments?.length || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {insights.length === 0 && (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <p className="text-center text-gray-500">
+                          No insights available yet. Upload documents to generate AI-powered insights!
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+
           </div>
         )}
 
