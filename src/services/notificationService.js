@@ -26,8 +26,11 @@ class NotificationService {
 
         this.connectionAttempted = true;
 
+        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'https://localhost:7001/api';
+        const hubUrl = apiBaseUrl.replace('/api', '/hubs/notification');
+        
         this.connection = new signalR.HubConnectionBuilder()
-            .withUrl('https://localhost:7001/hubs/notification', {
+            .withUrl(hubUrl, {
                 // Handle SSL certificate issues in development
                 skipNegotiation: false,
                 transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,

@@ -1524,13 +1524,13 @@ Priority Actions:
   };
 
   // Chart data preparation
-  const driversChartData = businessData.businessDrivers.map(driver => ({
+  const driversChartData = businessData?.businessDrivers?.map(driver => ({
     name: driver.name.slice(0, 20),
     impact: driver.impact,
     urgency: driver.urgency
   }));
 
-  const budgetChartData = Object.entries(businessData.budgetAllocation)
+  const budgetChartData = Object.entries(businessData?.budgetAllocation || {})
     .filter(([key, value]) => value > 0)
     .map(([key, value]) => ({
       name: key.charAt(0).toUpperCase() + key.slice(1),
@@ -2731,7 +2731,7 @@ Priority Actions:
           </div>
 
           {/* Analysis Results */}
-          {showAnalysisResults && businessData.analysis?.driversAnalysis && (
+          {showAnalysisResults && businessData?.analysis?.driversAnalysis && (
             <div className="space-y-6">
               {/* Business Drivers Analysis */}
               <div className="bg-white rounded-lg shadow-md p-6">
@@ -2753,11 +2753,11 @@ Priority Actions:
                   {businessData.analysis?.isAiPowered ? (
                     // AI-powered results (may contain markdown formatting)
                     <div className="whitespace-pre-wrap text-gray-700">
-                      {businessData.analysis?.driversAnalysis}
+                      {businessData?.analysis?.driversAnalysis}
                     </div>
                   ) : (
                     // Simulation results
-                    <p className="text-gray-700">{businessData.analysis.driversAnalysis}</p>
+                    <p className="text-gray-700">{businessData?.analysis?.driversAnalysis}</p>
                   )}
                 </div>
               </div>
@@ -2766,7 +2766,7 @@ Priority Actions:
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Stakeholder Analysis</h3>
                 <div className="prose max-w-none">
-                  <p className="text-gray-700">{businessData.analysis.stakeholderAnalysis}</p>
+                  <p className="text-gray-700">{businessData?.analysis?.stakeholderAnalysis}</p>
                 </div>
               </div>
 
@@ -2774,7 +2774,7 @@ Priority Actions:
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Timeline Analysis</h3>
                 <div className="prose max-w-none">
-                  <p className="text-gray-700">{businessData.analysis.timelineAnalysis}</p>
+                  <p className="text-gray-700">{businessData?.analysis?.timelineAnalysis}</p>
                 </div>
               </div>
 
@@ -2782,7 +2782,7 @@ Priority Actions:
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Analysis</h3>
                 <div className="prose max-w-none">
-                  <p className="text-gray-700">{businessData.analysis.riskAnalysis}</p>
+                  <p className="text-gray-700">{businessData?.analysis?.riskAnalysis}</p>
                 </div>
               </div>
 
@@ -2790,13 +2790,13 @@ Priority Actions:
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Strategic Recommendations</h3>
                 <div className="prose max-w-none">
-                  <div className="text-gray-700 whitespace-pre-line">{businessData.analysis.recommendations}</div>
+                  <div className="text-gray-700 whitespace-pre-line">{businessData?.analysis?.recommendations}</div>
                 </div>
               </div>
             </div>
           )}
 
-          {!showAnalysisResults && businessData.analysis?.driversAnalysis && (
+          {!showAnalysisResults && businessData?.analysis?.driversAnalysis && (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
               <Brain className="h-12 w-12 text-purple-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Analysis Complete</h3>

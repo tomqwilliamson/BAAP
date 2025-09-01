@@ -84,7 +84,13 @@
       "Bash(az sql db:*)",
       "Bash(az extension add:*)",
       "Bash(az sql server ad-admin list:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(az webapp cors:*)",
+      "Bash(az staticwebapp environment list:*)",
+      "Bash(az staticwebapp appsettings list:*)",
+      "Bash(az staticwebapp appsettings:*)",
+      "Bash(set NODE_ENV=production)",
+      "Bash(del /q /s build)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
