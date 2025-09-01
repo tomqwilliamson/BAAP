@@ -90,7 +90,14 @@
       "Bash(az staticwebapp appsettings list:*)",
       "Bash(az staticwebapp appsettings:*)",
       "Bash(set NODE_ENV=production)",
-      "Bash(del /q /s build)"
+      "Bash(del /q /s build)",
+      "Bash(.scriptssync-all-databases.ps1)",
+      "Bash(sqllocaldb info:*)",
+      "Bash(sqllocaldb:*)",
+      "Bash(where sqlcmd)",
+      "Bash(set HTTPS=true)",
+      "Bash(set NODE_OPTIONS=--openssl-legacy-provider)",
+      "Bash(react-scripts:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
