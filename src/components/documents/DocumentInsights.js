@@ -89,26 +89,68 @@ const DocumentInsights = () => {
         try {
             const assessmentId = 1; // Default assessment ID for DocumentInsights
             const response = await fetch(`${API_BASE_URL}/Intelligence/recommendations/${assessmentId}`);
+            
+            if (!response.ok) {
+                console.warn('Intelligence recommendations not available, using mock insights');
+                setInsights([
+                    {
+                        id: 1,
+                        title: "General Assessment Guidance",
+                        category: "General",
+                        analysisCategory: "General",
+                        documentType: "General Documentation",
+                        content: "Review uploaded documents for comprehensive assessment insights and recommendations.",
+                        confidence: 75,
+                        createdAt: new Date().toISOString()
+                    }
+                ]);
+                return;
+            }
+
             const data = await response.json();
             
-            // Transform recommendations to insights format
-            const transformedInsights = data.map(recommendation => ({
-                documentId: recommendation.id || Math.random().toString(36).substr(2, 9),
-                fileName: recommendation.title || 'General Recommendation',
-                analysisCategory: recommendation.category || 'General',
-                keyThemes: recommendation.tags || [],
-                relatedDocuments: recommendation.relatedItems?.map(item => ({
-                    fileName: item.name || item.title,
-                    relationshipType: item.type || 'Related'
-                })) || [],
-                insight: recommendation.title,
-                description: recommendation.description || recommendation.content,
-                confidence: recommendation.confidence || 85
+            // Handle the new RecommendationResult structure
+            if (!data || typeof data !== 'object') {
+                console.warn('Invalid Intelligence API response structure');
+                setInsights([]);
+                return;
+            }
+
+            // Combine all recommendation arrays from the RecommendationResult
+            const allRecommendations = [
+                ...(data.strategicRecommendations || []),
+                ...(data.tacticalRecommendations || []),
+                ...(data.personalizedRecommendations || [])
+            ];
+            
+            // Transform recommendations to insights format (no filtering for general insights)
+            const transformedInsights = allRecommendations.map((recommendation, index) => ({
+                id: recommendation.id || `general_${index + 1}`,
+                title: recommendation.title || recommendation.recommendation || recommendation.name || 'General Recommendation',
+                category: recommendation.category || "General",
+                analysisCategory: recommendation.category || "General",
+                documentType: "General Documentation",
+                content: recommendation.description || recommendation.details || recommendation.content || recommendation.recommendation || 'No description available',
+                confidence: recommendation.priority === 'High' ? 90 : recommendation.priority === 'Medium' ? 75 : recommendation.priority === 'Low' ? 60 : 75,
+                createdAt: new Date().toISOString()
             }));
             
             setInsights(transformedInsights);
         } catch (error) {
             console.error('Error loading insights:', error);
+            // Fallback to mock data on error
+            setInsights([
+                {
+                    id: 1,
+                    title: "General Assessment Guidance",
+                    category: "General",
+                    analysisCategory: "General",
+                    documentType: "General Documentation",
+                    content: "Review uploaded documents for comprehensive assessment insights and recommendations.",
+                    confidence: 75,
+                    createdAt: new Date().toISOString()
+                }
+            ]);
         }
     };
 

@@ -33,6 +33,9 @@ public class BaapDbContext : DbContext
     public DbSet<ArchitecturePattern> ArchitecturePatterns { get; set; } = null!;
     public DbSet<TechnologyStack> TechnologyStacks { get; set; } = null!;
     public DbSet<CodebaseStats> CodebaseStats { get; set; } = null!;
+    
+    // Development Practices
+    public DbSet<DevelopmentPractices> DevelopmentPractices { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

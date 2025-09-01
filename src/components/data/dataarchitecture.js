@@ -199,28 +199,75 @@ function DataArchitecture() {
     try {
       const assessmentId = currentAssessment?.id || 1;
       const response = await fetch(`${API_BASE_URL}/Intelligence/recommendations/${assessmentId}`);
+      
+      if (!response.ok) {
+        console.warn('Intelligence recommendations not available, using mock insights');
+        setInsights([
+          {
+            id: 1,
+            title: "Database Migration Readiness",
+            category: "Data",
+            analysisCategory: "Data Architecture",
+            documentType: "Data Architecture",
+            content: "Analysis shows mixed readiness levels for database migration with optimization opportunities.",
+            confidence: 85,
+            createdAt: new Date().toISOString()
+          }
+        ]);
+        return;
+      }
+
       const data = await response.json();
       
+      // Handle the new RecommendationResult structure
+      if (!data || typeof data !== 'object') {
+        console.warn('Invalid Intelligence API response structure');
+        setInsights([]);
+        return;
+      }
+
+      // Combine all recommendation arrays from the RecommendationResult
+      const allRecommendations = [
+        ...(data.strategicRecommendations || []),
+        ...(data.tacticalRecommendations || []),
+        ...(data.personalizedRecommendations || [])
+      ];
+      
       // Transform recommendations to insights format and filter for Data category
-      const dataInsights = data.filter(recommendation => 
-        recommendation.category === 'Data' || recommendation.category === 'Data Architecture'
-      ).map(recommendation => ({
-        documentId: recommendation.id || Math.random().toString(36).substr(2, 9),
-        fileName: recommendation.title || 'Data Architecture Recommendation',
-        analysisCategory: recommendation.category === 'Data Architecture' ? 'Data Architecture' : 'Data',
-        keyThemes: recommendation.tags || [],
-        relatedDocuments: recommendation.relatedItems?.map(item => ({
-          fileName: item.name || item.title,
-          relationshipType: item.type || 'Related'
-        })) || [],
-        insight: recommendation.title,
-        description: recommendation.description || recommendation.content,
-        confidence: recommendation.confidence || 85
-      }));
+      const dataInsights = allRecommendations
+        .filter(recommendation => 
+          recommendation.category === 'Data' || 
+          recommendation.category === 'Data Architecture' ||
+          recommendation.area === 'Data' ||
+          recommendation.type === 'Data'
+        )
+        .map((recommendation, index) => ({
+          id: recommendation.id || `data_${index + 1}`,
+          title: recommendation.title || recommendation.recommendation || recommendation.name || 'Data Architecture Recommendation',
+          category: "Data",
+          analysisCategory: "Data Architecture",
+          documentType: "Data Architecture",
+          content: recommendation.description || recommendation.details || recommendation.content || recommendation.recommendation || 'No description available',
+          confidence: recommendation.priority === 'High' ? 90 : recommendation.priority === 'Medium' ? 75 : recommendation.priority === 'Low' ? 60 : 75,
+          createdAt: new Date().toISOString()
+        }));
       
       setInsights(dataInsights);
     } catch (error) {
       console.error('Error loading data architecture insights:', error);
+      // Fallback to mock data on error
+      setInsights([
+        {
+          id: 1,
+          title: "Database Migration Readiness",
+          category: "Data",
+          analysisCategory: "Data Architecture",
+          documentType: "Data Architecture",
+          content: "Analysis shows mixed readiness levels for database migration with optimization opportunities.",
+          confidence: 85,
+          createdAt: new Date().toISOString()
+        }
+      ]);
     }
   };
 
@@ -319,12 +366,14 @@ function DataArchitecture() {
   const loadDataArchitectureData = async () => {
     try {
       setLoading(true);
-      console.log('DATA ARCHITECTURE: Loading data for assessment:', currentAssessment?.id);
+      console.log('DATA ARCHITECTURE: Loading data for assessment:', currentAssessment?.id, currentAssessment);
       
       // Generate assessment-specific data
       const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'dataArchitecture');
+      console.log('DATA ARCHITECTURE: Generated assessment data:', assessmentSpecificData);
       
       if (assessmentSpecificData && assessmentSpecificData.databases) {
+        console.log('DATA ARCHITECTURE: Using assessment-specific data');
         // Use assessment-specific data
         const enhancedData = {
           microsoftDMA: {
@@ -383,6 +432,7 @@ function DataArchitecture() {
         };
         setDataArchData(enhancedData);
       } else {
+        console.log('DATA ARCHITECTURE: Using fallback mock data');
         // Fallback to mock data
         const mockData = {
         microsoftDMA: {

@@ -62,6 +62,9 @@ public class DataSeederService
             await SeedBudgetAllocations(assessments);
             await SeedProjectTimelines(assessments);
             await SeedBusinessContextRisks(assessments);
+            
+            // Seed development practices
+            await SeedDevelopmentPractices(assessments);
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("Database seeding completed successfully with {AssessmentCount} assessments.", assessments.Count);
@@ -1795,5 +1798,263 @@ public class DataSeederService
 
         _context.BusinessContextRisks.AddRange(risks);
         _logger.LogInformation("Seeded {Count} business context risks.", risks.Length);
+    }
+
+    private async Task SeedDevelopmentPractices(List<Assessment> assessments)
+    {
+        var practices = new[]
+        {
+            // E-Commerce Platform - Agile/Mature Team
+            new DevelopmentPractices
+            {
+                AssessmentId = assessments[0].Id,
+                PrimaryMethodology = "Agile/Scrum",
+                SprintLength = "2 weeks",
+                ReleaseFrequency = "Bi-weekly",
+                HasDedicatedQA = true,
+                ManualTesting = true,
+                AutomatedTesting = true,
+                UnitTesting = true,
+                IntegrationTesting = true,
+                E2ETesting = true,
+                PerformanceTesting = false,
+                CodeCoverageTarget = "70-80%",
+                TotalTeamSize = 15,
+                NumberOfScrumTeams = 2,
+                
+                // Role counts
+                SoftwareDevelopers = 8,
+                SeniorLeadDevelopers = 2,
+                QAEngineers = 2,
+                DatabaseEngineers = 1,
+                DevOpsEngineers = 1,
+                BusinessAnalysts = 0,
+                ProductManagers = 1,
+                ProjectManagers = 0,
+                ScrumMasters = 2,
+                UIUXDesigners = 1,
+                Architects = 1,
+
+                // Development practices
+                CodeReviews = true,
+                PairProgramming = false,
+                TestDrivenDevelopment = false,
+                BehaviorDrivenDevelopment = false,
+                ContinuousIntegration = true,
+                ContinuousDeployment = true,
+                FeatureFlags = true,
+                ABTesting = true,
+                CodeDocumentationStandards = true,
+                APIDocumentation = true,
+                TechnicalDebtManagement = true,
+                PerformanceMonitoring = true,
+
+                // Communication
+                MicrosoftTeams = true,
+                Slack = false,
+                Discord = false,
+                Email = true,
+                OtherCommunicationTools = false,
+
+                // Project management
+                AzureDevOps = true,
+                Jira = false,
+                GitHubProjects = false,
+                Trello = false,
+                Asana = false,
+                MondayCom = false,
+                OtherProjectManagementTools = false,
+
+                // Meetings
+                DailyStandups = true,
+                SprintPlanning = true,
+                SprintReviews = true,
+                Retrospectives = true,
+                BacklogGrooming = true,
+                ArchitectureReviews = true,
+
+                // Technology
+                PrimaryProgrammingLanguages = "C#, JavaScript, TypeScript, SQL",
+                VisualStudio = true,
+                VSCode = true,
+                IntelliJIDEA = false,
+                Eclipse = false,
+                OtherIDEs = false,
+
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedBy = "System",
+                UpdatedBy = "System"
+            },
+
+            // Financial Services - Waterfall/Traditional
+            new DevelopmentPractices
+            {
+                AssessmentId = assessments[1].Id,
+                PrimaryMethodology = "Waterfall",
+                SprintLength = "Other/N/A",
+                ReleaseFrequency = "Quarterly",
+                HasDedicatedQA = true,
+                ManualTesting = true,
+                AutomatedTesting = false,
+                UnitTesting = false,
+                IntegrationTesting = true,
+                E2ETesting = false,
+                PerformanceTesting = true,
+                CodeCoverageTarget = "No formal target",
+                TotalTeamSize = 25,
+                NumberOfScrumTeams = 1,
+                
+                // Role counts
+                SoftwareDevelopers = 10,
+                SeniorLeadDevelopers = 4,
+                QAEngineers = 4,
+                DatabaseEngineers = 3,
+                DevOpsEngineers = 0,
+                BusinessAnalysts = 2,
+                ProductManagers = 0,
+                ProjectManagers = 3,
+                ScrumMasters = 0,
+                UIUXDesigners = 0,
+                Architects = 2,
+
+                // Development practices
+                CodeReviews = false,
+                PairProgramming = false,
+                TestDrivenDevelopment = false,
+                BehaviorDrivenDevelopment = false,
+                ContinuousIntegration = false,
+                ContinuousDeployment = false,
+                FeatureFlags = false,
+                ABTesting = false,
+                CodeDocumentationStandards = true,
+                APIDocumentation = false,
+                TechnicalDebtManagement = false,
+                PerformanceMonitoring = false,
+
+                // Communication
+                MicrosoftTeams = false,
+                Slack = false,
+                Discord = false,
+                Email = true,
+                OtherCommunicationTools = false,
+
+                // Project management
+                AzureDevOps = false,
+                Jira = false,
+                GitHubProjects = false,
+                Trello = false,
+                Asana = false,
+                MondayCom = false,
+                OtherProjectManagementTools = true,
+
+                // Meetings
+                DailyStandups = false,
+                SprintPlanning = false,
+                SprintReviews = false,
+                Retrospectives = false,
+                BacklogGrooming = false,
+                ArchitectureReviews = true,
+
+                // Technology
+                PrimaryProgrammingLanguages = "Java, COBOL, SQL, JavaScript",
+                VisualStudio = false,
+                VSCode = false,
+                IntelliJIDEA = true,
+                Eclipse = true,
+                OtherIDEs = true,
+
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedBy = "System",
+                UpdatedBy = "System"
+            },
+
+            // Cloud Migration - Hybrid/Modern
+            new DevelopmentPractices
+            {
+                AssessmentId = assessments[2].Id,
+                PrimaryMethodology = "Hybrid",
+                SprintLength = "3 weeks",
+                ReleaseFrequency = "Weekly",
+                HasDedicatedQA = false,
+                ManualTesting = true,
+                AutomatedTesting = true,
+                UnitTesting = true,
+                IntegrationTesting = true,
+                E2ETesting = true,
+                PerformanceTesting = true,
+                CodeCoverageTarget = "80%+",
+                TotalTeamSize = 12,
+                NumberOfScrumTeams = 3,
+                
+                // Role counts
+                SoftwareDevelopers = 6,
+                SeniorLeadDevelopers = 2,
+                QAEngineers = 0,
+                DatabaseEngineers = 1,
+                DevOpsEngineers = 2,
+                BusinessAnalysts = 1,
+                ProductManagers = 1,
+                ProjectManagers = 1,
+                ScrumMasters = 1,
+                UIUXDesigners = 1,
+                Architects = 1,
+
+                // Development practices
+                CodeReviews = true,
+                PairProgramming = true,
+                TestDrivenDevelopment = true,
+                BehaviorDrivenDevelopment = true,
+                ContinuousIntegration = true,
+                ContinuousDeployment = true,
+                FeatureFlags = true,
+                ABTesting = false,
+                CodeDocumentationStandards = true,
+                APIDocumentation = true,
+                TechnicalDebtManagement = true,
+                PerformanceMonitoring = true,
+
+                // Communication
+                MicrosoftTeams = true,
+                Slack = true,
+                Discord = false,
+                Email = true,
+                OtherCommunicationTools = false,
+
+                // Project management
+                AzureDevOps = false,
+                Jira = true,
+                GitHubProjects = true,
+                Trello = false,
+                Asana = false,
+                MondayCom = false,
+                OtherProjectManagementTools = false,
+
+                // Meetings
+                DailyStandups = true,
+                SprintPlanning = true,
+                SprintReviews = true,
+                Retrospectives = true,
+                BacklogGrooming = true,
+                ArchitectureReviews = true,
+
+                // Technology
+                PrimaryProgrammingLanguages = "Python, JavaScript, Go, SQL, TypeScript",
+                VisualStudio = false,
+                VSCode = true,
+                IntelliJIDEA = true,
+                Eclipse = false,
+                OtherIDEs = false,
+
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedBy = "System",
+                UpdatedBy = "System"
+            }
+        };
+
+        _context.DevelopmentPractices.AddRange(practices);
+        _logger.LogInformation("Seeded {Count} development practices.", practices.Length);
     }
 }

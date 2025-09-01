@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { API_BASE_URL } from '../../services/api';
+import { developmentPracticesService } from '../../services/developmentPracticesService';
 
 function DevOpsAssessment() {
   const { currentAssessment } = useAssessment();
@@ -55,11 +56,96 @@ function DevOpsAssessment() {
     }
   });
   const [loading, setLoading] = useState(false);
+  
+  // Development Practices state
+  const [developmentPractices, setDevelopmentPractices] = useState(null);
+  const [practicesLoading, setPracticesLoading] = useState(false);
+  const [practicesSaving, setPracticesSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    // Development Methodology
+    primaryMethodology: '',
+    sprintLength: '',
+    releaseFrequency: '',
+    
+    // Quality Assurance
+    hasDedicatedQA: false,
+    manualTesting: false,
+    automatedTesting: false,
+    unitTesting: false,
+    integrationTesting: false,
+    e2ETesting: false,
+    performanceTesting: false,
+    codeCoverageTarget: '',
+    
+    // Team Structure
+    totalTeamSize: 0,
+    numberOfScrumTeams: 0,
+    
+    // Role counts
+    softwareDevelopers: 0,
+    seniorLeadDevelopers: 0,
+    qaEngineers: 0,
+    databaseEngineers: 0,
+    devOpsEngineers: 0,
+    businessAnalysts: 0,
+    productManagers: 0,
+    projectManagers: 0,
+    scrumMasters: 0,
+    uiuxDesigners: 0,
+    architects: 0,
+    
+    // Development practices
+    codeReviews: false,
+    pairProgramming: false,
+    testDrivenDevelopment: false,
+    behaviorDrivenDevelopment: false,
+    continuousIntegration: false,
+    continuousDeployment: false,
+    featureFlags: false,
+    abTesting: false,
+    codeDocumentationStandards: false,
+    apiDocumentation: false,
+    technicalDebtManagement: false,
+    performanceMonitoring: false,
+    
+    // Communication tools
+    microsoftTeams: false,
+    slack: false,
+    discord: false,
+    email: false,
+    otherCommunicationTools: false,
+    
+    // Project management tools
+    azureDevOps: false,
+    jira: false,
+    gitHubProjects: false,
+    trello: false,
+    asana: false,
+    mondayCom: false,
+    otherProjectManagementTools: false,
+    
+    // Meeting cadence
+    dailyStandups: false,
+    sprintPlanning: false,
+    sprintReviews: false,
+    retrospectives: false,
+    backlogGrooming: false,
+    architectureReviews: false,
+    
+    // Technology
+    primaryProgrammingLanguages: '',
+    visualStudio: false,
+    vsCode: false,
+    intellijIDEA: false,
+    eclipse: false,
+    otherIDEs: false
+  });
 
   useEffect(() => {
     loadDevOpsData();
     loadDocuments();
     loadInsights();
+    loadDevelopmentPractices();
   }, [currentAssessment]);
 
   const loadDevOpsData = async () => {
@@ -221,28 +307,75 @@ function DevOpsAssessment() {
     try {
       const assessmentId = currentAssessment?.id || 1;
       const response = await fetch(`${API_BASE_URL}/Intelligence/recommendations/${assessmentId}`);
+      
+      if (!response.ok) {
+        console.warn('Intelligence recommendations not available, using mock insights');
+        setInsights([
+          {
+            id: 1,
+            title: "CI/CD Pipeline Optimization",
+            category: "DevOps",
+            analysisCategory: "DevOps",
+            documentType: "DevOps Documentation",
+            content: "Analysis shows opportunities to improve CI/CD pipeline efficiency and reduce build times.",
+            confidence: 85,
+            createdAt: new Date().toISOString()
+          }
+        ]);
+        return;
+      }
+
       const data = await response.json();
       
+      // Handle the new RecommendationResult structure
+      if (!data || typeof data !== 'object') {
+        console.warn('Invalid Intelligence API response structure');
+        setInsights([]);
+        return;
+      }
+
+      // Combine all recommendation arrays from the RecommendationResult
+      const allRecommendations = [
+        ...(data.strategicRecommendations || []),
+        ...(data.tacticalRecommendations || []),
+        ...(data.personalizedRecommendations || [])
+      ];
+      
       // Transform recommendations to insights format and filter for DevOps category
-      const devopsInsights = data.filter(recommendation => 
-        recommendation.category === 'DevOps' || recommendation.category === 'Development'
-      ).map(recommendation => ({
-        documentId: recommendation.id || Math.random().toString(36).substr(2, 9),
-        fileName: recommendation.title || 'DevOps Recommendation',
-        analysisCategory: recommendation.category === 'Development' ? 'Development' : 'DevOps',
-        keyThemes: recommendation.tags || [],
-        relatedDocuments: recommendation.relatedItems?.map(item => ({
-          fileName: item.name || item.title,
-          relationshipType: item.type || 'Related'
-        })) || [],
-        insight: recommendation.title,
-        description: recommendation.description || recommendation.content,
-        confidence: recommendation.confidence || 85
-      }));
+      const devopsInsights = allRecommendations
+        .filter(recommendation => 
+          recommendation.category === 'DevOps' || 
+          recommendation.category === 'Development' ||
+          recommendation.area === 'DevOps' ||
+          recommendation.type === 'DevOps'
+        )
+        .map((recommendation, index) => ({
+          id: recommendation.id || `devops_${index + 1}`,
+          title: recommendation.title || recommendation.recommendation || recommendation.name || 'DevOps Recommendation',
+          category: "DevOps",
+          analysisCategory: "DevOps",
+          documentType: "DevOps Documentation",
+          content: recommendation.description || recommendation.details || recommendation.content || recommendation.recommendation || 'No description available',
+          confidence: recommendation.priority === 'High' ? 90 : recommendation.priority === 'Medium' ? 75 : recommendation.priority === 'Low' ? 60 : 75,
+          createdAt: new Date().toISOString()
+        }));
       
       setInsights(devopsInsights);
     } catch (error) {
       console.error('Error loading devops insights:', error);
+      // Fallback to mock data on error
+      setInsights([
+        {
+          id: 1,
+          title: "CI/CD Pipeline Optimization",
+          category: "DevOps",
+          analysisCategory: "DevOps", 
+          documentType: "DevOps Documentation",
+          content: "Analysis shows opportunities to improve CI/CD pipeline efficiency and reduce build times.",
+          confidence: 85,
+          createdAt: new Date().toISOString()
+        }
+      ]);
     }
   };
 
@@ -313,6 +446,122 @@ function DevOpsAssessment() {
     } catch (error) {
       console.error('Delete error:', error);
       toast.error('Error deleting document');
+    }
+  };
+
+  // Development Practices functions
+  const loadDevelopmentPractices = async () => {
+    if (!currentAssessment?.id) return;
+    
+    try {
+      setPracticesLoading(true);
+      const practices = await developmentPracticesService.getByAssessmentId(currentAssessment.id);
+      
+      if (practices) {
+        setDevelopmentPractices(practices);
+        // Update form data with loaded practices
+        setFormData({
+          primaryMethodology: practices.primaryMethodology || '',
+          sprintLength: practices.sprintLength || '',
+          releaseFrequency: practices.releaseFrequency || '',
+          hasDedicatedQA: practices.hasDedicatedQA || false,
+          manualTesting: practices.manualTesting || false,
+          automatedTesting: practices.automatedTesting || false,
+          unitTesting: practices.unitTesting || false,
+          integrationTesting: practices.integrationTesting || false,
+          e2ETesting: practices.e2ETesting || false,
+          performanceTesting: practices.performanceTesting || false,
+          codeCoverageTarget: practices.codeCoverageTarget || '',
+          totalTeamSize: practices.totalTeamSize || 0,
+          numberOfScrumTeams: practices.numberOfScrumTeams || 0,
+          softwareDevelopers: practices.softwareDevelopers || 0,
+          seniorLeadDevelopers: practices.seniorLeadDevelopers || 0,
+          qaEngineers: practices.qaEngineers || 0,
+          databaseEngineers: practices.databaseEngineers || 0,
+          devOpsEngineers: practices.devOpsEngineers || 0,
+          businessAnalysts: practices.businessAnalysts || 0,
+          productManagers: practices.productManagers || 0,
+          projectManagers: practices.projectManagers || 0,
+          scrumMasters: practices.scrumMasters || 0,
+          uiuxDesigners: practices.uiuxDesigners || 0,
+          architects: practices.architects || 0,
+          codeReviews: practices.codeReviews || false,
+          pairProgramming: practices.pairProgramming || false,
+          testDrivenDevelopment: practices.testDrivenDevelopment || false,
+          behaviorDrivenDevelopment: practices.behaviorDrivenDevelopment || false,
+          continuousIntegration: practices.continuousIntegration || false,
+          continuousDeployment: practices.continuousDeployment || false,
+          featureFlags: practices.featureFlags || false,
+          abTesting: practices.abTesting || false,
+          codeDocumentationStandards: practices.codeDocumentationStandards || false,
+          apiDocumentation: practices.apiDocumentation || false,
+          technicalDebtManagement: practices.technicalDebtManagement || false,
+          performanceMonitoring: practices.performanceMonitoring || false,
+          microsoftTeams: practices.microsoftTeams || false,
+          slack: practices.slack || false,
+          discord: practices.discord || false,
+          email: practices.email || false,
+          otherCommunicationTools: practices.otherCommunicationTools || false,
+          azureDevOps: practices.azureDevOps || false,
+          jira: practices.jira || false,
+          gitHubProjects: practices.gitHubProjects || false,
+          trello: practices.trello || false,
+          asana: practices.asana || false,
+          mondayCom: practices.mondayCom || false,
+          otherProjectManagementTools: practices.otherProjectManagementTools || false,
+          dailyStandups: practices.dailyStandups || false,
+          sprintPlanning: practices.sprintPlanning || false,
+          sprintReviews: practices.sprintReviews || false,
+          retrospectives: practices.retrospectives || false,
+          backlogGrooming: practices.backlogGrooming || false,
+          architectureReviews: practices.architectureReviews || false,
+          primaryProgrammingLanguages: practices.primaryProgrammingLanguages || '',
+          visualStudio: practices.visualStudio || false,
+          vsCode: practices.vsCode || false,
+          intellijIDEA: practices.intellijIDEA || false,
+          eclipse: practices.eclipse || false,
+          otherIDEs: practices.otherIDEs || false
+        });
+      } else {
+        // No existing practices, keep default form data
+        setDevelopmentPractices(null);
+      }
+    } catch (error) {
+      console.error('Error loading development practices:', error);
+      setDevelopmentPractices(null);
+    } finally {
+      setPracticesLoading(false);
+    }
+  };
+
+  const handleFormChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const saveDevelopmentPractices = async () => {
+    if (!currentAssessment?.id) {
+      toast.error('No assessment selected');
+      return;
+    }
+
+    try {
+      setPracticesSaving(true);
+      
+      const result = await developmentPracticesService.createOrUpdateForAssessment(
+        currentAssessment.id,
+        formData
+      );
+      
+      setDevelopmentPractices(result);
+      toast.success('Development practices saved successfully!');
+    } catch (error) {
+      console.error('Error saving development practices:', error);
+      toast.error('Failed to save development practices');
+    } finally {
+      setPracticesSaving(false);
     }
   };
 
@@ -468,6 +717,13 @@ function DevOpsAssessment() {
                 <Save className="h-4 w-4 mr-2" />
                 Save
               </button>
+              <button
+                onClick={exportAssessment}
+                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </button>
             </div>
           </div>
           
@@ -494,6 +750,17 @@ function DevOpsAssessment() {
             >
               <Upload className="h-4 w-4 inline mr-2" />
               Data Sources
+            </button>
+            <button
+              onClick={() => setCurrentView('development')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                currentView === 'development' 
+                  ? 'bg-white text-blue-800' 
+                  : 'text-blue-100 hover:text-white hover:bg-blue-700'
+              }`}
+            >
+              <Users className="h-4 w-4 inline mr-2" />
+              Development Practices
             </button>
             <button
               onClick={() => setCurrentView('analyze')}
@@ -662,11 +929,103 @@ function DevOpsAssessment() {
         {/* Data Sources (Repo) View */}
         {currentView === 'repo' && (
           <div className="space-y-6">
-            
-            {/* Import/Export Actions */}
+
+            {/* Document Type Guidance */}
+            <div className="bg-white shadow-lg rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">DevOps Data Source Integration</h3>
+                <p className="text-sm text-gray-600">Upload specific DevOps documents for comprehensive analysis</p>
+              </div>
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* GitHub Integration */}
+                  <div className="border rounded-lg p-4 border-green-200 bg-green-50">
+                    <div className="flex items-center mb-3">
+                      <GitBranch className="h-5 w-5 text-green-600 mr-2" />
+                      <h4 className="font-medium text-green-900">GitHub Integration</h4>
+                    </div>
+                    <ul className="text-sm text-green-700 space-y-1">
+                      <li>• Repository configuration files</li>
+                      <li>• GitHub Actions workflows (.yml/.yaml)</li>
+                      <li>• Branch protection rules</li>
+                      <li>• Pull request templates</li>
+                      <li>• Issue templates</li>
+                      <li>• README and documentation</li>
+                    </ul>
+                  </div>
+
+                  {/* Azure DevOps Integration */}
+                  <div className="border rounded-lg p-4 border-blue-200 bg-blue-50">
+                    <div className="flex items-center mb-3">
+                      <Package className="h-5 w-5 text-blue-600 mr-2" />
+                      <h4 className="font-medium text-blue-900">Azure DevOps</h4>
+                    </div>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• Build pipeline definitions</li>
+                      <li>• Release pipeline configurations</li>
+                      <li>• Variable groups and libraries</li>
+                      <li>• Service connections</li>
+                      <li>• Work item templates</li>
+                      <li>• Test plans and suites</li>
+                    </ul>
+                  </div>
+
+                  {/* CI/CD Documentation */}
+                  <div className="border rounded-lg p-4 border-purple-200 bg-purple-50">
+                    <div className="flex items-center mb-3">
+                      <Zap className="h-5 w-5 text-purple-600 mr-2" />
+                      <h4 className="font-medium text-purple-900">CI/CD Documentation</h4>
+                    </div>
+                    <ul className="text-sm text-purple-700 space-y-1">
+                      <li>• Deployment procedures</li>
+                      <li>• Environment configurations</li>
+                      <li>• Release notes and changelogs</li>
+                      <li>• Rollback procedures</li>
+                      <li>• Testing strategies</li>
+                      <li>• Quality gates documentation</li>
+                    </ul>
+                  </div>
+
+                  {/* Monitoring & Operations */}
+                  <div className="border rounded-lg p-4 border-orange-200 bg-orange-50">
+                    <div className="flex items-center mb-3">
+                      <Monitor className="h-5 w-5 text-orange-600 mr-2" />
+                      <h4 className="font-medium text-orange-900">Monitoring & Operations</h4>
+                    </div>
+                    <ul className="text-sm text-orange-700 space-y-1">
+                      <li>• Monitoring configurations</li>
+                      <li>• Alert rules and notifications</li>
+                      <li>• Dashboards and visualizations</li>
+                      <li>• Incident response procedures</li>
+                      <li>• Performance metrics</li>
+                      <li>• Log aggregation configs</li>
+                    </ul>
+                  </div>
+
+                </div>
+
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+                    <div>
+                      <h5 className="font-medium text-gray-900">Upload Guidelines</h5>
+                      <p className="text-sm text-gray-600 mt-1">
+                        For best results, upload configuration files, documentation, and process definitions 
+                        that represent your current DevOps practices. The AI analysis will identify 
+                        improvement opportunities and provide maturity assessments.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Document Upload Section */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">DevOps Document Management</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Document Upload</h2>
                 <div className="flex space-x-3">
                   <input
                     type="file"
@@ -682,154 +1041,106 @@ function DevOpsAssessment() {
                       Upload Documents
                     </Button>
                   </label>
-                  <button
-                    onClick={exportAssessment}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export Assessment
-                  </button>
                 </div>
               </div>
-            </div>
-
-            {/* Upload Progress */}
-            {uploadProgress && (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center space-x-2">
-                    {uploadProgress.status === 'completed' ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : uploadProgress.status === 'error' ? (
-                      <AlertTriangle className="h-5 w-5 text-red-500" />
-                    ) : (
-                      <Clock className="h-5 w-5 text-blue-500" />
-                    )}
-                    <span className="text-sm">
-                      {uploadProgress.status === 'completed' ? 'Uploaded: ' : 
-                       uploadProgress.status === 'error' ? 'Failed: ' : 'Uploading: '}
-                      {uploadProgress.fileName}
-                    </span>
+              
+              {/* Upload Progress */}
+              {uploadProgress && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <span>Uploading: {uploadProgress.fileName}</span>
+                    <span>{uploadProgress.progress}%</span>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Document Type Guidance */}
-            <div className="bg-white shadow-lg rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">DevOps Data Source Integration</h3>
-                <p className="text-sm text-gray-600">Upload specific DevOps documents for comprehensive analysis</p>
-              </div>
-              <div className="p-6 space-y-6">
-                {/* Upload Areas */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* GitHub Export Data */}
-                  <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center bg-blue-50">
-                    <Code className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">GitHub Export</h4>
-                    <p className="text-sm text-gray-600 mb-4">Repository data, workflow history, pull requests, code quality metrics, branch protection rules</p>
-                  </div>
-
-                  {/* Azure DevOps Data */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <GitBranch className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">Azure DevOps</h4>
-                    <p className="text-sm text-gray-600 mb-4">Pipeline definitions, build/release history, work items, test results, board configurations</p>
-                  </div>
-
-                  {/* Logs & Diagrams */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">Logs & Diagrams</h4>
-                    <p className="text-sm text-gray-600 mb-4">Build logs, deployment logs, pipeline diagrams, monitoring dashboards, YAML definitions</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all" 
+                      style={{ width: `${uploadProgress.progress}%` }}
+                    ></div>
                   </div>
                 </div>
+              )}
+              
+              {/* Drag and Drop Area */}
+              <div
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                  dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  const files = Array.from(e.dataTransfer.files);
+                  handleDocumentUpload(files);
+                }}
+              >
+                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <p className="text-lg mb-2">Or drag and drop DevOps documents here</p>
+                <p className="text-sm text-gray-500">
+                  Supports PDF, Word, Excel, PowerPoint, JSON, YAML, XML, and ZIP files (Max 50MB each)
+                </p>
               </div>
             </div>
 
-            {/* Drag and Drop Area */}
-            <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-              }`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg mb-2">Or drag and drop DevOps documents here</p>
-              <p className="text-sm text-gray-500">
-                GitHub exports • Azure DevOps data • Pipeline logs • YAML files • Diagrams
-              </p>
-            </div>
-
-            <Tabs value={selectedDocumentTab} onValueChange={setSelectedDocumentTab}>
+            {/* Document Tabs */}
+            <Tabs value={selectedDocumentTab} onValueChange={setSelectedDocumentTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="documents" className="flex items-center">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Documents
-                </TabsTrigger>
-                <TabsTrigger value="insights" className="flex items-center">
-                  <Network className="h-4 w-4 mr-2" />
-                  Insights
-                </TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="insights">AI Insights</TabsTrigger>
               </TabsList>
 
               <TabsContent value="documents" className="space-y-4">
-                <div className="grid gap-4">
-                  {documents.map((doc) => (
-                    <Card key={doc.id}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="font-semibold">{doc.fileName}</h3>
-                              <Badge className={getDocumentTypeColor(doc.documentType)}>
+                <div className="bg-white rounded-lg shadow-sm">
+                  {documents.length > 0 ? (
+                    <div className="divide-y divide-gray-200">
+                      {documents.map((doc, index) => (
+                        <div key={index} className="p-4 flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            <FileText className="h-8 w-8 text-blue-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {doc.name}
+                            </p>
+                            <div className="flex items-center space-x-4 mt-1">
+                              <p className="text-xs text-gray-500">
+                                {doc.size ? formatFileSize(doc.size) : 'Unknown size'} • {doc.uploadedDate ? new Date(doc.uploadedDate).toLocaleDateString() : 'Recently uploaded'}
+                              </p>
+                              <Badge 
+                                className={`text-xs ${
+                                  getDocumentTypeColor(doc.documentType) || 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
                                 {doc.documentType}
                               </Badge>
                             </div>
-                            <p className="text-sm text-gray-600 mb-2">{doc.summary}</p>
-                            <div className="flex items-center space-x-4 text-xs text-gray-500">
-                              <span>{formatFileSize(doc.sizeBytes)}</span>
-                              <span>{doc.chunks?.length || 0} chunks</span>
-                              <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
-                            </div>
-                            {doc.keyFindings && doc.keyFindings.length > 0 && (
-                              <div className="mt-2">
-                                <p className="text-xs font-medium text-gray-700 mb-1">Key Findings:</p>
-                                <ul className="text-xs text-gray-600 space-y-1">
-                                  {doc.keyFindings.slice(0, 3).map((finding, idx) => (
-                                    <li key={idx}>• {finding}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                            <p className="text-xs text-gray-600 mt-1">
+                              {doc.summary || 'DevOps documentation and configuration files'}
+                            </p>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDeleteDocument(doc.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <button
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            className="flex-shrink-0 p-1 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {documents.length === 0 && (
-                    <Card>
-                      <CardContent className="pt-6">
-                        <p className="text-center text-gray-500">
-                          No DevOps documents uploaded yet. Upload some documents to get started!
-                        </p>
-                      </CardContent>
-                    </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-500">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p className="text-lg mb-2">No DevOps documents uploaded yet</p>
+                      <p className="text-sm">
+                        Upload documents using the area above to get started with AI analysis!
+                      </p>
+                    </div>
                   )}
                 </div>
               </TabsContent>
@@ -852,31 +1163,419 @@ function DevOpsAssessment() {
                             }`} />
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold mb-1">{insight.insight}</h3>
-                            <p className="text-sm text-gray-600 mb-2">{insight.description}</p>
+                            <h3 className="font-semibold mb-1">{insight.title}</h3>
+                            <p className="text-sm text-gray-600 mb-2">{insight.content}</p>
                             <div className="flex items-center space-x-4 text-xs text-gray-500">
                               <span>Category: {insight.analysisCategory}</span>
                               <span>Confidence: {insight.confidence}%</span>
-                              <span>Documents: {insight.relatedDocuments?.length || 0}</span>
                             </div>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {insight.confidence}% confidence
+                            </Badge>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
-                  {insights.length === 0 && (
-                    <Card>
-                      <CardContent className="pt-6">
-                        <p className="text-center text-gray-500">
-                          No insights available yet. Upload documents to generate AI-powered insights!
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
                 </div>
               </TabsContent>
             </Tabs>
 
+          </div>
+        )}
+
+        {/* Development Practices View */}
+        {currentView === 'development' && (
+          <div className="space-y-6">
+
+            {/* Development Methodology Assessment */}
+            <div className="bg-white shadow-lg rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Development Methodology & Process Assessment</h3>
+                <p className="text-sm text-gray-600">Evaluate your software development practices, team structure, and methodologies</p>
+              </div>
+              
+              <div className="p-6">
+                {practicesLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <span className="ml-2 text-gray-600">Loading development practices...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h4 className="text-lg font-medium text-gray-900">Assessment: {currentAssessment?.name || 'No assessment selected'}</h4>
+                        <p className="text-sm text-gray-600">{developmentPractices ? 'Existing practices found' : 'New practices assessment'}</p>
+                      </div>
+                      <button
+                        onClick={saveDevelopmentPractices}
+                        disabled={practicesSaving || !currentAssessment}
+                        className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                          practicesSaving || !currentAssessment
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                      >
+                        {practicesSaving ? (
+                          <>
+                            <RefreshCw className="animate-spin -ml-1 mr-2 h-4 w-4" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Practices
+                          </>
+                        )}
+                      </button>
+                    </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  
+                  {/* Development Methodology */}
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-lg font-medium text-gray-900 mb-4">Development Methodology</h4>
+                      
+                      {/* Methodology Selection */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Primary Development Methodology</label>
+                          <div className="mt-2 space-y-2">
+                            {['Agile/Scrum', 'Kanban', 'Waterfall', 'DevOps', 'Lean', 'Hybrid', 'Other'].map((method) => (
+                              <label key={method} className="flex items-center">
+                                <input 
+                                  type="radio" 
+                                  name="methodology" 
+                                  value={method} 
+                                  checked={formData.primaryMethodology === method}
+                                  onChange={(e) => handleFormChange('primaryMethodology', e.target.value)}
+                                  className="form-radio h-4 w-4 text-blue-600" 
+                                />
+                                <span className="ml-2 text-sm text-gray-700">{method}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Sprint/Cycle Information */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Sprint/Cycle Length</label>
+                            <select 
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                              value={formData.sprintLength}
+                              onChange={(e) => handleFormChange('sprintLength', e.target.value)}
+                            >
+                              <option value="">Select length</option>
+                              <option value="1 week">1 week</option>
+                              <option value="2 weeks">2 weeks</option>
+                              <option value="3 weeks">3 weeks</option>
+                              <option value="4 weeks">4 weeks</option>
+                              <option value="Other/N/A">Other/N/A</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Release Frequency</label>
+                            <select 
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                              value={formData.releaseFrequency}
+                              onChange={(e) => handleFormChange('releaseFrequency', e.target.value)}
+                            >
+                              <option value="">Select frequency</option>
+                              <option value="Daily">Daily</option>
+                              <option value="Weekly">Weekly</option>
+                              <option value="Bi-weekly">Bi-weekly</option>
+                              <option value="Monthly">Monthly</option>
+                              <option value="Quarterly">Quarterly</option>
+                              <option value="Ad-hoc">Ad-hoc</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quality Assurance */}
+                    <div>
+                      <h4 className="text-lg font-medium text-gray-900 mb-4">Quality Assurance & Testing</h4>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="flex items-center">
+                            <input 
+                              type="checkbox" 
+                              className="form-checkbox h-4 w-4 text-blue-600" 
+                              checked={formData.hasDedicatedQA}
+                              onChange={(e) => handleFormChange('hasDedicatedQA', e.target.checked)}
+                            />
+                            <span className="ml-2 text-sm text-gray-700">Dedicated QA Department</span>
+                          </label>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Testing Approach</label>
+                          <div className="mt-2 space-y-2">
+                            {[
+                              { label: 'Manual Testing', key: 'manualTesting' },
+                              { label: 'Automated Testing', key: 'automatedTesting' },
+                              { label: 'Unit Testing', key: 'unitTesting' },
+                              { label: 'Integration Testing', key: 'integrationTesting' },
+                              { label: 'E2E Testing', key: 'e2ETesting' },
+                              { label: 'Performance Testing', key: 'performanceTesting' }
+                            ].map((approach) => (
+                              <label key={approach.key} className="flex items-center">
+                                <input 
+                                  type="checkbox" 
+                                  className="form-checkbox h-4 w-4 text-blue-600" 
+                                  checked={formData[approach.key]}
+                                  onChange={(e) => handleFormChange(approach.key, e.target.checked)}
+                                />
+                                <span className="ml-2 text-sm text-gray-700">{approach.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Code Coverage Target</label>
+                          <select 
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            value={formData.codeCoverageTarget}
+                            onChange={(e) => handleFormChange('codeCoverageTarget', e.target.value)}
+                          >
+                            <option value="">Select target</option>
+                            <option value="No formal target">No formal target</option>
+                            <option value="50-60%">50-60%</option>
+                            <option value="60-70%">60-70%</option>
+                            <option value="70-80%">70-80%</option>
+                            <option value="80%+">80%+</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Team Structure */}
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-lg font-medium text-gray-900 mb-4">Team Structure & Organization</h4>
+                      
+                      {/* Team Size */}
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Total Development Team Size</label>
+                          <input 
+                            type="number" 
+                            min="0" 
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                            placeholder="e.g., 15"
+                            value={formData.totalTeamSize}
+                            onChange={(e) => handleFormChange('totalTeamSize', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Number of Scrum Teams</label>
+                          <input 
+                            type="number" 
+                            min="0" 
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                            placeholder="e.g., 3"
+                            value={formData.numberOfScrumTeams}
+                            onChange={(e) => handleFormChange('numberOfScrumTeams', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Role Distribution */}
+                      <div className="space-y-3">
+                        <h5 className="text-sm font-medium text-gray-700">Team Roles & Count</h5>
+                        {[
+                          { label: 'Software Developers', key: 'softwareDevelopers' },
+                          { label: 'Senior/Lead Developers', key: 'seniorLeadDevelopers' },
+                          { label: 'QA Engineers/Testers', key: 'qaEngineers' },
+                          { label: 'Database Engineers/DBAs', key: 'databaseEngineers' },
+                          { label: 'DevOps Engineers', key: 'devOpsEngineers' },
+                          { label: 'Business Analysts', key: 'businessAnalysts' },
+                          { label: 'Product Managers', key: 'productManagers' },
+                          { label: 'Project Managers', key: 'projectManagers' },
+                          { label: 'Scrum Masters', key: 'scrumMasters' },
+                          { label: 'UI/UX Designers', key: 'uiuxDesigners' },
+                          { label: 'Architects (Solution/Technical)', key: 'architects' }
+                        ].map((role) => (
+                          <div key={role.key} className="flex items-center justify-between">
+                            <label className="text-sm text-gray-700 flex-1">{role.label}</label>
+                            <input 
+                              type="number" 
+                              min="0" 
+                              className="w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" 
+                              placeholder="0"
+                              value={formData[role.key]}
+                              onChange={(e) => handleFormChange(role.key, parseInt(e.target.value) || 0)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Development Practices */}
+                    <div>
+                      <h4 className="text-lg font-medium text-gray-900 mb-4">Development Practices</h4>
+                      <div className="space-y-3">
+                        {[
+                          { label: 'Code Reviews (Pull Requests)', key: 'codeReviews' },
+                          { label: 'Pair Programming', key: 'pairProgramming' },
+                          { label: 'Test-Driven Development (TDD)', key: 'testDrivenDevelopment' },
+                          { label: 'Behavior-Driven Development (BDD)', key: 'behaviorDrivenDevelopment' },
+                          { label: 'Continuous Integration (CI)', key: 'continuousIntegration' },
+                          { label: 'Continuous Deployment (CD)', key: 'continuousDeployment' },
+                          { label: 'Feature Flags/Toggles', key: 'featureFlags' },
+                          { label: 'A/B Testing', key: 'abTesting' },
+                          { label: 'Code Documentation Standards', key: 'codeDocumentationStandards' },
+                          { label: 'API Documentation', key: 'apiDocumentation' },
+                          { label: 'Technical Debt Management', key: 'technicalDebtManagement' },
+                          { label: 'Performance Monitoring', key: 'performanceMonitoring' }
+                        ].map((practice) => (
+                          <label key={practice.key} className="flex items-center">
+                            <input 
+                              type="checkbox" 
+                              className="form-checkbox h-4 w-4 text-blue-600" 
+                              checked={formData[practice.key]}
+                              onChange={(e) => handleFormChange(practice.key, e.target.checked)}
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{practice.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Communication & Collaboration */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">Communication & Collaboration</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Primary Communication Tools</label>
+                      <div className="space-y-2">
+                        {[
+                          { label: 'Microsoft Teams', key: 'microsoftTeams' },
+                          { label: 'Slack', key: 'slack' },
+                          { label: 'Discord', key: 'discord' },
+                          { label: 'Email', key: 'email' },
+                          { label: 'Other', key: 'otherCommunicationTools' }
+                        ].map((tool) => (
+                          <label key={tool.key} className="flex items-center">
+                            <input 
+                              type="checkbox" 
+                              className="form-checkbox h-4 w-4 text-blue-600" 
+                              checked={formData[tool.key]}
+                              onChange={(e) => handleFormChange(tool.key, e.target.checked)}
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{tool.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Project Management Tools</label>
+                      <div className="space-y-2">
+                        {[
+                          { label: 'Azure DevOps', key: 'azureDevOps' },
+                          { label: 'Jira', key: 'jira' },
+                          { label: 'GitHub Projects', key: 'gitHubProjects' },
+                          { label: 'Trello', key: 'trello' },
+                          { label: 'Asana', key: 'asana' },
+                          { label: 'Monday.com', key: 'mondayCom' },
+                          { label: 'Other', key: 'otherProjectManagementTools' }
+                        ].map((tool) => (
+                          <label key={tool.key} className="flex items-center">
+                            <input 
+                              type="checkbox" 
+                              className="form-checkbox h-4 w-4 text-blue-600" 
+                              checked={formData[tool.key]}
+                              onChange={(e) => handleFormChange(tool.key, e.target.checked)}
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{tool.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Meeting Cadence</label>
+                      <div className="space-y-2">
+                        {[
+                          { label: 'Daily Standups', key: 'dailyStandups' },
+                          { label: 'Sprint Planning', key: 'sprintPlanning' },
+                          { label: 'Sprint Reviews', key: 'sprintReviews' },
+                          { label: 'Retrospectives', key: 'retrospectives' },
+                          { label: 'Backlog Grooming', key: 'backlogGrooming' },
+                          { label: 'Architecture Reviews', key: 'architectureReviews' }
+                        ].map((meeting) => (
+                          <label key={meeting.key} className="flex items-center">
+                            <input 
+                              type="checkbox" 
+                              className="form-checkbox h-4 w-4 text-blue-600" 
+                              checked={formData[meeting.key]}
+                              onChange={(e) => handleFormChange(meeting.key, e.target.checked)}
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{meeting.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Technology Stack */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">Technology Stack & Environment</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Primary Programming Languages</label>
+                      <textarea 
+                        rows="3" 
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="e.g., C#, JavaScript, Python, Java, TypeScript..."
+                        value={formData.primaryProgrammingLanguages}
+                        onChange={(e) => handleFormChange('primaryProgrammingLanguages', e.target.value)}
+                      ></textarea>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Development Environments</label>
+                      <div className="space-y-2">
+                        {[
+                          { label: 'Visual Studio', key: 'visualStudio' },
+                          { label: 'VS Code', key: 'vsCode' },
+                          { label: 'IntelliJ IDEA', key: 'intellijIDEA' },
+                          { label: 'Eclipse', key: 'eclipse' },
+                          { label: 'Other IDEs', key: 'otherIDEs' }
+                        ].map((env) => (
+                          <label key={env.key} className="flex items-center">
+                            <input 
+                              type="checkbox" 
+                              className="form-checkbox h-4 w-4 text-blue-600" 
+                              checked={formData[env.key]}
+                              onChange={(e) => handleFormChange(env.key, e.target.checked)}
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{env.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
