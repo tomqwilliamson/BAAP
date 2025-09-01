@@ -16,6 +16,9 @@ import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenera
 import { aiAnalysisService } from '../../services/aiAnalysisService';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { API_BASE_URL } from '../../services/api';
+import { dirtyTrackingService } from '../../services/dirtyTrackingService';
+import { notificationService } from '../../services/notificationService';
+import { useNotifications } from '../../contexts/notificationcontext';
 
 // Helper functions
 const getCompatibilityTarget = (dbType) => {
@@ -83,14 +86,17 @@ const createTechnologyDistribution = (databases) => {
 function DataArchitecture() {
   const { currentAssessment } = useAssessment();
   const { startAnalysis, getAnalysisState, isAnalysisRunning } = useAnalysis();
+  const { addAnalysisNotification } = useNotifications();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
   const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
   const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
   const [aiCapabilities, setAiCapabilities] = useState(null);
+  const [isDatabaseMode, setIsDatabaseMode] = useState(true); // Track if using database mode
 
   // Document management states
   const [documents, setDocuments] = useState([]);
@@ -103,6 +109,16 @@ function DataArchitecture() {
   const analysisState = getAnalysisState('data-architecture');
   const isAIAnalyzing = isAnalysisRunning('data-architecture');
   
+  // Wrapper function to track dirty state when data changes
+  const updateDataArchData = (newData) => {
+    setDataArchData(newData);
+    
+    // Mark as dirty when data changes (except during initial load)
+    if (currentAssessment?.id) {
+      dirtyTrackingService.setDirty(currentAssessment.id, 'data-architecture', true);
+    }
+  };
+
   const [dataArchData, setDataArchData] = useState({
     microsoftDMA: {
       databases: [],
@@ -130,6 +146,50 @@ function DataArchitecture() {
     loadDocuments();
     loadInsights();
   }, [currentAssessment]);
+
+  // Set up dirty tracking and SignalR
+  useEffect(() => {
+    if (!currentAssessment?.id) return;
+
+    // Register this module for dirty tracking
+    dirtyTrackingService.registerModule(currentAssessment.id, 'data-architecture', dataArchData);
+
+    // Set up dirty tracking listener
+    const unsubscribeDirty = dirtyTrackingService.onDirtyStateChange(
+      currentAssessment.id,
+      'data-architecture',
+      (isDirtyState) => {
+        setIsDirty(isDirtyState);
+        setDataSaved(!isDirtyState);
+      }
+    );
+
+    // Join SignalR assessment group for real-time collaboration
+    notificationService.joinAssessment(currentAssessment.id);
+
+    // Set up SignalR event listeners
+    const unsubscribeProgress = notificationService.onProgressUpdate((update) => {
+      if (update.Stage === 'ai_analysis_started' && update.AssessmentId == currentAssessment.id) {
+        toast.loading(update.Message, { id: 'ai-analysis-progress' });
+      } else if (update.Stage === 'ai_analysis_completed' && update.AssessmentId == currentAssessment.id) {
+        toast.success(update.Message, { id: 'ai-analysis-progress' });
+      } else if (update.Stage === 'dirty_save_reminder' && update.AssessmentId == currentAssessment.id) {
+        toast.error(update.Message, { 
+          id: 'dirty-save-reminder',
+          duration: 5000,
+          icon: '💾' 
+        });
+      }
+    });
+
+    return () => {
+      // Clean up
+      unsubscribeDirty();
+      unsubscribeProgress();
+      dirtyTrackingService.unregisterModule(currentAssessment.id, 'data-architecture');
+      notificationService.leaveAssessment(currentAssessment.id);
+    };
+  }, [currentAssessment?.id]);
 
   const checkAIServiceAvailability = async () => {
     try {
@@ -364,9 +424,33 @@ function DataArchitecture() {
   };
 
   const loadDataArchitectureData = async () => {
+    if (!currentAssessment?.id) {
+      console.log('DATA ARCHITECTURE: No assessment selected');
+      return;
+    }
+
     try {
       setLoading(true);
       console.log('DATA ARCHITECTURE: Loading data for assessment:', currentAssessment?.id, currentAssessment);
+      
+      // Try to load from localStorage first
+      const savedDataKey = `dataArchitectureData_${currentAssessment.id}`;
+      const savedData = localStorage.getItem(savedDataKey);
+      
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          setDataArchData(parsed);
+          setDataSaved(true);
+          const saveDate = parsed.lastSaveTime || new Date();
+          setLastSaveTime(new Date(saveDate));
+          setIsDatabaseMode(false);
+          console.log('DATA ARCHITECTURE: Loaded data from localStorage for assessment:', currentAssessment.id);
+          return;
+        } catch (error) {
+          console.error('Error parsing saved data architecture data:', error);
+        }
+      }
       
       // Generate assessment-specific data
       const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'dataArchitecture');
@@ -559,6 +643,66 @@ function DataArchitecture() {
     }
   };
 
+  const saveDataArchitectureData = async () => {
+    try {
+      if (!currentAssessment?.id) {
+        toast.error('No assessment selected. Please select an assessment first.');
+        return;
+      }
+
+      // Save to localStorage with assessment-specific key
+      const savedDataKey = `dataArchitectureData_${currentAssessment.id}`;
+      const dataToSave = {
+        ...dataArchData,
+        lastSaveTime: new Date().toISOString()
+      };
+      localStorage.setItem(savedDataKey, JSON.stringify(dataToSave));
+      
+      // Mark as clean in dirty tracking service
+      dirtyTrackingService.setDirty(currentAssessment.id, 'data-architecture', false);
+      setLastSaveTime(new Date());
+      setIsDatabaseMode(false); // Using local storage
+      
+      toast.success(`Data architecture assessment saved for "${currentAssessment.name}"!`);
+      console.log('DATA ARCHITECTURE: Saved assessment data for:', currentAssessment.id);
+    } catch (error) {
+      console.error('Error saving data architecture data:', error);
+      toast.error('Error saving data');
+    }
+  };
+
+  const exportData = () => {
+    const dataStr = JSON.stringify(dataArchData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `data-architecture-assessment-${currentAssessment?.id || 'data'}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    toast.success('Data architecture data exported successfully');
+  };
+
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          setDataArchData(importedData);
+          setDataSaved(false); // Mark as unsaved after import
+          setLastSaveTime(new Date());
+          toast.success('Data architecture data imported successfully');
+        } catch (error) {
+          toast.error('Error importing data - invalid format');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const handleFileUpload = (event, fileType) => {
     const files = Array.from(event.target.files);
     files.forEach(file => {
@@ -587,55 +731,8 @@ function DataArchitecture() {
     });
   };
 
-  const exportAssessment = () => {
-    const dataStr = JSON.stringify(dataArchData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'data-architecture-assessment.json';
-    link.click();
-  };
-
-  const importAssessment = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const importedData = JSON.parse(e.target.result);
-          setDataArchData(importedData);
-        } catch (error) {
-          alert('Error importing file: Invalid JSON format');
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
-  const saveAssessment = async () => {
-    try {
-      if (!currentAssessment?.id) {
-        toast.error('No assessment selected. Please select an assessment first.');
-        return;
-      }
-      
-      setDataSaved(true);
-      setLastSaveTime(new Date());
-      
-      // Save to database via API (placeholder for actual implementation)
-      console.log('DATA ARCHITECTURE: Saving assessment data for:', currentAssessment.id, dataArchData);
-      
-      // Also save to localStorage as backup
-      const dataStr = JSON.stringify(dataArchData, null, 2);
-      localStorage.setItem(`data_architecture_assessment_${currentAssessment.id}`, dataStr);
-      
-      toast.success(`Data architecture assessment saved for "${currentAssessment.name}"!`);
-    } catch (error) {
-      console.error('Error saving data architecture assessment:', error);
-      toast.error('Failed to save assessment data');
-    }
-  };
+  // Note: exportAssessment, importAssessment, and saveAssessment functions have been replaced with 
+  // exportData, importData, and saveDataArchitectureData defined above
 
   const runAnalysis = async () => {
     setIsAnalyzing(true);
@@ -645,69 +742,89 @@ function DataArchitecture() {
     // Start the progress tracking analysis
     const result = await startAnalysis('data-architecture');
     
-    let analysisResults;
-
-    try {
-      // Try AI analysis first if available
-      if (aiServiceAvailable) {
-        toast.success('Starting AI-powered data architecture analysis...', { duration: 3000 });
-        
-        // Transform data architecture data for AI analysis
-        const dataArchitectureRequest = {
-          databases: dataArchData.databases.map(db => ({
-            name: db.name,
-            type: db.type,
-            version: db.version,
-            sizeGB: db.size,
-            configuration: { status: db.status, performance: db.performance }
-          })),
-          dataGovernance: 'Enterprise data governance with classification, lineage tracking, and compliance monitoring',
-          dataFlows: dataArchData.integration?.map(i => `${i.from} -> ${i.to}: ${i.description}`).join('; ') || 'ETL pipelines, real-time streaming, batch processing',
-          uploadedDocuments: []
-        };
-        
-        // Call AI analysis service
-        const aiResponse = await aiAnalysisService.analyzeDataArchitecture(dataArchitectureRequest);
-        
-        // Format and store AI results
-        const formattedAiResults = aiAnalysisService.formatAnalysisResponse(aiResponse);
-        setAiAnalysisResults(formattedAiResults);
-        
-        analysisResults = {
-          databaseAnalysis: formattedAiResults,
-          isAiPowered: true,
-          analysisMode: aiCapabilities?.mode || 'AI-Powered'
-        };
-
-        toast.success('AI analysis completed successfully!', { 
-          duration: 4000,
-          icon: '🤖'
-        });
-
-      } else {
-        // Fall back to simulation mode
-        analysisResults = generateSimulationResults();
-        
-        toast.success('Analysis completed using simulation mode', { 
-          duration: 3000,
-          icon: '📊'
-        });
-      }
-    } catch (error) {
-      console.error('AI analysis failed, falling back to simulation:', error);
-      toast.error('AI analysis failed, using simulation mode', { duration: 3000 });
-      
-      // Fall back to simulation mode
-      analysisResults = generateSimulationResults();
+    if (!currentAssessment?.id) {
+      toast.error('No assessment selected');
+      setIsAnalyzing(false);
+      return;
     }
 
-    setDataArchData(prev => ({
-      ...prev,
-      analysis: analysisResults
-    }));
-    
-    setIsAnalyzing(false);
-    setShowAnalysisResults(true);
+    try {
+      // Use the dirty tracking service to run AI analysis with SignalR notifications
+      const analysisResults = await dirtyTrackingService.startAIAnalysis(
+        currentAssessment.id,
+        'data-architecture',
+        async () => {
+          // Try AI analysis first if available
+          if (aiServiceAvailable) {
+            // Transform data architecture data for AI analysis
+            const dataArchitectureRequest = {
+              databases: dataArchData.databases.map(db => ({
+                name: db.name,
+                type: db.type,
+                version: db.version,
+                sizeGB: db.size,
+                configuration: { status: db.status, performance: db.performance }
+              })),
+              dataGovernance: 'Enterprise data governance with classification, lineage tracking, and compliance monitoring',
+              dataFlows: dataArchData.integration?.map(i => `${i.from} -> ${i.to}: ${i.description}`).join('; ') || 'ETL pipelines, real-time streaming, batch processing',
+              uploadedDocuments: []
+            };
+            
+            // Call AI analysis service
+            const aiResponse = await aiAnalysisService.analyzeDataArchitecture(dataArchitectureRequest);
+            
+            // Format and store AI results
+            const formattedAiResults = aiAnalysisService.formatAnalysisResponse(aiResponse);
+            setAiAnalysisResults(formattedAiResults);
+            
+            return {
+              databaseAnalysis: formattedAiResults,
+              isAiPowered: true,
+              analysisMode: aiCapabilities?.mode || 'AI-Powered'
+            };
+          } else {
+            // Fall back to simulation mode
+            return generateSimulationResults();
+          }
+        }
+      );
+
+      // Update data with analysis results
+      setDataArchData(prev => ({
+        ...prev,
+        analysis: analysisResults
+      }));
+      
+      setShowAnalysisResults(true);
+
+      // Add to local notifications as well
+      addAnalysisNotification(
+        'data-architecture', 
+        currentAssessment.name, 
+        null
+      );
+
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      toast.error('Analysis failed: ' + error.message);
+      
+      // Fall back to simulation mode
+      const analysisResults = generateSimulationResults();
+      
+      setDataArchData(prev => ({
+        ...prev,
+        analysis: analysisResults
+      }));
+      
+      setShowAnalysisResults(true);
+      
+      toast.success('Analysis completed using simulation mode', { 
+        duration: 3000,
+        icon: '📊'
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const generateSimulationResults = () => {
@@ -799,26 +916,7 @@ function DataArchitecture() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {dataSaved && lastSaveTime && (
-                <div className="text-sm text-blue-200">
-                  <Clock className="h-4 w-4 inline mr-1" />
-                  Saved {new Date(lastSaveTime).toLocaleTimeString()}
-                </div>
-              )}
-              <button
-                onClick={exportAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </button>
-              <button
-                onClick={saveAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </button>
+              {/* Empty for now - buttons moved to action bar */}
             </div>
           </div>
           
@@ -857,6 +955,55 @@ function DataArchitecture() {
               <Brain className="h-4 w-4 inline mr-2" />
               AI Analysis
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
+          <div className="flex space-x-3">
+            <button
+              onClick={saveDataArchitectureData}
+              className={`flex items-center px-4 py-2 text-white rounded-md transition-colors ${
+                isDirty 
+                  ? 'bg-orange-600 hover:bg-orange-700 animate-pulse' 
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isDirty ? 'Save Data (Required)' : 'Save Data'}
+            </button>
+            <button
+              onClick={exportData}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </button>
+            <label className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors cursor-pointer">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+              <input
+                type="file"
+                accept=".json"
+                onChange={importData}
+                className="hidden"
+              />
+            </label>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-500">
+              {dataSaved && lastSaveTime 
+                ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${isDatabaseMode ? '(DB)' : '(Local)'}`
+                : 'Not saved yet'
+              }
+              {isDatabaseMode ? (
+                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
+              ) : (
+                <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Local Storage</span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using BAAP.API.Data;
 using BAAP.API.Models;
 using BAAP.API.Hubs;
+using BAAP.API.Services;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BAAP.API.Controllers;
@@ -16,15 +17,18 @@ public class AssessmentsController : ControllerBase
     private readonly BaapDbContext _context;
     private readonly ILogger<AssessmentsController> _logger;
     private readonly IHubContext<NotificationHub> _hubContext;
+    private readonly DataSeederService _dataSeederService;
 
     public AssessmentsController(
         BaapDbContext context,
         ILogger<AssessmentsController> logger,
-        IHubContext<NotificationHub> hubContext)
+        IHubContext<NotificationHub> hubContext,
+        DataSeederService dataSeederService)
     {
         _context = context;
         _logger = logger;
         _hubContext = hubContext;
+        _dataSeederService = dataSeederService;
     }
 
     // GET: api/assessments
@@ -95,6 +99,17 @@ public class AssessmentsController : ControllerBase
 
             _context.Assessments.Add(assessment);
             await _context.SaveChangesAsync();
+
+            // Seed default data for the new assessment to prevent component crashes
+            try
+            {
+                await _dataSeederService.SeedDefaultDataForNewAssessment(assessment.Id);
+                _logger.LogInformation("Default data seeded successfully for new assessment ID {AssessmentId}", assessment.Id);
+            }
+            catch (Exception seedEx)
+            {
+                _logger.LogWarning(seedEx, "Failed to seed default data for assessment ID {AssessmentId}, but assessment was created successfully", assessment.Id);
+            }
 
             return CreatedAtAction(nameof(GetAssessment), new { id = assessment.Id }, assessment);
         }

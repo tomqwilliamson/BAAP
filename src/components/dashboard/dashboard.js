@@ -46,8 +46,30 @@ function Dashboard() {
       setLoading(true);
       
       // Wait for assessments to be loaded before proceeding
-      if (assessmentsLoading || assessments.length === 0) {
-        console.log('DASHBOARD: Waiting for assessments to load...', { assessmentsLoading, assessmentsCount: assessments.length });
+      if (assessmentsLoading) {
+        console.log('DASHBOARD: Waiting for assessments to load...');
+        return;
+      }
+
+      // Handle empty assessments case
+      if (assessments.length === 0) {
+        console.log('DASHBOARD: No assessments found in database');
+        setDashboardData({
+          portfolio: null,
+          applications: [],
+          assessmentMetrics: {
+            totalApplications: 0,
+            averageScore: 0,
+            criticalIssues: 0,
+            potentialSavings: 0,
+            assessmentProgress: 0,
+            securityIssues: 0,
+            complianceScore: 0,
+            cloudReadiness: 0
+          },
+          categoryScores: generateCategoryScores(null),
+          trendsData: generateTrendsData(null)
+        });
         setLoading(false);
         return;
       }
@@ -259,7 +281,7 @@ function Dashboard() {
     }
   };
 
-  if (loading || assessmentsLoading || (assessments.length === 0 && !assessmentsLoading)) {
+  if (loading || assessmentsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>

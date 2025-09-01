@@ -18,17 +18,23 @@ import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenera
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { aiAnalysisService } from '../../services/aiAnalysisService';
 import { API_BASE_URL } from '../../services/api';
+import { dirtyTrackingService } from '../../services/dirtyTrackingService';
+import { notificationService } from '../../services/notificationService';
+import { useNotifications } from '../../contexts/notificationcontext';
 
 function InfrastructureAssessment() {
   const { currentAssessment } = useAssessment();
   const { startAnalysis, getAnalysisState, isAnalysisRunning } = useAnalysis();
+  const { addAnalysisNotification } = useNotifications();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
   const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
   const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
   const [aiCapabilities, setAiCapabilities] = useState(null);
+  const [isDatabaseMode, setIsDatabaseMode] = useState(true); // Track if using database mode
   
   // Document management states
   const [documents, setDocuments] = useState([]);
@@ -41,6 +47,16 @@ function InfrastructureAssessment() {
   const analysisState = getAnalysisState('infrastructure');
   const isAnalyzing = isAnalysisRunning('infrastructure');
   
+  // Wrapper function to track dirty state when data changes
+  const updateAssessmentData = (newData) => {
+    setAssessmentData(newData);
+    
+    // Mark as dirty when data changes (except during initial load)
+    if (currentAssessment?.id) {
+      dirtyTrackingService.setDirty(currentAssessment.id, 'infrastructure', true);
+    }
+  };
+
   const [assessmentData, setAssessmentData] = useState({
     azureMigrate: {
       servers: [],
@@ -70,6 +86,50 @@ function InfrastructureAssessment() {
     loadDocuments();
     loadInsights();
   }, [currentAssessment]);
+
+  // Set up dirty tracking and SignalR
+  useEffect(() => {
+    if (!currentAssessment?.id) return;
+
+    // Register this module for dirty tracking
+    dirtyTrackingService.registerModule(currentAssessment.id, 'infrastructure', assessmentData);
+
+    // Set up dirty tracking listener
+    const unsubscribeDirty = dirtyTrackingService.onDirtyStateChange(
+      currentAssessment.id,
+      'infrastructure',
+      (isDirtyState) => {
+        setIsDirty(isDirtyState);
+        setDataSaved(!isDirtyState);
+      }
+    );
+
+    // Join SignalR assessment group for real-time collaboration
+    notificationService.joinAssessment(currentAssessment.id);
+
+    // Set up SignalR event listeners
+    const unsubscribeProgress = notificationService.onProgressUpdate((update) => {
+      if (update.Stage === 'ai_analysis_started' && update.AssessmentId == currentAssessment.id) {
+        toast.loading(update.Message, { id: 'ai-analysis-progress' });
+      } else if (update.Stage === 'ai_analysis_completed' && update.AssessmentId == currentAssessment.id) {
+        toast.success(update.Message, { id: 'ai-analysis-progress' });
+      } else if (update.Stage === 'dirty_save_reminder' && update.AssessmentId == currentAssessment.id) {
+        toast.error(update.Message, { 
+          id: 'dirty-save-reminder',
+          duration: 5000,
+          icon: '💾' 
+        });
+      }
+    });
+
+    return () => {
+      // Clean up
+      unsubscribeDirty();
+      unsubscribeProgress();
+      dirtyTrackingService.unregisterModule(currentAssessment.id, 'infrastructure');
+      notificationService.leaveAssessment(currentAssessment.id);
+    };
+  }, [currentAssessment?.id]);
 
   const checkAIServiceAvailability = async () => {
     try {
@@ -299,8 +359,31 @@ function InfrastructureAssessment() {
   };
 
   const loadAssessmentData = async () => {
+    if (!currentAssessment?.id) {
+      console.log('INFRASTRUCTURE: No assessment selected');
+      return;
+    }
+
     try {
       setLoading(true);
+      
+      // Try to load from localStorage first
+      const savedDataKey = `infrastructureData_${currentAssessment.id}`;
+      const savedData = localStorage.getItem(savedDataKey);
+      
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          setAssessmentData(parsed);
+          setDataSaved(true);
+          const saveDate = parsed.lastSaveTime || new Date();
+          setLastSaveTime(new Date(saveDate));
+          setIsDatabaseMode(false);
+          console.log('INFRASTRUCTURE: Loaded data from localStorage for assessment:', currentAssessment.id);
+        } catch (error) {
+          console.error('Error parsing saved infrastructure data:', error);
+        }
+      }
       console.log('INFRASTRUCTURE: Loading data for assessment:', currentAssessment?.id);
       
       // Generate assessment-specific data
@@ -423,17 +506,20 @@ function InfrastructureAssessment() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const exportAssessment = () => {
+  const exportData = () => {
     const dataStr = JSON.stringify(assessmentData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'infrastructure-assessment.json';
-    link.click();
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `infrastructure-assessment-${currentAssessment?.id || 'data'}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    toast.success('Infrastructure data exported successfully');
   };
 
-  const importAssessment = (event) => {
+  const importData = (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -441,20 +527,44 @@ function InfrastructureAssessment() {
         try {
           const importedData = JSON.parse(e.target.result);
           setAssessmentData(importedData);
+          setDataSaved(false); // Mark as unsaved after import
+          setLastSaveTime(new Date());
+          toast.success('Infrastructure data imported successfully');
         } catch (error) {
-          alert('Error importing file: Invalid JSON format');
+          toast.error('Error importing data - invalid format');
         }
       };
       reader.readAsText(file);
     }
   };
 
-  const saveAssessment = () => {
-    setDataSaved(true);
-    setLastSaveTime(new Date());
-    const dataStr = JSON.stringify(assessmentData, null, 2);
-    localStorage.setItem('infrastructure_assessment', dataStr);
-    toast.success('Assessment data saved successfully!');
+  const saveInfrastructureData = async () => {
+    try {
+      if (!currentAssessment?.id) {
+        toast.error('No assessment selected. Please select an assessment first.');
+        return;
+      }
+
+      // Save to localStorage with assessment-specific key
+      const savedDataKey = `infrastructureData_${currentAssessment.id}`;
+      const dataToSave = {
+        ...assessmentData,
+        lastSaveTime: new Date().toISOString()
+      };
+      localStorage.setItem(savedDataKey, JSON.stringify(dataToSave));
+      
+      // Mark as clean in dirty tracking service
+      dirtyTrackingService.setDirty(currentAssessment.id, 'infrastructure', false);
+      
+      setLastSaveTime(new Date());
+      setIsDatabaseMode(false); // Using local storage
+      
+      toast.success(`Infrastructure assessment saved for "${currentAssessment.name}"!`);
+      console.log('INFRASTRUCTURE: Saved assessment data for:', currentAssessment.id);
+    } catch (error) {
+      console.error('Error saving infrastructure data:', error);
+      toast.error('Error saving data');
+    }
   };
 
   const runAnalysis = async () => {
@@ -464,57 +574,76 @@ function InfrastructureAssessment() {
     // Start the progress tracking analysis
     const result = await startAnalysis('infrastructure');
     
-    let analysisResults;
+    if (!currentAssessment?.id) {
+      toast.error('No assessment selected');
+      return;
+    }
 
-    // Try AI analysis first if available
-    if (aiServiceAvailable) {
-      try {
-        toast.success('Starting AI-powered infrastructure analysis...', { duration: 3000 });
-        
-        // Transform assessment data for AI analysis
-        const infrastructureRequest = aiAnalysisService.transformInfrastructureData(assessmentData);
-        
-        // Call AI analysis service
-        const aiResponse = await aiAnalysisService.analyzeInfrastructure(infrastructureRequest);
-        
-        // Format and store AI results
-        const formattedAiResults = aiAnalysisService.formatAnalysisResponse(aiResponse);
-        setAiAnalysisResults(formattedAiResults);
-        
-        analysisResults = {
-          infrastructureAnalysis: formattedAiResults,
-          isAiPowered: true,
-          analysisMode: aiCapabilities?.mode || 'AI-Powered'
-        };
+    try {
+      // Use the dirty tracking service to run AI analysis with SignalR notifications
+      const analysisResults = await dirtyTrackingService.startAIAnalysis(
+        currentAssessment.id,
+        'infrastructure',
+        async () => {
+          // Try AI analysis first if available
+          if (aiServiceAvailable) {
+            // Transform assessment data for AI analysis
+            const infrastructureRequest = aiAnalysisService.transformInfrastructureData(assessmentData);
+            
+            // Call AI analysis service
+            const aiResponse = await aiAnalysisService.analyzeInfrastructure(infrastructureRequest);
+            
+            // Format and store AI results
+            const formattedAiResults = aiAnalysisService.formatAnalysisResponse(aiResponse);
+            setAiAnalysisResults(formattedAiResults);
+            
+            return {
+              infrastructureAnalysis: formattedAiResults,
+              isAiPowered: true,
+              analysisMode: aiCapabilities?.mode || 'AI-Powered'
+            };
+          } else {
+            // Fall back to simulation mode
+            return generateSimulationResults();
+          }
+        }
+      );
 
-        toast.success('AI analysis completed successfully!', { 
-          duration: 4000,
-          icon: '🤖'
-        });
+      // Update assessment data with results
+      setAssessmentData(prev => ({
+        ...prev,
+        analysis: analysisResults
+      }));
 
-      } catch (error) {
-        console.error('AI analysis failed, falling back to simulation:', error);
-        toast.error('AI analysis failed, using simulation mode', { duration: 3000 });
-        
-        // Fall back to simulation mode
-        analysisResults = generateSimulationResults();
-      }
-    } else {
-      // Use simulation results when AI is not available
-      analysisResults = generateSimulationResults();
+      // Show analysis results
+      setShowAnalysisResults(true);
+
+      // Add to local notifications as well
+      addAnalysisNotification(
+        'infrastructure', 
+        currentAssessment.name, 
+        null
+      );
+
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      toast.error('Analysis failed: ' + error.message);
+      
+      // Fall back to simulation mode
+      const analysisResults = generateSimulationResults();
+      
+      setAssessmentData(prev => ({
+        ...prev,
+        analysis: analysisResults
+      }));
+      
+      setShowAnalysisResults(true);
       
       toast.success('Analysis completed using simulation mode', { 
         duration: 3000,
         icon: '📊'
       });
     }
-
-    setAssessmentData(prev => ({
-      ...prev,
-      analysis: analysisResults
-    }));
-    
-    setShowAnalysisResults(true);
   };
 
   const generateSimulationResults = () => {
@@ -587,26 +716,7 @@ function InfrastructureAssessment() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {dataSaved && lastSaveTime && (
-                <div className="text-sm text-blue-200">
-                  <Clock className="h-4 w-4 inline mr-1" />
-                  Saved {new Date(lastSaveTime).toLocaleTimeString()}
-                </div>
-              )}
-              <button
-                onClick={exportAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </button>
-              <button
-                onClick={saveAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </button>
+              {/* Empty for now - buttons moved to action bar */}
             </div>
           </div>
           
@@ -645,6 +755,55 @@ function InfrastructureAssessment() {
               <Brain className="h-4 w-4 inline mr-2" />
               AI Analysis
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
+          <div className="flex space-x-3">
+            <button
+              onClick={saveInfrastructureData}
+              className={`flex items-center px-4 py-2 text-white rounded-md transition-colors ${
+                isDirty 
+                  ? 'bg-orange-600 hover:bg-orange-700 animate-pulse' 
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isDirty ? 'Save Data (Required)' : 'Save Data'}
+            </button>
+            <button
+              onClick={exportData}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </button>
+            <label className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors cursor-pointer">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+              <input
+                type="file"
+                accept=".json"
+                onChange={importData}
+                className="hidden"
+              />
+            </label>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-500">
+              {dataSaved && lastSaveTime 
+                ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${isDatabaseMode ? '(DB)' : '(Local)'}`
+                : 'Not saved yet'
+              }
+              {isDatabaseMode ? (
+                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
+              ) : (
+                <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Local Storage</span>
+              )}
+            </div>
           </div>
         </div>
       </div>

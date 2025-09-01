@@ -15,14 +15,20 @@ import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { API_BASE_URL } from '../../services/api';
 import { developmentPracticesService } from '../../services/developmentPracticesService';
+import { dirtyTrackingService } from '../../services/dirtyTrackingService';
+import { notificationService } from '../../services/notificationService';
+import { useNotifications } from '../../contexts/notificationcontext';
 
 function DevOpsAssessment() {
   const { currentAssessment } = useAssessment();
+  const { addAnalysisNotification } = useNotifications();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [isDatabaseMode, setIsDatabaseMode] = useState(true); // Track if using database mode
   
   // Document management states
   const [documents, setDocuments] = useState([]);
@@ -31,6 +37,19 @@ function DevOpsAssessment() {
   const [selectedDocumentTab, setSelectedDocumentTab] = useState('documents');
   const [dragOver, setDragOver] = useState(false);
   
+  // Development practices tabs state
+  const [selectedDevelopmentTab, setSelectedDevelopmentTab] = useState('methodology');
+  
+  // Wrapper function to track dirty state when data changes
+  const updateDevopsData = (newData) => {
+    setDevopsData(newData);
+    
+    // Mark as dirty when data changes (except during initial load)
+    if (currentAssessment?.id) {
+      dirtyTrackingService.setDirty(currentAssessment.id, 'devops', true);
+    }
+  };
+
   const [devopsData, setDevopsData] = useState({
     github: {
       repositories: [],
@@ -148,10 +167,153 @@ function DevOpsAssessment() {
     loadDevelopmentPractices();
   }, [currentAssessment]);
 
+  // Set up dirty tracking and SignalR
+  useEffect(() => {
+    if (!currentAssessment?.id) return;
+
+    // Register this module for dirty tracking
+    dirtyTrackingService.registerModule(currentAssessment.id, 'devops', devopsData);
+
+    // Set up dirty tracking listener
+    const unsubscribeDirty = dirtyTrackingService.onDirtyStateChange(
+      currentAssessment.id,
+      'devops',
+      (isDirtyState) => {
+        setIsDirty(isDirtyState);
+        setDataSaved(!isDirtyState);
+      }
+    );
+
+    // Join SignalR assessment group for real-time collaboration
+    notificationService.joinAssessment(currentAssessment.id);
+
+    // Set up SignalR event listeners
+    const unsubscribeProgress = notificationService.onProgressUpdate((update) => {
+      if (update.Stage === 'ai_analysis_started' && update.AssessmentId == currentAssessment.id) {
+        toast.loading(update.Message, { id: 'ai-analysis-progress' });
+      } else if (update.Stage === 'ai_analysis_completed' && update.AssessmentId == currentAssessment.id) {
+        toast.success(update.Message, { id: 'ai-analysis-progress' });
+      } else if (update.Stage === 'dirty_save_reminder' && update.AssessmentId == currentAssessment.id) {
+        toast.error(update.Message, { 
+          id: 'dirty-save-reminder',
+          duration: 5000,
+          icon: '💾' 
+        });
+      }
+    });
+
+    return () => {
+      // Clean up
+      unsubscribeDirty();
+      unsubscribeProgress();
+      dirtyTrackingService.unregisterModule(currentAssessment.id, 'devops');
+      notificationService.leaveAssessment(currentAssessment.id);
+    };
+  }, [currentAssessment?.id]);
+
+  // Save, Export, Import functions
+  const saveDevOpsData = async () => {
+    try {
+      if (!currentAssessment?.id) {
+        toast.error('No assessment selected. Please select an assessment first.');
+        return;
+      }
+
+      // Save DevOps data to localStorage with assessment-specific key
+      const savedDataKey = `devOpsData_${currentAssessment.id}`;
+      const dataToSave = {
+        ...devopsData,
+        lastSaveTime: new Date().toISOString()
+      };
+      localStorage.setItem(savedDataKey, JSON.stringify(dataToSave));
+      
+      // Also save development practices data if currentAssessment exists
+      if (currentAssessment?.id && formData) {
+        try {
+          await developmentPracticesService.createOrUpdateForAssessment(
+            currentAssessment.id,
+            formData
+          );
+          console.log('DEVOPS: Development practices saved successfully');
+        } catch (practicesError) {
+          console.error('Error saving development practices:', practicesError);
+          toast.error('DevOps data saved, but failed to save development practices');
+        }
+      }
+      
+      // Mark as clean in dirty tracking service
+      dirtyTrackingService.setDirty(currentAssessment.id, 'devops', false);
+      setLastSaveTime(new Date());
+      setIsDatabaseMode(false); // Using local storage
+      
+      toast.success(`DevOps assessment saved for "${currentAssessment.name}"!`);
+      console.log('DEVOPS: Saved assessment data for:', currentAssessment.id);
+    } catch (error) {
+      console.error('Error saving DevOps data:', error);
+      toast.error('Error saving data');
+    }
+  };
+
+  const exportData = () => {
+    const dataStr = JSON.stringify(devopsData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `devops-assessment-${currentAssessment?.id || 'data'}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    toast.success('DevOps data exported successfully');
+  };
+
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          setDevopsData(importedData);
+          setDataSaved(false); // Mark as unsaved after import
+          setLastSaveTime(new Date());
+          toast.success('DevOps data imported successfully');
+        } catch (error) {
+          toast.error('Error importing data - invalid format');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const loadDevOpsData = async () => {
+    if (!currentAssessment?.id) {
+      console.log('DEVOPS: No assessment selected');
+      return;
+    }
+
     try {
       setLoading(true);
       console.log('DEVOPS: Loading data for assessment:', currentAssessment?.id);
+      
+      // Try to load from localStorage first
+      const savedDataKey = `devOpsData_${currentAssessment.id}`;
+      const savedData = localStorage.getItem(savedDataKey);
+      
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          setDevopsData(parsed);
+          setDataSaved(true);
+          const saveDate = parsed.lastSaveTime || new Date();
+          setLastSaveTime(new Date(saveDate));
+          setIsDatabaseMode(false);
+          console.log('DEVOPS: Loaded data from localStorage for assessment:', currentAssessment.id);
+          return;
+        } catch (error) {
+          console.error('Error parsing saved DevOps data:', error);
+        }
+      }
       
       // Generate assessment-specific data
       const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'devops');
@@ -588,70 +750,82 @@ function DevOpsAssessment() {
   };
 
 
-  const exportAssessment = () => {
-    const dataStr = JSON.stringify(devopsData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'devops-assessment.json';
-    link.click();
-  };
-
-
-  const saveAssessment = () => {
-    setDataSaved(true);
-    setLastSaveTime(new Date());
-    const dataStr = JSON.stringify(devopsData, null, 2);
-    localStorage.setItem('devops_assessment', dataStr);
-    toast.success('Assessment data saved successfully!');
-  };
+  // Note: Export and save functions are defined above after useEffect
 
   const runAnalysis = async () => {
     setIsAnalyzing(true);
     setShowAnalysisResults(false);
     
-    // Simulate analysis processing
-    setTimeout(() => {
-      const analysisResults = {
-        devopsAnalysis: `GitHub and Azure DevOps analysis reveals ${devopsData.github?.repositories?.length || 4} active repositories with strong development practices:
+    if (!currentAssessment?.id) {
+      toast.error('No assessment selected');
+      setIsAnalyzing(false);
+      return;
+    }
+
+    try {
+      // Use the dirty tracking service to run AI analysis with SignalR notifications
+      const analysisResults = await dirtyTrackingService.startAIAnalysis(
+        currentAssessment.id,
+        'devops',
+        async () => {
+          // Simulate analysis processing or call actual AI service
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({
+                devopsAnalysis: `GitHub and Azure DevOps analysis reveals ${devopsData.github?.repositories?.length || 4} active repositories with strong development practices:
 
 • Pull request merge rate: ${devopsData.github?.pullRequests?.mergeRate || 94}% with ${devopsData.github?.pullRequests?.avgReviewTime || '4.2 hours'} average review time
 • ${devopsData.azureDevOps?.pipelines?.length || 3} Azure DevOps pipelines with ${devopsData.cicd?.successRate || 87}% success rate
 • Code coverage at ${devopsData.github?.codeQuality?.coverage || 78}% across repositories
 • Active work items: ${devopsData.azureDevOps?.workItems?.active || 23} with ${devopsData.azureDevOps?.workItems?.bugs || 8} open bugs`,
 
-        pipelineAnalysis: `CI/CD pipeline performance shows areas for optimization:
+                pipelineAnalysis: `CI/CD pipeline performance shows areas for optimization:
 
 • Average build time: ${devopsData.cicd?.avgBuildTime || 8.5} minutes with deployment frequency of ${devopsData.cicd?.deploymentFrequency || 'Daily'}
 • Lead time from commit to production: ${devopsData.cicd?.leadTime || '2.3 hours'}
 • Mean time to recovery (MTTR): ${devopsData.cicd?.mttr || '45 minutes'}
 • Test automation at ${devopsData.automation?.find(a => a.process === 'Testing')?.automated || 65}% coverage`,
 
-        qualityAnalysis: `Code quality metrics indicate good practices with improvement opportunities:
+                qualityAnalysis: `Code quality metrics indicate good practices with improvement opportunities:
 
 • Maintainability index: ${devopsData.github?.codeQuality?.maintainability || 85}%
 • Reliability score: ${devopsData.github?.codeQuality?.reliability || 82}%
 • Security rating: ${devopsData.github?.codeQuality?.security || 71}% - requires attention
 • Test coverage: ${devopsData.azureDevOps?.testResults?.coverage || 82}% with ${devopsData.azureDevOps?.testResults?.failed || 91} failing tests`,
 
-        modernizationRecommendations: `Recommended DevOps modernization strategy:
+                modernizationRecommendations: `Recommended DevOps modernization strategy:
 
 1. **Phase 1**: Implement Infrastructure as Code to reach 80%+ automation
 2. **Phase 2**: Enhance security integration with automated scanning and compliance checks
 3. **Phase 3**: Improve test automation coverage to 85%+ and reduce manual testing
 4. **Implement**: Advanced monitoring, observability, and automated incident response`
-      };
+              });
+            }, 3000);
+          });
+        }
+      );
 
+      // Update data with analysis results
       setDevopsData(prev => ({
         ...prev,
         analysis: analysisResults
       }));
       
-      setIsAnalyzing(false);
       setShowAnalysisResults(true);
-      toast.success('Analysis completed successfully!');
-    }, 3000);
+
+      // Add to local notifications as well
+      addAnalysisNotification(
+        'devops', 
+        currentAssessment.name, 
+        null
+      );
+
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      toast.error('Analysis failed: ' + error.message);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const getMaturityColor = (score) => {
@@ -704,26 +878,7 @@ function DevOpsAssessment() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {dataSaved && lastSaveTime && (
-                <div className="text-sm text-blue-200">
-                  <Clock className="h-4 w-4 inline mr-1" />
-                  Saved {new Date(lastSaveTime).toLocaleTimeString()}
-                </div>
-              )}
-              <button
-                onClick={saveAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </button>
-              <button
-                onClick={exportAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </button>
+              {/* Empty for now - buttons moved to action bar */}
             </div>
           </div>
           
@@ -773,6 +928,55 @@ function DevOpsAssessment() {
               <Brain className="h-4 w-4 inline mr-2" />
               AI Analysis
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
+          <div className="flex space-x-3">
+            <button
+              onClick={saveDevOpsData}
+              className={`flex items-center px-4 py-2 text-white rounded-md transition-colors ${
+                isDirty 
+                  ? 'bg-orange-600 hover:bg-orange-700 animate-pulse' 
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isDirty ? 'Save Data (Required)' : 'Save Data'}
+            </button>
+            <button
+              onClick={exportData}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </button>
+            <label className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors cursor-pointer">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+              <input
+                type="file"
+                accept=".json"
+                onChange={importData}
+                className="hidden"
+              />
+            </label>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-500">
+              {dataSaved && lastSaveTime 
+                ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${isDatabaseMode ? '(DB)' : '(Local)'}`
+                : 'Not saved yet'
+              }
+              {isDatabaseMode ? (
+                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
+              ) : (
+                <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Local Storage</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1205,373 +1409,371 @@ function DevOpsAssessment() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="mb-6">
                       <div>
                         <h4 className="text-lg font-medium text-gray-900">Assessment: {currentAssessment?.name || 'No assessment selected'}</h4>
                         <p className="text-sm text-gray-600">{developmentPractices ? 'Existing practices found' : 'New practices assessment'}</p>
                       </div>
-                      <button
-                        onClick={saveDevelopmentPractices}
-                        disabled={practicesSaving || !currentAssessment}
-                        className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                          practicesSaving || !currentAssessment
-                            ? 'bg-gray-400 cursor-not-allowed' 
-                            : 'bg-blue-600 hover:bg-blue-700'
-                        }`}
-                      >
-                        {practicesSaving ? (
-                          <>
-                            <RefreshCw className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="h-4 w-4 mr-2" />
-                            Save Practices
-                          </>
-                        )}
-                      </button>
                     </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  
-                  {/* Development Methodology */}
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-4">Development Methodology</h4>
-                      
-                      {/* Methodology Selection */}
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">Primary Development Methodology</label>
-                          <div className="mt-2 space-y-2">
-                            {['Agile/Scrum', 'Kanban', 'Waterfall', 'DevOps', 'Lean', 'Hybrid', 'Other'].map((method) => (
-                              <label key={method} className="flex items-center">
-                                <input 
-                                  type="radio" 
-                                  name="methodology" 
-                                  value={method} 
-                                  checked={formData.primaryMethodology === method}
-                                  onChange={(e) => handleFormChange('primaryMethodology', e.target.value)}
-                                  className="form-radio h-4 w-4 text-blue-600" 
-                                />
-                                <span className="ml-2 text-sm text-gray-700">{method}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
+                    {/* Development Practices Tabs */}
+                    <Tabs value={selectedDevelopmentTab} onValueChange={setSelectedDevelopmentTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-6 mb-6">
+                        <TabsTrigger value="methodology" className="text-xs">Development Methodology</TabsTrigger>
+                        <TabsTrigger value="team" className="text-xs">Team Structure & Organization</TabsTrigger>
+                        <TabsTrigger value="quality" className="text-xs">Quality Assurance & Testing</TabsTrigger>
+                        <TabsTrigger value="practices" className="text-xs">Development Practices</TabsTrigger>
+                        <TabsTrigger value="communication" className="text-xs">Communication & Collaboration</TabsTrigger>
+                        <TabsTrigger value="technology" className="text-xs">Technology Stack & Environment</TabsTrigger>
+                      </TabsList>
 
-                        {/* Sprint/Cycle Information */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">Sprint/Cycle Length</label>
-                            <select 
-                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                              value={formData.sprintLength}
-                              onChange={(e) => handleFormChange('sprintLength', e.target.value)}
-                            >
-                              <option value="">Select length</option>
-                              <option value="1 week">1 week</option>
-                              <option value="2 weeks">2 weeks</option>
-                              <option value="3 weeks">3 weeks</option>
-                              <option value="4 weeks">4 weeks</option>
-                              <option value="Other/N/A">Other/N/A</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">Release Frequency</label>
-                            <select 
-                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                              value={formData.releaseFrequency}
-                              onChange={(e) => handleFormChange('releaseFrequency', e.target.value)}
-                            >
-                              <option value="">Select frequency</option>
-                              <option value="Daily">Daily</option>
-                              <option value="Weekly">Weekly</option>
-                              <option value="Bi-weekly">Bi-weekly</option>
-                              <option value="Monthly">Monthly</option>
-                              <option value="Quarterly">Quarterly</option>
-                              <option value="Ad-hoc">Ad-hoc</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      {/* Development Methodology Tab */}
+                      <TabsContent value="methodology" className="space-y-6">
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900 mb-4">Development Methodology</h4>
+                          
+                          {/* Methodology Selection */}
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Primary Development Methodology</label>
+                              <div className="mt-2 space-y-2">
+                                {['Agile/Scrum', 'Kanban', 'Waterfall', 'DevOps', 'Lean', 'Hybrid', 'Other'].map((method) => (
+                                  <label key={method} className="flex items-center">
+                                    <input 
+                                      type="radio" 
+                                      name="methodology" 
+                                      value={method} 
+                                      checked={formData.primaryMethodology === method}
+                                      onChange={(e) => handleFormChange('primaryMethodology', e.target.value)}
+                                      className="form-radio h-4 w-4 text-blue-600" 
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">{method}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
 
-                    {/* Quality Assurance */}
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-4">Quality Assurance & Testing</h4>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="flex items-center">
-                            <input 
-                              type="checkbox" 
-                              className="form-checkbox h-4 w-4 text-blue-600" 
-                              checked={formData.hasDedicatedQA}
-                              onChange={(e) => handleFormChange('hasDedicatedQA', e.target.checked)}
-                            />
-                            <span className="ml-2 text-sm text-gray-700">Dedicated QA Department</span>
-                          </label>
+                            {/* Sprint/Cycle Information */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">Sprint/Cycle Length</label>
+                                <select 
+                                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                  value={formData.sprintLength}
+                                  onChange={(e) => handleFormChange('sprintLength', e.target.value)}
+                                >
+                                  <option value="">Select length</option>
+                                  <option value="1 week">1 week</option>
+                                  <option value="2 weeks">2 weeks</option>
+                                  <option value="3 weeks">3 weeks</option>
+                                  <option value="4 weeks">4 weeks</option>
+                                  <option value="Other/N/A">Other/N/A</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">Release Frequency</label>
+                                <select 
+                                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                  value={formData.releaseFrequency}
+                                  onChange={(e) => handleFormChange('releaseFrequency', e.target.value)}
+                                >
+                                  <option value="">Select frequency</option>
+                                  <option value="Daily">Daily</option>
+                                  <option value="Weekly">Weekly</option>
+                                  <option value="Bi-weekly">Bi-weekly</option>
+                                  <option value="Monthly">Monthly</option>
+                                  <option value="Quarterly">Quarterly</option>
+                                  <option value="Ad-hoc">Ad-hoc</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
                         </div>
+                      </TabsContent>
+
+                      {/* Team Structure Tab */}
+                      <TabsContent value="team" className="space-y-6">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">Testing Approach</label>
-                          <div className="mt-2 space-y-2">
-                            {[
-                              { label: 'Manual Testing', key: 'manualTesting' },
-                              { label: 'Automated Testing', key: 'automatedTesting' },
-                              { label: 'Unit Testing', key: 'unitTesting' },
-                              { label: 'Integration Testing', key: 'integrationTesting' },
-                              { label: 'E2E Testing', key: 'e2ETesting' },
-                              { label: 'Performance Testing', key: 'performanceTesting' }
-                            ].map((approach) => (
-                              <label key={approach.key} className="flex items-center">
+                          <h4 className="text-lg font-medium text-gray-900 mb-4">Team Structure & Organization</h4>
+                          
+                          {/* Team Size */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Total Development Team Size</label>
+                              <input 
+                                type="number" 
+                                min="0" 
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                                placeholder="e.g., 15"
+                                value={formData.totalTeamSize}
+                                onChange={(e) => handleFormChange('totalTeamSize', parseInt(e.target.value) || 0)}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Number of Scrum Teams</label>
+                              <input 
+                                type="number" 
+                                min="0" 
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                                placeholder="e.g., 3"
+                                value={formData.numberOfScrumTeams}
+                                onChange={(e) => handleFormChange('numberOfScrumTeams', parseInt(e.target.value) || 0)}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Role Distribution */}
+                          <div className="space-y-3">
+                            <h5 className="text-sm font-medium text-gray-700">Team Roles & Count</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {[
+                                { label: 'Software Developers', key: 'softwareDevelopers' },
+                                { label: 'Senior/Lead Developers', key: 'seniorLeadDevelopers' },
+                                { label: 'QA Engineers/Testers', key: 'qaEngineers' },
+                                { label: 'Database Engineers/DBAs', key: 'databaseEngineers' },
+                                { label: 'DevOps Engineers', key: 'devOpsEngineers' },
+                                { label: 'Business Analysts', key: 'businessAnalysts' },
+                                { label: 'Product Managers', key: 'productManagers' },
+                                { label: 'Project Managers', key: 'projectManagers' },
+                                { label: 'Scrum Masters', key: 'scrumMasters' },
+                                { label: 'UI/UX Designers', key: 'uiuxDesigners' },
+                                { label: 'Architects (Solution/Technical)', key: 'architects' }
+                              ].map((role) => (
+                                <div key={role.key} className="flex items-center justify-between">
+                                  <label className="text-sm text-gray-700 flex-1">{role.label}</label>
+                                  <input 
+                                    type="number" 
+                                    min="0" 
+                                    className="w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" 
+                                    placeholder="0"
+                                    value={formData[role.key]}
+                                    onChange={(e) => handleFormChange(role.key, parseInt(e.target.value) || 0)}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      {/* Quality Assurance Tab */}
+                      <TabsContent value="quality" className="space-y-6">
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900 mb-4">Quality Assurance & Testing</h4>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="flex items-center">
                                 <input 
                                   type="checkbox" 
                                   className="form-checkbox h-4 w-4 text-blue-600" 
-                                  checked={formData[approach.key]}
-                                  onChange={(e) => handleFormChange(approach.key, e.target.checked)}
+                                  checked={formData.hasDedicatedQA}
+                                  onChange={(e) => handleFormChange('hasDedicatedQA', e.target.checked)}
                                 />
-                                <span className="ml-2 text-sm text-gray-700">{approach.label}</span>
+                                <span className="ml-2 text-sm text-gray-700">Dedicated QA Department</span>
+                              </label>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Testing Approach</label>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {[
+                                  { label: 'Manual Testing', key: 'manualTesting' },
+                                  { label: 'Automated Testing', key: 'automatedTesting' },
+                                  { label: 'Unit Testing', key: 'unitTesting' },
+                                  { label: 'Integration Testing', key: 'integrationTesting' },
+                                  { label: 'E2E Testing', key: 'e2ETesting' },
+                                  { label: 'Performance Testing', key: 'performanceTesting' }
+                                ].map((approach) => (
+                                  <label key={approach.key} className="flex items-center">
+                                    <input 
+                                      type="checkbox" 
+                                      className="form-checkbox h-4 w-4 text-blue-600" 
+                                      checked={formData[approach.key]}
+                                      onChange={(e) => handleFormChange(approach.key, e.target.checked)}
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">{approach.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Code Coverage Target</label>
+                              <select 
+                                className="mt-1 block w-full md:w-1/2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                value={formData.codeCoverageTarget}
+                                onChange={(e) => handleFormChange('codeCoverageTarget', e.target.value)}
+                              >
+                                <option value="">Select target</option>
+                                <option value="No formal target">No formal target</option>
+                                <option value="50-60%">50-60%</option>
+                                <option value="60-70%">60-70%</option>
+                                <option value="70-80%">70-80%</option>
+                                <option value="80%+">80%+</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      {/* Development Practices Tab */}
+                      <TabsContent value="practices" className="space-y-6">
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900 mb-4">Development Practices</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {[
+                              { label: 'Code Reviews (Pull Requests)', key: 'codeReviews' },
+                              { label: 'Pair Programming', key: 'pairProgramming' },
+                              { label: 'Test-Driven Development (TDD)', key: 'testDrivenDevelopment' },
+                              { label: 'Behavior-Driven Development (BDD)', key: 'behaviorDrivenDevelopment' },
+                              { label: 'Continuous Integration (CI)', key: 'continuousIntegration' },
+                              { label: 'Continuous Deployment (CD)', key: 'continuousDeployment' },
+                              { label: 'Feature Flags/Toggles', key: 'featureFlags' },
+                              { label: 'A/B Testing', key: 'abTesting' },
+                              { label: 'Code Documentation Standards', key: 'codeDocumentationStandards' },
+                              { label: 'API Documentation', key: 'apiDocumentation' },
+                              { label: 'Technical Debt Management', key: 'technicalDebtManagement' },
+                              { label: 'Performance Monitoring', key: 'performanceMonitoring' }
+                            ].map((practice) => (
+                              <label key={practice.key} className="flex items-center">
+                                <input 
+                                  type="checkbox" 
+                                  className="form-checkbox h-4 w-4 text-blue-600" 
+                                  checked={formData[practice.key]}
+                                  onChange={(e) => handleFormChange(practice.key, e.target.checked)}
+                                />
+                                <span className="ml-2 text-sm text-gray-700">{practice.label}</span>
                               </label>
                             ))}
                           </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Code Coverage Target</label>
-                          <select 
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            value={formData.codeCoverageTarget}
-                            onChange={(e) => handleFormChange('codeCoverageTarget', e.target.value)}
-                          >
-                            <option value="">Select target</option>
-                            <option value="No formal target">No formal target</option>
-                            <option value="50-60%">50-60%</option>
-                            <option value="60-70%">60-70%</option>
-                            <option value="70-80%">70-80%</option>
-                            <option value="80%+">80%+</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                      </TabsContent>
 
-                  {/* Team Structure */}
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-4">Team Structure & Organization</h4>
-                      
-                      {/* Team Size */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
+                      {/* Communication & Collaboration Tab */}
+                      <TabsContent value="communication" className="space-y-6">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">Total Development Team Size</label>
-                          <input 
-                            type="number" 
-                            min="0" 
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
-                            placeholder="e.g., 15"
-                            value={formData.totalTeamSize}
-                            onChange={(e) => handleFormChange('totalTeamSize', parseInt(e.target.value) || 0)}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Number of Scrum Teams</label>
-                          <input 
-                            type="number" 
-                            min="0" 
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
-                            placeholder="e.g., 3"
-                            value={formData.numberOfScrumTeams}
-                            onChange={(e) => handleFormChange('numberOfScrumTeams', parseInt(e.target.value) || 0)}
-                          />
-                        </div>
-                      </div>
+                          <h4 className="text-lg font-medium text-gray-900 mb-4">Communication & Collaboration</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Primary Communication Tools</label>
+                              <div className="space-y-2">
+                                {[
+                                  { label: 'Microsoft Teams', key: 'microsoftTeams' },
+                                  { label: 'Slack', key: 'slack' },
+                                  { label: 'Discord', key: 'discord' },
+                                  { label: 'Email', key: 'email' },
+                                  { label: 'Other', key: 'otherCommunicationTools' }
+                                ].map((tool) => (
+                                  <label key={tool.key} className="flex items-center">
+                                    <input 
+                                      type="checkbox" 
+                                      className="form-checkbox h-4 w-4 text-blue-600" 
+                                      checked={formData[tool.key]}
+                                      onChange={(e) => handleFormChange(tool.key, e.target.checked)}
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">{tool.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
 
-                      {/* Role Distribution */}
-                      <div className="space-y-3">
-                        <h5 className="text-sm font-medium text-gray-700">Team Roles & Count</h5>
-                        {[
-                          { label: 'Software Developers', key: 'softwareDevelopers' },
-                          { label: 'Senior/Lead Developers', key: 'seniorLeadDevelopers' },
-                          { label: 'QA Engineers/Testers', key: 'qaEngineers' },
-                          { label: 'Database Engineers/DBAs', key: 'databaseEngineers' },
-                          { label: 'DevOps Engineers', key: 'devOpsEngineers' },
-                          { label: 'Business Analysts', key: 'businessAnalysts' },
-                          { label: 'Product Managers', key: 'productManagers' },
-                          { label: 'Project Managers', key: 'projectManagers' },
-                          { label: 'Scrum Masters', key: 'scrumMasters' },
-                          { label: 'UI/UX Designers', key: 'uiuxDesigners' },
-                          { label: 'Architects (Solution/Technical)', key: 'architects' }
-                        ].map((role) => (
-                          <div key={role.key} className="flex items-center justify-between">
-                            <label className="text-sm text-gray-700 flex-1">{role.label}</label>
-                            <input 
-                              type="number" 
-                              min="0" 
-                              className="w-16 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" 
-                              placeholder="0"
-                              value={formData[role.key]}
-                              onChange={(e) => handleFormChange(role.key, parseInt(e.target.value) || 0)}
-                            />
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Project Management Tools</label>
+                              <div className="space-y-2">
+                                {[
+                                  { label: 'Azure DevOps', key: 'azureDevOps' },
+                                  { label: 'Jira', key: 'jira' },
+                                  { label: 'GitHub Projects', key: 'gitHubProjects' },
+                                  { label: 'Trello', key: 'trello' },
+                                  { label: 'Asana', key: 'asana' },
+                                  { label: 'Monday.com', key: 'mondayCom' },
+                                  { label: 'Other', key: 'otherProjectManagementTools' }
+                                ].map((tool) => (
+                                  <label key={tool.key} className="flex items-center">
+                                    <input 
+                                      type="checkbox" 
+                                      className="form-checkbox h-4 w-4 text-blue-600" 
+                                      checked={formData[tool.key]}
+                                      onChange={(e) => handleFormChange(tool.key, e.target.checked)}
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">{tool.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Meeting Cadence</label>
+                              <div className="space-y-2">
+                                {[
+                                  { label: 'Daily Standups', key: 'dailyStandups' },
+                                  { label: 'Sprint Planning', key: 'sprintPlanning' },
+                                  { label: 'Sprint Reviews', key: 'sprintReviews' },
+                                  { label: 'Retrospectives', key: 'retrospectives' },
+                                  { label: 'Backlog Grooming', key: 'backlogGrooming' },
+                                  { label: 'Architecture Reviews', key: 'architectureReviews' }
+                                ].map((meeting) => (
+                                  <label key={meeting.key} className="flex items-center">
+                                    <input 
+                                      type="checkbox" 
+                                      className="form-checkbox h-4 w-4 text-blue-600" 
+                                      checked={formData[meeting.key]}
+                                      onChange={(e) => handleFormChange(meeting.key, e.target.checked)}
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">{meeting.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </div>
+                      </TabsContent>
 
-                    {/* Development Practices */}
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-4">Development Practices</h4>
-                      <div className="space-y-3">
-                        {[
-                          { label: 'Code Reviews (Pull Requests)', key: 'codeReviews' },
-                          { label: 'Pair Programming', key: 'pairProgramming' },
-                          { label: 'Test-Driven Development (TDD)', key: 'testDrivenDevelopment' },
-                          { label: 'Behavior-Driven Development (BDD)', key: 'behaviorDrivenDevelopment' },
-                          { label: 'Continuous Integration (CI)', key: 'continuousIntegration' },
-                          { label: 'Continuous Deployment (CD)', key: 'continuousDeployment' },
-                          { label: 'Feature Flags/Toggles', key: 'featureFlags' },
-                          { label: 'A/B Testing', key: 'abTesting' },
-                          { label: 'Code Documentation Standards', key: 'codeDocumentationStandards' },
-                          { label: 'API Documentation', key: 'apiDocumentation' },
-                          { label: 'Technical Debt Management', key: 'technicalDebtManagement' },
-                          { label: 'Performance Monitoring', key: 'performanceMonitoring' }
-                        ].map((practice) => (
-                          <label key={practice.key} className="flex items-center">
-                            <input 
-                              type="checkbox" 
-                              className="form-checkbox h-4 w-4 text-blue-600" 
-                              checked={formData[practice.key]}
-                              onChange={(e) => handleFormChange(practice.key, e.target.checked)}
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{practice.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                      {/* Technology Stack Tab */}
+                      <TabsContent value="technology" className="space-y-6">
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900 mb-4">Technology Stack & Environment</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Primary Programming Languages</label>
+                              <textarea 
+                                rows="3" 
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                placeholder="e.g., C#, JavaScript, Python, Java, TypeScript..."
+                                value={formData.primaryProgrammingLanguages}
+                                onChange={(e) => handleFormChange('primaryProgrammingLanguages', e.target.value)}
+                              ></textarea>
+                            </div>
 
-                </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Development Environments</label>
+                              <div className="space-y-2">
+                                {[
+                                  { label: 'Visual Studio', key: 'visualStudio' },
+                                  { label: 'VS Code', key: 'vsCode' },
+                                  { label: 'IntelliJ IDEA', key: 'intellijIDEA' },
+                                  { label: 'Eclipse', key: 'eclipse' },
+                                  { label: 'Other IDEs', key: 'otherIDEs' }
+                                ].map((env) => (
+                                  <label key={env.key} className="flex items-center">
+                                    <input 
+                                      type="checkbox" 
+                                      className="form-checkbox h-4 w-4 text-blue-600" 
+                                      checked={formData[env.key]}
+                                      onChange={(e) => handleFormChange(env.key, e.target.checked)}
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">{env.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
 
-                {/* Communication & Collaboration */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Communication & Collaboration</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Primary Communication Tools</label>
-                      <div className="space-y-2">
-                        {[
-                          { label: 'Microsoft Teams', key: 'microsoftTeams' },
-                          { label: 'Slack', key: 'slack' },
-                          { label: 'Discord', key: 'discord' },
-                          { label: 'Email', key: 'email' },
-                          { label: 'Other', key: 'otherCommunicationTools' }
-                        ].map((tool) => (
-                          <label key={tool.key} className="flex items-center">
-                            <input 
-                              type="checkbox" 
-                              className="form-checkbox h-4 w-4 text-blue-600" 
-                              checked={formData[tool.key]}
-                              onChange={(e) => handleFormChange(tool.key, e.target.checked)}
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{tool.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+                          </div>
+                        </div>
+                      </TabsContent>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Project Management Tools</label>
-                      <div className="space-y-2">
-                        {[
-                          { label: 'Azure DevOps', key: 'azureDevOps' },
-                          { label: 'Jira', key: 'jira' },
-                          { label: 'GitHub Projects', key: 'gitHubProjects' },
-                          { label: 'Trello', key: 'trello' },
-                          { label: 'Asana', key: 'asana' },
-                          { label: 'Monday.com', key: 'mondayCom' },
-                          { label: 'Other', key: 'otherProjectManagementTools' }
-                        ].map((tool) => (
-                          <label key={tool.key} className="flex items-center">
-                            <input 
-                              type="checkbox" 
-                              className="form-checkbox h-4 w-4 text-blue-600" 
-                              checked={formData[tool.key]}
-                              onChange={(e) => handleFormChange(tool.key, e.target.checked)}
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{tool.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Meeting Cadence</label>
-                      <div className="space-y-2">
-                        {[
-                          { label: 'Daily Standups', key: 'dailyStandups' },
-                          { label: 'Sprint Planning', key: 'sprintPlanning' },
-                          { label: 'Sprint Reviews', key: 'sprintReviews' },
-                          { label: 'Retrospectives', key: 'retrospectives' },
-                          { label: 'Backlog Grooming', key: 'backlogGrooming' },
-                          { label: 'Architecture Reviews', key: 'architectureReviews' }
-                        ].map((meeting) => (
-                          <label key={meeting.key} className="flex items-center">
-                            <input 
-                              type="checkbox" 
-                              className="form-checkbox h-4 w-4 text-blue-600" 
-                              checked={formData[meeting.key]}
-                              onChange={(e) => handleFormChange(meeting.key, e.target.checked)}
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{meeting.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
-                {/* Technology Stack */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Technology Stack & Environment</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Primary Programming Languages</label>
-                      <textarea 
-                        rows="3" 
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="e.g., C#, JavaScript, Python, Java, TypeScript..."
-                        value={formData.primaryProgrammingLanguages}
-                        onChange={(e) => handleFormChange('primaryProgrammingLanguages', e.target.value)}
-                      ></textarea>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Development Environments</label>
-                      <div className="space-y-2">
-                        {[
-                          { label: 'Visual Studio', key: 'visualStudio' },
-                          { label: 'VS Code', key: 'vsCode' },
-                          { label: 'IntelliJ IDEA', key: 'intellijIDEA' },
-                          { label: 'Eclipse', key: 'eclipse' },
-                          { label: 'Other IDEs', key: 'otherIDEs' }
-                        ].map((env) => (
-                          <label key={env.key} className="flex items-center">
-                            <input 
-                              type="checkbox" 
-                              className="form-checkbox h-4 w-4 text-blue-600" 
-                              checked={formData[env.key]}
-                              onChange={(e) => handleFormChange(env.key, e.target.checked)}
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{env.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
+                    </Tabs>
                   </div>
                 )}
               </div>

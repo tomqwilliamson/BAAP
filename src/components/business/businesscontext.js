@@ -1073,7 +1073,14 @@ Priority Actions:
           projectTimeline: projectTimeline,
           budgetAllocation: budgetAllocation,
           risks: risks,
-          riskAssessment: risks // Map to both fields for compatibility
+          riskAssessment: risks, // Map to both fields for compatibility
+          analysis: {
+            driversAnalysis: '',
+            stakeholderAnalysis: '',
+            timelineAnalysis: '',
+            riskAnalysis: '',
+            recommendations: ''
+          }
         });
         console.log('LOADING: Set businessData with database-only data');
 
@@ -2724,7 +2731,7 @@ Priority Actions:
           </div>
 
           {/* Analysis Results */}
-          {showAnalysisResults && businessData.analysis.driversAnalysis && (
+          {showAnalysisResults && businessData.analysis?.driversAnalysis && (
             <div className="space-y-6">
               {/* Business Drivers Analysis */}
               <div className="bg-white rounded-lg shadow-md p-6">
@@ -2789,7 +2796,7 @@ Priority Actions:
             </div>
           )}
 
-          {!showAnalysisResults && businessData.analysis.driversAnalysis && (
+          {!showAnalysisResults && businessData.analysis?.driversAnalysis && (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
               <Brain className="h-12 w-12 text-purple-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Analysis Complete</h3>

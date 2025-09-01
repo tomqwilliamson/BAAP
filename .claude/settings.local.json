@@ -73,7 +73,18 @@
       "Bash(dotnet ef dbcontext scaffold:*)",
       "Bash(tasklist:*)",
       "Bash(set PORT=3001)",
-      "Bash(dotnet ef dbcontext script:*)"
+      "Bash(dotnet ef dbcontext script:*)",
+      "Bash(set ConnectionStrings__DefaultConnection:*)",
+      "Bash(set ASPNETCORE_ENVIRONMENT=Development)",
+      "Bash(net start:*)",
+      "Bash(sc query:*)",
+      "Bash(az sql db show:*)",
+      "Bash(az keyvault secret list:*)",
+      "Bash(az sql db query:*)",
+      "Bash(az sql db:*)",
+      "Bash(az extension add:*)",
+      "Bash(az sql server ad-admin list:*)",
+      "Bash(python:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"

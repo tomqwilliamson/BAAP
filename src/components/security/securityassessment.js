@@ -14,6 +14,9 @@ import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { API_BASE_URL } from '../../services/api';
+import { dirtyTrackingService } from '../../services/dirtyTrackingService';
+import { notificationService } from '../../services/notificationService';
+import { useNotifications } from '../../contexts/notificationcontext';
 
 // Helper functions for generating cross-assessment and log data
 const generateInfrastructureRisks = (securityData) => [
@@ -73,11 +76,14 @@ const generateSecurityLogs = (securityData) => ({
 
 function SecurityAssessment() {
   const { currentAssessment } = useAssessment();
+  const { addAnalysisNotification } = useNotifications();
   const [currentView, setCurrentView] = useState('overview'); // overview, repo, analyze
   const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [isDatabaseMode, setIsDatabaseMode] = useState(true); // Track if using database mode
   
   // Document management states
   const [documents, setDocuments] = useState([]);
@@ -86,6 +92,16 @@ function SecurityAssessment() {
   const [selectedDocumentTab, setSelectedDocumentTab] = useState('documents');
   const [dragOver, setDragOver] = useState(false);
   
+  // Wrapper function to track dirty state when data changes
+  const updateSecurityData = (newData) => {
+    setSecurityData(newData);
+    
+    // Mark as dirty when data changes (except during initial load)
+    if (currentAssessment?.id) {
+      dirtyTrackingService.setDirty(currentAssessment.id, 'security', true);
+    }
+  };
+
   const [securityData, setSecurityData] = useState({
     crossAssessment: {
       infrastructureRisks: [],
@@ -119,6 +135,111 @@ function SecurityAssessment() {
     loadDocuments();
     loadInsights();
   }, [currentAssessment]);
+
+  // Set up dirty tracking and SignalR
+  useEffect(() => {
+    if (!currentAssessment?.id) return;
+
+    // Register this module for dirty tracking
+    dirtyTrackingService.registerModule(currentAssessment.id, 'security', securityData);
+
+    // Set up dirty tracking listener
+    const unsubscribeDirty = dirtyTrackingService.onDirtyStateChange(
+      currentAssessment.id,
+      'security',
+      (isDirtyState) => {
+        setIsDirty(isDirtyState);
+        setDataSaved(!isDirtyState);
+      }
+    );
+
+    // Join SignalR assessment group for real-time collaboration
+    notificationService.joinAssessment(currentAssessment.id);
+
+    // Set up SignalR event listeners
+    const unsubscribeProgress = notificationService.onProgressUpdate((update) => {
+      if (update.Stage === 'ai_analysis_started' && update.AssessmentId == currentAssessment.id) {
+        toast.loading(update.Message, { id: 'ai-analysis-progress' });
+      } else if (update.Stage === 'ai_analysis_completed' && update.AssessmentId == currentAssessment.id) {
+        toast.success(update.Message, { id: 'ai-analysis-progress' });
+      } else if (update.Stage === 'dirty_save_reminder' && update.AssessmentId == currentAssessment.id) {
+        toast.error(update.Message, { 
+          id: 'dirty-save-reminder',
+          duration: 5000,
+          icon: '💾' 
+        });
+      }
+    });
+
+    return () => {
+      // Clean up
+      unsubscribeDirty();
+      unsubscribeProgress();
+      dirtyTrackingService.unregisterModule(currentAssessment.id, 'security');
+      notificationService.leaveAssessment(currentAssessment.id);
+    };
+  }, [currentAssessment?.id]);
+
+  // Save, Export, Import functions
+  const saveSecurityData = async () => {
+    try {
+      if (!currentAssessment?.id) {
+        toast.error('No assessment selected. Please select an assessment first.');
+        return;
+      }
+
+      // Save to localStorage with assessment-specific key
+      const savedDataKey = `securityData_${currentAssessment.id}`;
+      const dataToSave = {
+        ...securityData,
+        lastSaveTime: new Date().toISOString()
+      };
+      localStorage.setItem(savedDataKey, JSON.stringify(dataToSave));
+      
+      // Mark as clean in dirty tracking service
+      dirtyTrackingService.setDirty(currentAssessment.id, 'security', false);
+      setLastSaveTime(new Date());
+      setIsDatabaseMode(false); // Using local storage
+      
+      toast.success(`Security assessment saved for "${currentAssessment.name}"!`);
+      console.log('SECURITY: Saved assessment data for:', currentAssessment.id);
+    } catch (error) {
+      console.error('Error saving security data:', error);
+      toast.error('Error saving data');
+    }
+  };
+
+  const exportData = () => {
+    const dataStr = JSON.stringify(securityData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `security-assessment-${currentAssessment?.id || 'data'}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    toast.success('Security data exported successfully');
+  };
+
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          setSecurityData(importedData);
+          setDataSaved(false); // Mark as unsaved after import
+          setLastSaveTime(new Date());
+          toast.success('Security data imported successfully');
+        } catch (error) {
+          toast.error('Error importing data - invalid format');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
 
   // Document management functions
   const documentTypes = [
@@ -340,9 +461,33 @@ function SecurityAssessment() {
   };
 
   const loadSecurityData = async () => {
+    if (!currentAssessment?.id) {
+      console.log('SECURITY: No assessment selected');
+      return;
+    }
+
     try {
       setLoading(true);
       console.log('SECURITY: Loading data for assessment:', currentAssessment?.id);
+      
+      // Try to load from localStorage first
+      const savedDataKey = `securityData_${currentAssessment.id}`;
+      const savedData = localStorage.getItem(savedDataKey);
+      
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          setSecurityData(parsed);
+          setDataSaved(true);
+          const saveDate = parsed.lastSaveTime || new Date();
+          setLastSaveTime(new Date(saveDate));
+          setIsDatabaseMode(false);
+          console.log('SECURITY: Loaded data from localStorage for assessment:', currentAssessment.id);
+          return;
+        } catch (error) {
+          console.error('Error parsing saved security data:', error);
+        }
+      }
       
       // Generate assessment-specific data
       const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'security');
@@ -525,55 +670,7 @@ function SecurityAssessment() {
     });
   };
 
-  const exportAssessment = () => {
-    const dataStr = JSON.stringify(securityData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'security-assessment.json';
-    link.click();
-  };
-
-  const importAssessment = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const importedData = JSON.parse(e.target.result);
-          setSecurityData(importedData);
-        } catch (error) {
-          alert('Error importing file: Invalid JSON format');
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
-  const saveAssessment = async () => {
-    try {
-      if (!currentAssessment?.id) {
-        toast.error('No assessment selected. Please select an assessment first.');
-        return;
-      }
-      
-      setDataSaved(true);
-      setLastSaveTime(new Date());
-      
-      // Save to database via API (placeholder for actual implementation)
-      console.log('SECURITY: Saving assessment data for:', currentAssessment.id, securityData);
-      
-      // Also save to localStorage as backup
-      const dataStr = JSON.stringify(securityData, null, 2);
-      localStorage.setItem(`security_assessment_${currentAssessment.id}`, dataStr);
-      
-      toast.success(`Security assessment data saved for "${currentAssessment.name}"!`);
-    } catch (error) {
-      console.error('Error saving security assessment:', error);
-      toast.error('Failed to save assessment data');
-    }
-  };
+  // Note: Export, import and save functions are defined above after useEffect
 
   const runAnalysis = async () => {
     setIsAnalyzing(true);
@@ -686,26 +783,7 @@ function SecurityAssessment() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {dataSaved && lastSaveTime && (
-                <div className="text-sm text-blue-200">
-                  <Clock className="h-4 w-4 inline mr-1" />
-                  Saved {new Date(lastSaveTime).toLocaleTimeString()}
-                </div>
-              )}
-              <button
-                onClick={exportAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </button>
-              <button
-                onClick={saveAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </button>
+              {/* Empty for now - buttons moved to action bar */}
             </div>
           </div>
           
@@ -744,6 +822,55 @@ function SecurityAssessment() {
               <Brain className="h-4 w-4 inline mr-2" />
               AI Analysis
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
+          <div className="flex space-x-3">
+            <button
+              onClick={saveSecurityData}
+              className={`flex items-center px-4 py-2 text-white rounded-md transition-colors ${
+                isDirty 
+                  ? 'bg-orange-600 hover:bg-orange-700 animate-pulse' 
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isDirty ? 'Save Data (Required)' : 'Save Data'}
+            </button>
+            <button
+              onClick={exportData}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </button>
+            <label className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors cursor-pointer">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+              <input
+                type="file"
+                accept=".json"
+                onChange={importData}
+                className="hidden"
+              />
+            </label>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-500">
+              {dataSaved && lastSaveTime 
+                ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${isDatabaseMode ? '(DB)' : '(Local)'}`
+                : 'Not saved yet'
+              }
+              {isDatabaseMode ? (
+                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
+              ) : (
+                <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Local Storage</span>
+              )}
+            </div>
           </div>
         </div>
       </div>

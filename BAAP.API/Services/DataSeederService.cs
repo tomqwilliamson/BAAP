@@ -2057,4 +2057,167 @@ public class DataSeederService
         _context.DevelopmentPractices.AddRange(practices);
         _logger.LogInformation("Seeded {Count} development practices.", practices.Length);
     }
+
+    /// <summary>
+    /// Creates default/placeholder data for a new assessment to prevent component crashes
+    /// This method ensures that components don't fail when accessing related data
+    /// </summary>
+    public async Task SeedDefaultDataForNewAssessment(int assessmentId)
+    {
+        try
+        {
+            _logger.LogInformation("Seeding default data for assessment {AssessmentId}", assessmentId);
+
+            // Create a placeholder application to prevent crashes
+            var defaultApplication = new Application
+            {
+                Name = "Default Application",
+                Description = "Placeholder application - please add your actual applications",
+                Type = "Web Application",
+                Category = "Frontend",
+                Technology = "To Be Determined",
+                LinesOfCode = 0,
+                ComplexityScore = 50,
+                SecurityRating = 50,
+                CloudReadinessScore = 50,
+                CriticalIssues = 0,
+                SecurityIssues = 0,
+                CriticalFindings = 0,
+                HighFindings = 0,
+                EstimatedMigrationCost = 0,
+                MonthlyCost = 0,
+                CreatedDate = DateTime.UtcNow,
+                AssessmentId = assessmentId
+            };
+            _context.Applications.Add(defaultApplication);
+
+            // Create default business driver
+            var defaultBusinessDriver = new BusinessDriver
+            {
+                Name = "Digital Transformation",
+                Description = "General digital transformation initiative - please customize",
+                Priority = "Medium",
+                Impact = 50,
+                Urgency = 50,
+                BusinessValue = "To be defined based on specific business needs",
+                CreatedDate = DateTime.UtcNow,
+                AssessmentId = assessmentId
+            };
+            _context.BusinessDrivers.Add(defaultBusinessDriver);
+
+            // Create default stakeholder
+            var defaultStakeholder = new Stakeholder
+            {
+                Name = "System Administrator",
+                Role = "System Admin",
+                Department = "IT",
+                Email = "admin@company.com",
+                InfluenceLevel = "Medium",
+                InterestLevel = "Medium",
+                Notes = "Default stakeholder - please add actual project stakeholders",
+                CreatedDate = DateTime.UtcNow,
+                AssessmentId = assessmentId
+            };
+            _context.Stakeholders.Add(defaultStakeholder);
+
+            // Create default recommendation
+            var defaultRecommendation = new Recommendation
+            {
+                Title = "Initial Assessment Review",
+                Description = "Complete the assessment by adding applications, stakeholders, and business drivers",
+                Category = "Planning",
+                Priority = "High",
+                Effort = "Small",
+                EstimatedCost = 0,
+                PotentialSavings = 0,
+                TimeframeWeeks = 1,
+                Implementation = "Use the BAAP platform to complete your assessment details",
+                Benefits = "Comprehensive understanding of current state and transformation opportunities",
+                Risks = "Incomplete assessment may lead to suboptimal recommendations",
+                IsAccepted = false,
+                CreatedDate = DateTime.UtcNow,
+                AssessmentId = assessmentId
+            };
+            _context.Recommendations.Add(defaultRecommendation);
+
+            // Create default development practices
+            var defaultDevelopmentPractices = new DevelopmentPractices
+            {
+                AssessmentId = assessmentId,
+                PrimaryMethodology = "To Be Determined",
+                SprintLength = "",
+                ReleaseFrequency = "",
+                HasDedicatedQA = false,
+                ManualTesting = true,
+                AutomatedTesting = false,
+                UnitTesting = false,
+                IntegrationTesting = false,
+                E2ETesting = false,
+                PerformanceTesting = false,
+                CodeCoverageTarget = "No formal target",
+                TotalTeamSize = 0,
+                NumberOfScrumTeams = 0,
+                SoftwareDevelopers = 0,
+                SeniorLeadDevelopers = 0,
+                QAEngineers = 0,
+                DatabaseEngineers = 0,
+                DevOpsEngineers = 0,
+                BusinessAnalysts = 0,
+                ProductManagers = 0,
+                ProjectManagers = 0,
+                ScrumMasters = 0,
+                UIUXDesigners = 0,
+                Architects = 0,
+                CodeReviews = false,
+                PairProgramming = false,
+                TestDrivenDevelopment = false,
+                BehaviorDrivenDevelopment = false,
+                ContinuousIntegration = false,
+                ContinuousDeployment = false,
+                FeatureFlags = false,
+                ABTesting = false,
+                CodeDocumentationStandards = false,
+                APIDocumentation = false,
+                TechnicalDebtManagement = false,
+                PerformanceMonitoring = false,
+                MicrosoftTeams = false,
+                Slack = false,
+                Discord = false,
+                Email = true,
+                OtherCommunicationTools = false,
+                AzureDevOps = false,
+                Jira = false,
+                GitHubProjects = false,
+                Trello = false,
+                Asana = false,
+                MondayCom = false,
+                OtherProjectManagementTools = false,
+                DailyStandups = false,
+                SprintPlanning = false,
+                SprintReviews = false,
+                Retrospectives = false,
+                BacklogGrooming = false,
+                ArchitectureReviews = false,
+                VisualStudio = false,
+                VSCode = false,
+                IntelliJIDEA = false,
+                Eclipse = false,
+                OtherIDEs = false,
+                PrimaryProgrammingLanguages = "To Be Determined",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedBy = "System",
+                UpdatedBy = "System"
+            };
+            _context.DevelopmentPractices.Add(defaultDevelopmentPractices);
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Successfully seeded default data for assessment {AssessmentId}", assessmentId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error seeding default data for assessment {AssessmentId}", assessmentId);
+            throw;
+        }
+    }
 }
