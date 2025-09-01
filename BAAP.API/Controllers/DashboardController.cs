@@ -31,9 +31,7 @@ public class DashboardController : ControllerBase
                 ? await _context.Assessments.AverageAsync(a => (double)a.OverallScore)
                 : 0;
 
-            var criticalSecurityFindings = await _context.SecurityFindings
-                .Where(sf => sf.Severity == "Critical")
-                .CountAsync();
+            var criticalIssues = await _context.Applications.SumAsync(a => a.CriticalIssues);
 
             var totalSavings = await _context.Assessments
                 .Where(a => a.PotentialSavings.HasValue)
@@ -47,7 +45,7 @@ public class DashboardController : ControllerBase
                 ? (completedAssessments * 100 / totalAssessments) 
                 : 0;
 
-            var securityIssues = await _context.SecurityFindings.CountAsync();
+            var securityIssues = await _context.Applications.SumAsync(a => a.SecurityIssues);
             
             var avgCloudReadiness = totalApplications > 0
                 ? await _context.Applications.AverageAsync(a => (double)a.CloudReadinessScore)
@@ -67,7 +65,7 @@ public class DashboardController : ControllerBase
                 {
                     totalApplications,
                     averageScore = (int)Math.Round(averageScore),
-                    criticalIssues = criticalSecurityFindings,
+                    criticalIssues = criticalIssues,
                     potentialSavings = totalSavings,
                     assessmentProgress,
                     securityIssues,
@@ -94,7 +92,6 @@ public class DashboardController : ControllerBase
         {
             var query = _context.Applications
                 .Include(a => a.Assessment)
-                .Include(a => a.SecurityFindings)
                 .AsQueryable();
 
             if (assessmentId.HasValue)
@@ -116,8 +113,8 @@ public class DashboardController : ControllerBase
                 estimatedMigrationCost = app.EstimatedMigrationCost,
                 monthlyCost = app.MonthlyCost,
                 lastAnalyzed = app.LastAnalyzedDate,
-                criticalFindings = app.SecurityFindings.Count(sf => sf.Severity == "Critical"),
-                highFindings = app.SecurityFindings.Count(sf => sf.Severity == "High"),
+                criticalFindings = app.CriticalIssues,
+                highFindings = app.SecurityIssues,
                 assessment = new
                 {
                     id = app.Assessment.Id,

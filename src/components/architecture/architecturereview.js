@@ -13,8 +13,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
+import { assessmentService } from '../../services/assessmentservice';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { aiAnalysisService } from '../../services/aiAnalysisService';
+import { architectureService } from '../../services/architectureService';
 import { useAnalysis } from '../../hooks/useAnalysis';
 
 function ArchitectureReview() {
@@ -87,13 +89,41 @@ function ArchitectureReview() {
     }
   });
 
+  // Reset architecture data to initial state
+  const resetArchitectureData = () => {
+    console.log('ARCHITECTURE: Resetting architecture data to initial state');
+    setArchitectureData(prevData => ({
+      ...prevData,
+      repositoryInfo: {
+        url: '',
+        type: 'github',
+        status: 'disconnected',
+        branches: [],
+        commits: 0,
+        contributors: 0,
+        lastCommit: null
+      }
+    }));
+    setRepositoryConnected(false);
+    setDataSaved(false);
+    setLastSaveTime(null);
+    setShowAnalysisResults(false);
+    setAiAnalysisResults(null);
+  };
+
   // Load saved data on component mount
   useEffect(() => {
+    console.log('ARCHITECTURE: Assessment changed, resetting and loading data for:', currentAssessment?.id, currentAssessment?.name);
+    
+    // Reset states when assessment changes
+    resetArchitectureData();
+    
+    // Load new data
     loadArchitectureData();
     checkAIServiceAvailability();
     loadDocuments();
     loadInsights();
-  }, [currentAssessment]);
+  }, [currentAssessment?.id]); // More specific dependency on assessment ID
 
   const checkAIServiceAvailability = async () => {
     try {
@@ -126,23 +156,22 @@ function ArchitectureReview() {
         return;
       }
       
-      const response = await fetch(`/api/files/assessment/${currentAssessment.id}?category=Architecture`);
-      if (response.ok) {
-        const data = await response.json();
-        // Map the file data to the expected document structure
-        const architectureDocs = data.map(file => ({
+      const data = await assessmentService.getFiles(currentAssessment.id);
+      
+      // Ensure data is an array and filter for architecture-related files
+      const dataArray = Array.isArray(data) ? data : [];
+      const architectureDocs = dataArray
+        .filter(file => file.category === 'Architecture' || !file.category) // Include uncategorized files
+        .map(file => ({
           id: file.id,
           fileName: file.originalFileName,
           documentType: 'Architecture Documentation',
-          category: file.category,
+          category: file.category || 'Architecture',
           uploadedDate: file.uploadedDate,
           fileSize: file.fileSize,
           contentType: file.contentType
         }));
-        setDocuments(architectureDocs);
-      } else {
-        setDocuments([]);
-      }
+      setDocuments(architectureDocs);
     } catch (error) {
       console.error('Error loading architecture documents:', error);
       setDocuments([]);
@@ -157,26 +186,23 @@ function ArchitectureReview() {
         return;
       }
 
-      // Get architecture documents from the files endpoint
-      const response = await fetch(`/api/files/assessment/${currentAssessment.id}?category=Architecture`);
-      if (response.ok) {
-        const files = await response.json();
-        
-        // Create basic insights from uploaded architecture documents
-        const basicInsights = files.map(file => ({
-          documentId: file.id,
-          fileName: file.originalFileName,
-          analysisCategory: 'Architecture',
-          documentType: 'Architecture Documentation',
-          relationships: [],
-          keyFindings: ['Document uploaded and ready for analysis'],
-          lastAnalyzed: file.uploadedDate
-        }));
-        
-        setInsights(basicInsights);
-      } else {
-        setInsights([]);
-      }
+      // Get architecture documents from the assessment service
+      const files = await assessmentService.getFiles(currentAssessment.id);
+      
+      // Ensure files is an array and filter for architecture files
+      const filesArray = Array.isArray(files) ? files : [];
+      const architectureFiles = filesArray.filter(file => file.category === 'Architecture' || !file.category);
+      const basicInsights = architectureFiles.map(file => ({
+        documentId: file.id,
+        fileName: file.originalFileName,
+        analysisCategory: 'Architecture',
+        documentType: 'Architecture Documentation',
+        relationships: [],
+        keyFindings: ['Document uploaded and ready for analysis'],
+        lastAnalyzed: file.uploadedDate
+      }));
+      
+      setInsights(basicInsights);
     } catch (error) {
       console.error('Error loading architecture insights:', error);
       setInsights([]);
@@ -191,42 +217,19 @@ function ArchitectureReview() {
       setUploadProgress({ fileName: file.name, progress: 0 });
       
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        // Detect file type for better categorization
-        const fileExtension = file.name.split('.').pop().toLowerCase();
-        let description = 'Architecture Documentation';
-        if (['js', 'ts', 'cs', 'java', 'py', 'cpp', 'c', 'h', 'php', 'rb', 'go'].includes(fileExtension)) {
-          description = 'Source Code Files';
-        } else if (['json', 'xml', 'yml', 'yaml', 'config', 'ini'].includes(fileExtension)) {
-          description = 'Configuration Files';
-        } else if (['sql', 'ddl'].includes(fileExtension)) {
-          description = 'Database Schemas';
-        }
-        
-        formData.append('category', 'Architecture');
-        formData.append('description', description);
-        
-        // Include assessment ID if available
-        if (currentAssessment?.id) {
-          formData.append('assessmentId', currentAssessment.id.toString());
-        }
-        
-        const response = await fetch('/api/files/upload', {
-          method: 'POST',
-          body: formData
-        });
-        
-        if (response.ok) {
-          setUploadProgress({ fileName: file.name, progress: 100, status: 'completed' });
-          await loadDocuments();
-          await loadInsights();
-          toast.success(`${file.name} uploaded successfully`);
-        } else {
+        if (!currentAssessment?.id) {
+          toast.error('Please select an assessment first');
           setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
-          toast.error(`Failed to upload ${file.name}`);
+          continue;
         }
+
+        // Use the assessment service to upload the file
+        const result = await assessmentService.uploadFile(file, currentAssessment.id);
+        
+        setUploadProgress({ fileName: file.name, progress: 100, status: 'completed' });
+        await loadDocuments();
+        await loadInsights();
+        toast.success(`${file.name} uploaded successfully`);
       } catch (error) {
         console.error('Upload error:', error);
         setUploadProgress({ fileName: file.name, progress: 0, status: 'error' });
@@ -257,14 +260,10 @@ function ArchitectureReview() {
     if (!confirm('Are you sure you want to delete this document?')) return;
     
     try {
-      const response = await fetch(`/api/files/${documentId}`, { method: 'DELETE' });
-      if (response.ok) {
-        await loadDocuments();
-        await loadInsights();
-        toast.success('Document deleted successfully');
-      } else {
-        throw new Error('Delete request failed');
-      }
+      await assessmentService.deleteFile(documentId);
+      await loadDocuments();
+      await loadInsights();
+      toast.success('Document deleted successfully');
     } catch (error) {
       console.error('Delete error:', error);
       toast.error('Error deleting document');
@@ -293,69 +292,183 @@ function ArchitectureReview() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const loadArchitectureData = () => {
-    console.log('ARCHITECTURE: Loading data for assessment:', currentAssessment?.id);
+  const loadArchitectureData = async () => {
+    console.log('ARCHITECTURE: Loading data for assessment:', currentAssessment?.id, currentAssessment?.name);
     
-    // Generate assessment-specific data
+    if (!currentAssessment?.id) {
+      console.log('ARCHITECTURE: No assessment selected, resetting to default data');
+      // Reset to initial sample data when no assessment is selected
+      setArchitectureData({
+        repositoryInfo: {
+          url: '',
+          type: 'github',
+          status: 'disconnected',
+          branches: [],
+          commits: 0,
+          contributors: 0,
+          lastCommit: null
+        },
+        healthMetrics: {
+          maintainability: 0,
+          complexity: 0,
+          coupling: 0,
+          cohesion: 0,
+          testCoverage: 0,
+          technicalDebt: 0
+        },
+        technologyStack: [],
+        codeQuality: {
+          codeSmells: 0,
+          duplicatedLines: 0,
+          vulnerabilities: 0,
+          bugs: 0,
+          securityHotspots: 0
+        },
+        dependencies: [],
+        analysis: {
+          architectureAnalysis: '',
+          healthAnalysis: '',
+          patternsAnalysis: '',
+          technologyAnalysis: '',
+          maintainabilityAnalysis: '',
+          recommendationsAnalysis: ''
+        }
+      });
+      return;
+    }
+
+    try {
+      // Try to load from database first
+      console.log('ARCHITECTURE: Attempting to load from database for assessment ID:', currentAssessment.id);
+      const dbData = await architectureService.getArchitectureReview(currentAssessment.id);
+      
+      if (dbData) {
+        console.log('ARCHITECTURE: Successfully loaded data from database for assessment:', currentAssessment.name, dbData);
+        const mappedData = architectureService.mapFromDto(dbData);
+        
+        // Reset to fresh sample data first, then apply database data
+        setArchitectureData(prevData => {
+          const freshData = {
+            ...prevData, // Start with sample structure
+            ...mappedData, // Apply database data
+            // Ensure we always have the core sample data structure
+            applications: mappedData.applications?.length > 0 ? mappedData.applications : prevData.applications,
+            dependencies: mappedData.dependencies?.length > 0 ? mappedData.dependencies : prevData.dependencies
+          };
+          console.log('ARCHITECTURE: Final merged data:', freshData);
+          return freshData;
+        });
+        
+        if (dbData.repositoryInfo?.status === 'connected') {
+          console.log('ARCHITECTURE: Setting repository as connected');
+          setRepositoryConnected(true);
+        } else {
+          console.log('ARCHITECTURE: Repository not connected in database');
+          setRepositoryConnected(false);
+        }
+        setDataSaved(true);
+        const saveDate = dbData.lastUpdatedDate || dbData.createdDate;
+        setLastSaveTime(saveDate ? new Date(saveDate) : new Date());
+        return;
+      } else {
+        console.log('ARCHITECTURE: No data found in database for assessment:', currentAssessment.id);
+      }
+    } catch (error) {
+      console.error('ARCHITECTURE: Error loading from database for assessment:', currentAssessment.id, error);
+      // Don't show error toast every time - only log it
+    }
+
+    // Fallback to assessment-specific mock data and localStorage
+    console.log('ARCHITECTURE: Using mock data fallback');
+    
     const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'architecture');
     
-    // Load saved data
-    const savedDataKey = currentAssessment?.id 
-      ? `architectureReviewData_${currentAssessment.id}`
-      : 'architectureReviewData';
+    // Load saved data from localStorage as secondary fallback
+    const savedDataKey = `architectureReviewData_${currentAssessment.id}`;
     const savedData = localStorage.getItem(savedDataKey);
     
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
-        // Merge saved data with assessment-specific data
-        const mergedData = {
-          ...parsed,
-          ...assessmentSpecificData && {
-            architecturePatterns: assessmentSpecificData.patterns || parsed.architecturePatterns,
-            applications: assessmentSpecificData.applications || parsed.applications,
-            analysis: assessmentSpecificData.analysis || parsed.analysis
-          }
-        };
-        setArchitectureData(mergedData);
-        if (parsed.repositoryInfo.status === 'connected') {
+        // Merge saved data with sample data structure and assessment-specific data
+        setArchitectureData(prevData => {
+          const mergedData = {
+            ...prevData,
+            ...parsed,
+            ...assessmentSpecificData && {
+              architecturePatterns: assessmentSpecificData.patterns || parsed.architecturePatterns,
+              applications: assessmentSpecificData.applications || parsed.applications,
+              analysis: {
+                ...prevData.analysis,
+                ...parsed.analysis,
+                ...assessmentSpecificData.analysis
+              }
+            }
+          };
+          return mergedData;
+        });
+        if (parsed.repositoryInfo?.status === 'connected') {
           setRepositoryConnected(true);
         }
-        setDataSaved(true);
+        setDataSaved(false); // Not saved to database yet
         setLastSaveTime(new Date());
       } catch (error) {
-        console.error('Error loading architecture data:', error);
+        console.error('Error loading architecture data from localStorage:', error);
         toast.error('Error loading saved data');
       }
     } else if (assessmentSpecificData) {
-      // Use assessment-specific data as default
-      const defaultData = {
-        ...architectureData,
-        architecturePatterns: assessmentSpecificData.patterns || [],
-        applications: assessmentSpecificData.applications || [],
-        dependencies: assessmentSpecificData.dependencies || [],
-        analysis: assessmentSpecificData.analysis || {}
-      };
-      setArchitectureData(defaultData);
+      // Merge assessment-specific data with existing sample data structure
+      setArchitectureData(prevData => ({
+        ...prevData,
+        architecturePatterns: assessmentSpecificData.patterns || prevData.architecturePatterns,
+        applications: assessmentSpecificData.applications || prevData.applications,
+        dependencies: assessmentSpecificData.dependencies || prevData.dependencies,
+        analysis: {
+          ...prevData.analysis,
+          ...assessmentSpecificData.analysis
+        }
+      }));
+      setDataSaved(false); // Not saved to database yet
     }
   };
 
-  const saveArchitectureData = () => {
+  const saveArchitectureData = async () => {
     try {
       if (!currentAssessment?.id) {
         toast.error('No assessment selected. Please select an assessment first.');
         return;
       }
+
+      // Save to database if CRUD is enabled
+      if (architectureService.isDatabaseCrudEnabled()) {
+        console.log('ARCHITECTURE: Saving to database for assessment:', currentAssessment.id);
+        await architectureService.saveArchitectureReview(currentAssessment.id, architectureData);
+        setDataSaved(true);
+        setLastSaveTime(new Date());
+        toast.success(`Architecture review saved to database for "${currentAssessment.name}"!`);
+      } else {
+        // Fallback to localStorage
+        const savedDataKey = `architectureReviewData_${currentAssessment.id}`;
+        localStorage.setItem(savedDataKey, JSON.stringify(architectureData));
+        setDataSaved(true);
+        setLastSaveTime(new Date());
+        toast.success(`Architecture review saved locally for "${currentAssessment.name}"!`);
+      }
       
-      const savedDataKey = `architectureReviewData_${currentAssessment.id}`;
-      localStorage.setItem(savedDataKey, JSON.stringify(architectureData));
-      setDataSaved(true);
-      setLastSaveTime(new Date());
-      console.log('ARCHITECTURE: Saving assessment data for:', currentAssessment.id, architectureData);
-      toast.success(`Architecture review saved for "${currentAssessment.name}"!`);
+      console.log('ARCHITECTURE: Saved assessment data for:', currentAssessment.id);
     } catch (error) {
       console.error('Error saving architecture data:', error);
-      toast.error('Error saving data');
+      toast.error('Error saving data to database, saved locally instead');
+      
+      // Fallback to localStorage on database error
+      try {
+        const savedDataKey = `architectureReviewData_${currentAssessment.id}`;
+        localStorage.setItem(savedDataKey, JSON.stringify(architectureData));
+        setDataSaved(false); // Mark as not saved to database
+        setLastSaveTime(new Date());
+      } catch (localError) {
+        console.error('Error saving to localStorage:', localError);
+      }
     }
   };
 
@@ -798,9 +911,14 @@ function ArchitectureReview() {
           )}
           <div className="text-sm text-gray-500">
             {dataSaved && lastSaveTime 
-              ? `Last saved: ${lastSaveTime.toLocaleString()}`
+              ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${architectureService.isDatabaseCrudEnabled() ? '(DB)' : '(Local)'}`
               : 'Not saved yet'
             }
+            {architectureService.isDatabaseCrudEnabled() ? (
+              <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
+            ) : (
+              <span className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">Mock Data Mode</span>
+            )}
           </div>
         </div>
       </div>
@@ -815,7 +933,7 @@ function ArchitectureReview() {
                 <Code className="h-8 w-8 text-blue-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Lines of Code</p>
-                  <p className="text-2xl font-bold text-gray-900">{architectureData.codebaseStats.linesOfCode.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">{architectureData.codebaseStats?.linesOfCode?.toLocaleString() || '0'}</p>
                 </div>
               </div>
             </div>
@@ -825,7 +943,7 @@ function ArchitectureReview() {
                 <Package className="h-8 w-8 text-green-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Files</p>
-                  <p className="text-2xl font-bold text-gray-900">{architectureData.codebaseStats.totalFiles}</p>
+                  <p className="text-2xl font-bold text-gray-900">{architectureData.codebaseStats?.totalFiles || 0}</p>
                 </div>
               </div>
             </div>
@@ -852,7 +970,7 @@ function ArchitectureReview() {
           </div>
 
           {/* Charts */}
-          {architectureData.codebaseStats.languages.length > 0 && (
+          {architectureData.codebaseStats?.languages?.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Language Distribution */}
               <div className="bg-white rounded-lg shadow-md p-6">
@@ -860,14 +978,14 @@ function ArchitectureReview() {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={architectureData.codebaseStats.languages}
+                      data={architectureData.codebaseStats?.languages || []}
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
                       dataKey="percentage"
                       label={({ name, percentage }) => `${name}: ${percentage}%`}
                     >
-                      {architectureData.codebaseStats.languages.map((entry, index) => (
+                      {(architectureData.codebaseStats?.languages || []).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={patternColors[index % patternColors.length]} />
                       ))}
                     </Pie>
@@ -1260,20 +1378,20 @@ function ArchitectureReview() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <h4 className="font-medium text-blue-800">Total Files</h4>
-                    <p className="text-2xl font-bold text-blue-600">{architectureData.codebaseStats.totalFiles}</p>
+                    <p className="text-2xl font-bold text-blue-600">{architectureData.codebaseStats?.totalFiles || 0}</p>
                   </div>
                   <div className="p-4 bg-green-50 rounded-lg">
                     <h4 className="font-medium text-green-800">Lines of Code</h4>
-                    <p className="text-2xl font-bold text-green-600">{architectureData.codebaseStats.linesOfCode.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-green-600">{architectureData.codebaseStats?.linesOfCode?.toLocaleString() || '0'}</p>
                   </div>
                   <div className="p-4 bg-purple-50 rounded-lg">
                     <h4 className="font-medium text-purple-800">Languages</h4>
-                    <p className="text-2xl font-bold text-purple-600">{architectureData.codebaseStats.languages.length}</p>
+                    <p className="text-2xl font-bold text-purple-600">{architectureData.codebaseStats?.languages?.length || 0}</p>
                   </div>
                 </div>
                 
                 {/* Languages Breakdown */}
-                {architectureData.codebaseStats.languages.length > 0 && (
+                {architectureData.codebaseStats?.languages?.length > 0 && (
                   <div>
                     <h4 className="font-medium text-gray-900 mb-3">Language Breakdown</h4>
                     <div className="space-y-2">
@@ -1295,11 +1413,11 @@ function ArchitectureReview() {
                 )}
                 
                 {/* Frameworks */}
-                {architectureData.codebaseStats.frameworks.length > 0 && (
+                {architectureData.codebaseStats?.frameworks?.length > 0 && (
                   <div>
                     <h4 className="font-medium text-gray-900 mb-3">Detected Frameworks</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {architectureData.codebaseStats.frameworks.map((framework, index) => (
+                      {(architectureData.codebaseStats?.frameworks || []).map((framework, index) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
                           <div>
                             <p className="font-medium text-gray-900">{framework.name}</p>

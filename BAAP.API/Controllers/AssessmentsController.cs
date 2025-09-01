@@ -127,6 +127,12 @@ public class AssessmentsController : ControllerBase
             if (assessmentUpdate.OverallScore.HasValue) assessment.OverallScore = assessmentUpdate.OverallScore.Value;
             if (assessmentUpdate.SecurityScore.HasValue) assessment.SecurityScore = assessmentUpdate.SecurityScore.Value;
             if (assessmentUpdate.CloudReadinessScore.HasValue) assessment.CloudReadinessScore = assessmentUpdate.CloudReadinessScore.Value;
+            if (assessmentUpdate.CodeQualityScore.HasValue) assessment.CodeQualityScore = assessmentUpdate.CodeQualityScore.Value;
+            if (assessmentUpdate.InfrastructureScore.HasValue) assessment.InfrastructureScore = assessmentUpdate.InfrastructureScore.Value;
+            if (assessmentUpdate.DevOpsMaturityScore.HasValue) assessment.DevOpsMaturityScore = assessmentUpdate.DevOpsMaturityScore.Value;
+            if (assessmentUpdate.DatabaseOptimizationScore.HasValue) assessment.DatabaseOptimizationScore = assessmentUpdate.DatabaseOptimizationScore.Value;
+            if (assessmentUpdate.DocumentationScore.HasValue) assessment.DocumentationScore = assessmentUpdate.DocumentationScore.Value;
+            if (assessmentUpdate.ApplicationCount.HasValue) assessment.ApplicationCount = assessmentUpdate.ApplicationCount.Value;
             if (assessmentUpdate.Timeline != null) assessment.Timeline = assessmentUpdate.Timeline;
             if (assessmentUpdate.Budget.HasValue) assessment.Budget = assessmentUpdate.Budget.Value;
 

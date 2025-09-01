@@ -27,6 +27,12 @@ public class BaapDbContext : DbContext
     public DbSet<BudgetAllocation> BudgetAllocations { get; set; } = null!;
     public DbSet<ProjectTimelineItem> ProjectTimelineItems { get; set; } = null!;
     public DbSet<BusinessContextRisk> BusinessContextRisks { get; set; } = null!;
+    
+    // Architecture Review models
+    public DbSet<ArchitectureReview> ArchitectureReviews { get; set; } = null!;
+    public DbSet<ArchitecturePattern> ArchitecturePatterns { get; set; } = null!;
+    public DbSet<TechnologyStack> TechnologyStacks { get; set; } = null!;
+    public DbSet<CodebaseStats> CodebaseStats { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -151,5 +157,30 @@ public class BaapDbContext : DbContext
         modelBuilder.Entity<Recommendation>()
             .Property(r => r.PotentialSavings)
             .HasPrecision(18, 2);
+
+        // Architecture Review relationships
+        modelBuilder.Entity<ArchitectureReview>()
+            .HasOne(ar => ar.Assessment)
+            .WithMany()
+            .HasForeignKey(ar => ar.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ArchitecturePattern>()
+            .HasOne(ap => ap.ArchitectureReview)
+            .WithMany(ar => ar.ArchitecturePatterns)
+            .HasForeignKey(ap => ap.ArchitectureReviewId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TechnologyStack>()
+            .HasOne(ts => ts.ArchitectureReview)
+            .WithMany(ar => ar.TechnologyStacks)
+            .HasForeignKey(ts => ts.ArchitectureReviewId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CodebaseStats>()
+            .HasOne(cs => cs.ArchitectureReview)
+            .WithMany()
+            .HasForeignKey(cs => cs.ArchitectureReviewId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

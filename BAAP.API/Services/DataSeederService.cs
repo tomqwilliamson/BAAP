@@ -54,6 +54,9 @@ public class DataSeederService
             
             // Seed recommendations
             await SeedRecommendations(assessments);
+            
+            // Seed architecture reviews
+            await SeedArchitectureReviews(assessments);
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("Database seeding completed successfully with {AssessmentCount} assessments.", assessments.Count);
@@ -1071,5 +1074,190 @@ public class DataSeederService
         };
 
         _context.Recommendations.AddRange(recommendations);
+    }
+
+    private async Task SeedArchitectureReviews(List<Assessment> assessments)
+    {
+        var architectureReviews = new List<ArchitectureReview>();
+
+        // E-Commerce Platform (Assessment 1) - Modern React-based system
+        var ecommerceReview = new ArchitectureReview
+        {
+            AssessmentId = assessments[0].Id,
+            MaintainabilityScore = 78,
+            ComplexityScore = 65,
+            CouplingScore = 72,
+            CohesionScore = 82,
+            TestCoverageScore = 68,
+            TechnicalDebtScore = 25,
+            CodeSmells = 47,
+            DuplicatedLines = 3.2,
+            Vulnerabilities = 4,
+            Bugs = 12,
+            SecurityHotspots = 7,
+            RepositoryUrl = "https://github.com/company/ecommerce-platform",
+            RepositoryType = "github",
+            RepositoryStatus = "connected",
+            LastCommitHash = "a7f4d8e2b1c",
+            LastCommitDate = DateTime.Parse("2024-12-20T14:30:00Z").ToUniversalTime(),
+            ArchitectureAnalysis = "Modern React-based e-commerce platform with microservices architecture. Strong separation of concerns with API-first design. Payment and inventory services are well-isolated, but the customer portal needs modernization for better performance.",
+            HealthAnalysis = "Overall architecture health is good with a maintainability score of 78/100. The system demonstrates solid architectural principles with manageable complexity. However, some legacy components contribute to technical debt.",
+            PatternsAnalysis = "Effective use of microservices and API gateway patterns. Repository pattern implementation could be more consistent. Event-driven architecture is partially implemented but needs expansion for better scalability.",
+            TechnologyAnalysis = "Current technology stack is modern and well-maintained. React 18.2, Node.js 18.x, and PostgreSQL provide a solid foundation. Consider migrating from Webpack to Vite for improved build performance.",
+            MaintainabilityAnalysis = "Code maintainability is good but could be improved with better TypeScript adoption and consistent error handling patterns. Reduce coupling between frontend components.",
+            RecommendationsAnalysis = "1. Implement comprehensive repository pattern\n2. Increase test coverage to 80%+\n3. Migrate build system to Vite\n4. Standardize error handling\n5. Implement circuit breaker pattern",
+            CreatedDate = DateTime.UtcNow,
+            LastUpdatedDate = DateTime.UtcNow
+        };
+
+        var ecommercePatterns = new List<ArchitecturePattern>
+        {
+            new ArchitecturePattern { ArchitectureReview = ecommerceReview, PatternName = "Microservices", Usage = 75, Quality = "Good", Maturity = "Intermediate", Recommendation = "Expand to more services for better scalability" },
+            new ArchitecturePattern { ArchitectureReview = ecommerceReview, PatternName = "API Gateway", Usage = 85, Quality = "Excellent", Maturity = "Advanced", Recommendation = "Well implemented, consider rate limiting" },
+            new ArchitecturePattern { ArchitectureReview = ecommerceReview, PatternName = "Event-Driven", Usage = 45, Quality = "Fair", Maturity = "Basic", Recommendation = "Expand for better decoupling" },
+            new ArchitecturePattern { ArchitectureReview = ecommerceReview, PatternName = "CQRS", Usage = 30, Quality = "Fair", Maturity = "Basic", Recommendation = "Consider for read-heavy operations" }
+        };
+
+        var ecommerceTech = new List<TechnologyStack>
+        {
+            new TechnologyStack { ArchitectureReview = ecommerceReview, Category = "Frontend Framework", Technology = "React", Version = "18.2.0", Status = "Current", Risk = "Low", Recommendation = "Keep updated" },
+            new TechnologyStack { ArchitectureReview = ecommerceReview, Category = "Backend Runtime", Technology = "Node.js", Version = "18.17.0", Status = "Current", Risk = "Low", Recommendation = "Stable version" },
+            new TechnologyStack { ArchitectureReview = ecommerceReview, Category = "Database", Technology = "PostgreSQL", Version = "15.2", Status = "Current", Risk = "Low", Recommendation = "Excellent choice" },
+            new TechnologyStack { ArchitectureReview = ecommerceReview, Category = "Build Tool", Technology = "Webpack", Version = "5.88.0", Status = "Current", Risk = "Medium", Recommendation = "Consider migrating to Vite" }
+        };
+
+        var ecommerceStats = new List<CodebaseStats>
+        {
+            new CodebaseStats { ArchitectureReview = ecommerceReview, Language = "JavaScript", LinesOfCode = 45000, Percentage = 65.2, FileCount = 320 },
+            new CodebaseStats { ArchitectureReview = ecommerceReview, Language = "TypeScript", LinesOfCode = 18000, Percentage = 26.1, FileCount = 145 },
+            new CodebaseStats { ArchitectureReview = ecommerceReview, Language = "CSS", LinesOfCode = 4200, Percentage = 6.1, FileCount = 85 },
+            new CodebaseStats { ArchitectureReview = ecommerceReview, Language = "HTML", LinesOfCode = 1800, Percentage = 2.6, FileCount = 42 }
+        };
+
+        // Financial Services (Assessment 2) - Legacy modernization focus
+        var financialReview = new ArchitectureReview
+        {
+            AssessmentId = assessments[1].Id,
+            MaintainabilityScore = 45,
+            ComplexityScore = 85,
+            CouplingScore = 40,
+            CohesionScore = 52,
+            TestCoverageScore = 35,
+            TechnicalDebtScore = 68,
+            CodeSmells = 142,
+            DuplicatedLines = 12.8,
+            Vulnerabilities = 18,
+            Bugs = 34,
+            SecurityHotspots = 23,
+            RepositoryUrl = "https://dev.azure.com/company/banking-core",
+            RepositoryType = "azure-devops",
+            RepositoryStatus = "connected",
+            LastCommitHash = "f9e2d1c8a5b",
+            LastCommitDate = DateTime.Parse("2024-12-18T09:15:00Z").ToUniversalTime(),
+            ArchitectureAnalysis = "Legacy financial system with monolithic architecture requiring significant modernization. COBOL mainframe integration presents challenges but core banking logic is well-established. Security-focused architecture with multiple validation layers.",
+            HealthAnalysis = "Architecture health requires immediate attention with maintainability score of 45/100. High complexity and technical debt indicate urgent need for refactoring and modernization initiatives.",
+            PatternsAnalysis = "Predominantly monolithic with some SOA patterns. Limited use of modern architectural patterns. Event-driven architecture is minimal but critical for real-time fraud detection improvements.",
+            TechnologyAnalysis = "Mixed technology landscape with legacy COBOL systems and modern .NET components. Significant technical debt in integration layers. Security frameworks are robust but need updating.",
+            MaintainabilityAnalysis = "Poor maintainability due to tightly coupled legacy components and insufficient documentation. Critical need for architectural refactoring and knowledge transfer initiatives.",
+            RecommendationsAnalysis = "1. Implement strangler fig pattern for gradual modernization\n2. Upgrade authentication systems\n3. Improve API design and documentation\n4. Implement comprehensive monitoring\n5. Reduce mainframe dependencies",
+            CreatedDate = DateTime.UtcNow,
+            LastUpdatedDate = DateTime.UtcNow
+        };
+
+        var financialPatterns = new List<ArchitecturePattern>
+        {
+            new ArchitecturePattern { ArchitectureReview = financialReview, PatternName = "Monolithic", Usage = 85, Quality = "Poor", Maturity = "Legacy", Recommendation = "Break down into microservices gradually" },
+            new ArchitecturePattern { ArchitectureReview = financialReview, PatternName = "SOA", Usage = 40, Quality = "Fair", Maturity = "Intermediate", Recommendation = "Modernize service interfaces" },
+            new ArchitecturePattern { ArchitectureReview = financialReview, PatternName = "Event-Driven", Usage = 15, Quality = "Poor", Maturity = "Basic", Recommendation = "Critical for fraud detection improvements" },
+            new ArchitecturePattern { ArchitectureReview = financialReview, PatternName = "Layered Architecture", Usage = 90, Quality = "Fair", Maturity = "Mature", Recommendation = "Well-established but needs modernization" }
+        };
+
+        var financialTech = new List<TechnologyStack>
+        {
+            new TechnologyStack { ArchitectureReview = financialReview, Category = "Mainframe", Technology = "COBOL", Version = "Enterprise", Status = "Legacy", Risk = "Critical", Recommendation = "Plan modernization strategy" },
+            new TechnologyStack { ArchitectureReview = financialReview, Category = "Backend Framework", Technology = ".NET Framework", Version = "4.8", Status = "Outdated", Risk = "High", Recommendation = "Migrate to .NET 8" },
+            new TechnologyStack { ArchitectureReview = financialReview, Category = "Database", Technology = "SQL Server", Version = "2019", Status = "Current", Risk = "Low", Recommendation = "Consider Azure SQL for cloud benefits" },
+            new TechnologyStack { ArchitectureReview = financialReview, Category = "Security", Technology = "Custom Auth", Version = "2.1", Status = "Outdated", Risk = "Critical", Recommendation = "Implement modern identity management" }
+        };
+
+        var financialStats = new List<CodebaseStats>
+        {
+            new CodebaseStats { ArchitectureReview = financialReview, Language = "COBOL", LinesOfCode = 285000, Percentage = 52.3, FileCount = 1850 },
+            new CodebaseStats { ArchitectureReview = financialReview, Language = "C#", LinesOfCode = 180000, Percentage = 33.0, FileCount = 920 },
+            new CodebaseStats { ArchitectureReview = financialReview, Language = "SQL", LinesOfCode = 65000, Percentage = 11.9, FileCount = 340 },
+            new CodebaseStats { ArchitectureReview = financialReview, Language = "JavaScript", LinesOfCode = 15000, Percentage = 2.8, FileCount = 125 }
+        };
+
+        // Data Architecture (Assessment 3) - Modern data platform
+        var dataReview = new ArchitectureReview
+        {
+            AssessmentId = assessments[2].Id,
+            MaintainabilityScore = 82,
+            ComplexityScore = 58,
+            CouplingScore = 78,
+            CohesionScore = 85,
+            TestCoverageScore = 75,
+            TechnicalDebtScore = 15,
+            CodeSmells = 28,
+            DuplicatedLines = 1.8,
+            Vulnerabilities = 2,
+            Bugs = 6,
+            SecurityHotspots = 3,
+            RepositoryUrl = "https://github.com/company/data-platform",
+            RepositoryType = "github",
+            RepositoryStatus = "connected",
+            LastCommitHash = "c5b8e2f4a9d",
+            LastCommitDate = DateTime.Parse("2024-12-21T16:45:00Z").ToUniversalTime(),
+            ArchitectureAnalysis = "Modern data architecture built on cloud-native principles with excellent scalability and maintainability. Implements data mesh concepts with well-defined data contracts and governance policies. Strong foundation for AI/ML initiatives.",
+            HealthAnalysis = "Excellent architecture health with maintainability score of 82/100. Low complexity and technical debt indicate well-planned and executed modernization. Ready for advanced analytics and ML workloads.",
+            PatternsAnalysis = "Exemplary implementation of modern data patterns including data mesh, event streaming, and lambda architecture. Microservices pattern well-adopted for data processing pipelines.",
+            TechnologyAnalysis = "Cutting-edge technology stack with Python, Spark, Kubernetes, and cloud services. Strong focus on open-source solutions and vendor neutrality. Excellent observability and monitoring capabilities.",
+            MaintainabilityAnalysis = "Outstanding maintainability with consistent coding standards, comprehensive documentation, and automated testing. Well-structured for team collaboration and knowledge sharing.",
+            RecommendationsAnalysis = "1. Implement real-time ML inference pipelines\n2. Expand data governance framework\n3. Add advanced data cataloging\n4. Implement federated learning capabilities\n5. Enhance data privacy controls",
+            CreatedDate = DateTime.UtcNow,
+            LastUpdatedDate = DateTime.UtcNow
+        };
+
+        var dataPatterns = new List<ArchitecturePattern>
+        {
+            new ArchitecturePattern { ArchitectureReview = dataReview, PatternName = "Data Mesh", Usage = 90, Quality = "Excellent", Maturity = "Advanced", Recommendation = "Industry-leading implementation" },
+            new ArchitecturePattern { ArchitectureReview = dataReview, PatternName = "Event Streaming", Usage = 85, Quality = "Excellent", Maturity = "Advanced", Recommendation = "Excellent real-time processing" },
+            new ArchitecturePattern { ArchitectureReview = dataReview, PatternName = "Lambda Architecture", Usage = 80, Quality = "Good", Maturity = "Intermediate", Recommendation = "Consider Kappa for simplification" },
+            new ArchitecturePattern { ArchitectureReview = dataReview, PatternName = "Microservices", Usage = 95, Quality = "Excellent", Maturity = "Advanced", Recommendation = "Best-in-class implementation" }
+        };
+
+        var dataTech = new List<TechnologyStack>
+        {
+            new TechnologyStack { ArchitectureReview = dataReview, Category = "Data Processing", Technology = "Apache Spark", Version = "3.4.0", Status = "Current", Risk = "Low", Recommendation = "Excellent for big data processing" },
+            new TechnologyStack { ArchitectureReview = dataReview, Category = "Programming Language", Technology = "Python", Version = "3.11", Status = "Current", Risk = "Low", Recommendation = "Perfect for data science" },
+            new TechnologyStack { ArchitectureReview = dataReview, Category = "Container Orchestration", Technology = "Kubernetes", Version = "1.28", Status = "Current", Risk = "Low", Recommendation = "Industry standard" },
+            new TechnologyStack { ArchitectureReview = dataReview, Category = "Stream Processing", Technology = "Apache Kafka", Version = "3.5.0", Status = "Current", Risk = "Low", Recommendation = "Excellent choice for real-time data" }
+        };
+
+        var dataStats = new List<CodebaseStats>
+        {
+            new CodebaseStats { ArchitectureReview = dataReview, Language = "Python", LinesOfCode = 85000, Percentage = 68.5, FileCount = 450 },
+            new CodebaseStats { ArchitectureReview = dataReview, Language = "SQL", LinesOfCode = 25000, Percentage = 20.2, FileCount = 180 },
+            new CodebaseStats { ArchitectureReview = dataReview, Language = "YAML", LinesOfCode = 8000, Percentage = 6.4, FileCount = 95 },
+            new CodebaseStats { ArchitectureReview = dataReview, Language = "Scala", LinesOfCode = 6000, Percentage = 4.9, FileCount = 65 }
+        };
+
+        // Add all data to context
+        architectureReviews.AddRange(new[] { ecommerceReview, financialReview, dataReview });
+        _context.ArchitectureReviews.AddRange(architectureReviews);
+        
+        _context.ArchitecturePatterns.AddRange(ecommercePatterns);
+        _context.ArchitecturePatterns.AddRange(financialPatterns);
+        _context.ArchitecturePatterns.AddRange(dataPatterns);
+        
+        _context.TechnologyStacks.AddRange(ecommerceTech);
+        _context.TechnologyStacks.AddRange(financialTech);
+        _context.TechnologyStacks.AddRange(dataTech);
+        
+        _context.CodebaseStats.AddRange(ecommerceStats);
+        _context.CodebaseStats.AddRange(financialStats);
+        _context.CodebaseStats.AddRange(dataStats);
+
+        _logger.LogInformation("Seeded {Count} architecture reviews with comprehensive data.", architectureReviews.Count);
     }
 }

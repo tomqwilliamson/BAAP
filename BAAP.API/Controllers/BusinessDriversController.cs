@@ -435,7 +435,7 @@ public class BusinessDriversController : ControllerBase
                 .Select(a => new { 
                     id = a.Id, 
                     name = a.Name, 
-                    businessContext = a.BusinessContext 
+                    businessContext = "Temporarily disabled" // a.BusinessContext 
                 })
                 .FirstOrDefaultAsync();
 

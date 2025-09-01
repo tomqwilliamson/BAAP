@@ -218,6 +218,10 @@ public class ApplicationsController : ControllerBase
                 application.MonthlyCost = request.MonthlyCost;
             if (request.AssessmentId.HasValue)
                 application.AssessmentId = request.AssessmentId;
+            if (request.CriticalIssues.HasValue)
+                application.CriticalIssues = request.CriticalIssues.Value;
+            if (request.SecurityIssues.HasValue)
+                application.SecurityIssues = request.SecurityIssues.Value;
 
             await _context.SaveChangesAsync();
             return NoContent();
@@ -571,6 +575,8 @@ public class UpdateApplicationRequest
     public decimal? EstimatedMigrationCost { get; set; }
     public decimal? MonthlyCost { get; set; }
     public int? AssessmentId { get; set; }
+    public int? CriticalIssues { get; set; }
+    public int? SecurityIssues { get; set; }
 }
 
 public class BulkImportApplicationsRequest
