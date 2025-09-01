@@ -939,6 +939,34 @@ Priority Actions:
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Helper function to format currency input with proper $ and comma formatting
+  const formatCurrencyInput = (value) => {
+    if (!value) return '';
+    
+    // Remove all non-numeric characters except decimal point
+    const numericValue = value.replace(/[^\d.]/g, '');
+    
+    // Handle empty or invalid input
+    if (!numericValue || numericValue === '.') return '$';
+    
+    // Parse the number and format with commas
+    const number = parseFloat(numericValue);
+    if (isNaN(number)) return '$';
+    
+    // Format with commas and no decimal places for whole numbers
+    const formatted = number % 1 === 0 
+      ? number.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+      : number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    return `$${formatted}`;
+  };
+
+  // Helper function to parse currency input back to raw number
+  const parseCurrencyInput = (value) => {
+    if (!value) return '';
+    return value.replace(/[$,]/g, '');
+  };
+
   const loadAssessmentData = async () => {
     try {
       setLoading(true);
@@ -952,7 +980,7 @@ Priority Actions:
           name: currentAssessment.type || currentAssessment.name || '',
           description: currentAssessment.businessObjective || currentAssessment.description || '',
           duration: currentAssessment.timeline || '',
-          totalBudget: currentAssessment.budget ? formatCurrency(currentAssessment.budget) : ''
+          totalBudget: currentAssessment.budget ? formatCurrencyInput(currentAssessment.budget.toString()) : ''
         };
         
         console.log('LOADING: Current assessment data:', {
@@ -962,9 +990,11 @@ Priority Actions:
           description: currentAssessment.description,
           businessObjective: currentAssessment.businessObjective,
           timeline: currentAssessment.timeline,
-          budget: currentAssessment.budget
+          budget: currentAssessment.budget,
+          budgetType: typeof currentAssessment.budget
         });
         console.log('LOADING: Mapped projectInfo:', projectInfo);
+        console.log('LOADING: Budget formatted result:', currentAssessment.budget ? formatCurrencyInput(currentAssessment.budget.toString()) : 'NO BUDGET VALUE');
 
         // Load business drivers for this assessment
         let businessDrivers = [];
@@ -1101,9 +1131,16 @@ Priority Actions:
       
       // Save to database if we have a current assessment
       if (currentAssessment?.id) {
-        // Parse budget value
-        const budgetValue = businessData.projectInfo.totalBudget?.replace(/[^0-9.-]+/g, "");
+        // Parse budget value using helper function
+        const budgetValue = parseCurrencyInput(businessData.projectInfo.totalBudget);
         const parsedBudget = budgetValue ? parseFloat(budgetValue) : null;
+        
+        console.log('SAVING: Budget parsing debug:', {
+          originalBudget: businessData.projectInfo.totalBudget,
+          budgetValue,
+          parsedBudget,
+          currentAssessmentBudget: currentAssessment.budget
+        });
         
         // Save project information to assessment - using PascalCase for C# API
         const assessmentUpdate = {
@@ -2018,11 +2055,20 @@ Priority Actions:
                   type="text"
                   value={businessData.projectInfo.totalBudget}
                   onChange={(e) => {
+                    const formattedValue = formatCurrencyInput(e.target.value);
                     setBusinessData(prev => ({
                       ...prev,
-                      projectInfo: { ...prev.projectInfo, totalBudget: e.target.value }
+                      projectInfo: { ...prev.projectInfo, totalBudget: formattedValue }
                     }));
                     setDataSaved(false);
+                  }}
+                  onBlur={(e) => {
+                    // Ensure proper formatting on blur
+                    const formattedValue = formatCurrencyInput(e.target.value);
+                    setBusinessData(prev => ({
+                      ...prev,
+                      projectInfo: { ...prev.projectInfo, totalBudget: formattedValue }
+                    }));
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., 2500000"
@@ -2275,73 +2321,85 @@ Priority Actions:
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Assessment</label>
                 <input
-                  type="number"
-                  value={businessData.budgetAllocation.assessment}
+                  type="text"
+                  value={businessData.budgetAllocation.assessment ? formatCurrencyInput(businessData.budgetAllocation.assessment.toString()) : ''}
                   onChange={(e) => {
-                    const newValue = parseInt(e.target.value) || 0;
+                    const formattedValue = formatCurrencyInput(e.target.value);
+                    const numericValue = parseCurrencyInput(formattedValue);
+                    const newValue = numericValue ? parseInt(numericValue) : 0;
                     const updatedBudget = { ...businessData.budgetAllocation, assessment: newValue };
                     setBusinessData(prev => ({
                       ...prev,
-                      budgetAllocation: updatedBudget
+                      budgetAllocation: { ...prev.budgetAllocation, assessment: newValue }
                     }));
                     debouncedSaveBudget(updatedBudget);
+                    setDataSaved(false);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
+                  placeholder="$0"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Implementation</label>
                 <input
-                  type="number"
-                  value={businessData.budgetAllocation.implementation}
+                  type="text"
+                  value={businessData.budgetAllocation.implementation ? formatCurrencyInput(businessData.budgetAllocation.implementation.toString()) : ''}
                   onChange={(e) => {
-                    const newValue = parseInt(e.target.value) || 0;
+                    const formattedValue = formatCurrencyInput(e.target.value);
+                    const numericValue = parseCurrencyInput(formattedValue);
+                    const newValue = numericValue ? parseInt(numericValue) : 0;
                     const updatedBudget = { ...businessData.budgetAllocation, implementation: newValue };
                     setBusinessData(prev => ({
                       ...prev,
-                      budgetAllocation: updatedBudget
+                      budgetAllocation: { ...prev.budgetAllocation, implementation: newValue }
                     }));
                     debouncedSaveBudget(updatedBudget);
+                    setDataSaved(false);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
+                  placeholder="$0"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Maintenance</label>
                 <input
-                  type="number"
-                  value={businessData.budgetAllocation.maintenance}
+                  type="text"
+                  value={businessData.budgetAllocation.maintenance ? formatCurrencyInput(businessData.budgetAllocation.maintenance.toString()) : ''}
                   onChange={(e) => {
-                    const newValue = parseInt(e.target.value) || 0;
+                    const formattedValue = formatCurrencyInput(e.target.value);
+                    const numericValue = parseCurrencyInput(formattedValue);
+                    const newValue = numericValue ? parseInt(numericValue) : 0;
                     const updatedBudget = { ...businessData.budgetAllocation, maintenance: newValue };
                     setBusinessData(prev => ({
                       ...prev,
-                      budgetAllocation: updatedBudget
+                      budgetAllocation: { ...prev.budgetAllocation, maintenance: newValue }
                     }));
                     debouncedSaveBudget(updatedBudget);
+                    setDataSaved(false);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
+                  placeholder="$0"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Training</label>
                 <input
-                  type="number"
-                  value={businessData.budgetAllocation.training}
+                  type="text"
+                  value={businessData.budgetAllocation.training ? formatCurrencyInput(businessData.budgetAllocation.training.toString()) : ''}
                   onChange={(e) => {
-                    const newValue = parseInt(e.target.value) || 0;
+                    const formattedValue = formatCurrencyInput(e.target.value);
+                    const numericValue = parseCurrencyInput(formattedValue);
+                    const newValue = numericValue ? parseInt(numericValue) : 0;
                     const updatedBudget = { ...businessData.budgetAllocation, training: newValue };
                     setBusinessData(prev => ({
                       ...prev,
-                      budgetAllocation: updatedBudget
+                      budgetAllocation: { ...prev.budgetAllocation, training: newValue }
                     }));
                     debouncedSaveBudget(updatedBudget);
+                    setDataSaved(false);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
+                  placeholder="$0"
                 />
               </div>
             </div>

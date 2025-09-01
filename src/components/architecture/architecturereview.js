@@ -121,35 +121,65 @@ function ArchitectureReview() {
 
   const loadDocuments = async () => {
     try {
-      const response = await fetch('/api/document');
-      const data = await response.json();
-      // Filter for architecture-related documents
-      const architectureDocs = data.filter(doc => 
-        doc.documentType === 'Architecture Documentation' || 
-        doc.documentType === 'Source Code Files' ||
-        doc.documentType === 'API Documentation' ||
-        doc.category === 'architecture'
-      );
-      setDocuments(architectureDocs);
+      if (!currentAssessment?.id) {
+        setDocuments([]);
+        return;
+      }
+      
+      const response = await fetch(`/api/files/assessment/${currentAssessment.id}?category=Architecture`);
+      if (response.ok) {
+        const data = await response.json();
+        // Map the file data to the expected document structure
+        const architectureDocs = data.map(file => ({
+          id: file.id,
+          fileName: file.originalFileName,
+          documentType: 'Architecture Documentation',
+          category: file.category,
+          uploadedDate: file.uploadedDate,
+          fileSize: file.fileSize,
+          contentType: file.contentType
+        }));
+        setDocuments(architectureDocs);
+      } else {
+        setDocuments([]);
+      }
     } catch (error) {
       console.error('Error loading architecture documents:', error);
+      setDocuments([]);
     }
   };
 
   const loadInsights = async () => {
     try {
-      const response = await fetch('/api/document/analyze-relationships', {
-        method: 'POST'
-      });
-      const data = await response.json();
-      // Filter insights for architecture-related documents
-      const architectureInsights = data.filter(insight => 
-        insight.analysisCategory === 'Architecture' ||
-        insight.documentType === 'Architecture Documentation'
-      );
-      setInsights(architectureInsights);
+      // For now, check if we have any architecture documents and create basic insights
+      if (!currentAssessment?.id) {
+        setInsights([]);
+        return;
+      }
+
+      // Get architecture documents from the files endpoint
+      const response = await fetch(`/api/files/assessment/${currentAssessment.id}?category=Architecture`);
+      if (response.ok) {
+        const files = await response.json();
+        
+        // Create basic insights from uploaded architecture documents
+        const basicInsights = files.map(file => ({
+          documentId: file.id,
+          fileName: file.originalFileName,
+          analysisCategory: 'Architecture',
+          documentType: 'Architecture Documentation',
+          relationships: [],
+          keyFindings: ['Document uploaded and ready for analysis'],
+          lastAnalyzed: file.uploadedDate
+        }));
+        
+        setInsights(basicInsights);
+      } else {
+        setInsights([]);
+      }
     } catch (error) {
       console.error('Error loading architecture insights:', error);
+      setInsights([]);
     }
   };
 
@@ -163,21 +193,27 @@ function ArchitectureReview() {
       try {
         const formData = new FormData();
         formData.append('file', file);
+        
         // Detect file type for better categorization
         const fileExtension = file.name.split('.').pop().toLowerCase();
-        let documentType = 'Architecture Documentation';
+        let description = 'Architecture Documentation';
         if (['js', 'ts', 'cs', 'java', 'py', 'cpp', 'c', 'h', 'php', 'rb', 'go'].includes(fileExtension)) {
-          documentType = 'Source Code Files';
+          description = 'Source Code Files';
         } else if (['json', 'xml', 'yml', 'yaml', 'config', 'ini'].includes(fileExtension)) {
-          documentType = 'Configuration Files';
+          description = 'Configuration Files';
         } else if (['sql', 'ddl'].includes(fileExtension)) {
-          documentType = 'Database Schemas';
+          description = 'Database Schemas';
         }
         
-        formData.append('documentType', documentType);
-        formData.append('category', 'architecture');
+        formData.append('category', 'Architecture');
+        formData.append('description', description);
         
-        const response = await fetch('/api/document/upload', {
+        // Include assessment ID if available
+        if (currentAssessment?.id) {
+          formData.append('assessmentId', currentAssessment.id.toString());
+        }
+        
+        const response = await fetch('/api/files/upload', {
           method: 'POST',
           body: formData
         });
@@ -221,10 +257,14 @@ function ArchitectureReview() {
     if (!confirm('Are you sure you want to delete this document?')) return;
     
     try {
-      await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
-      await loadDocuments();
-      await loadInsights();
-      toast.success('Document deleted successfully');
+      const response = await fetch(`/api/files/${documentId}`, { method: 'DELETE' });
+      if (response.ok) {
+        await loadDocuments();
+        await loadInsights();
+        toast.success('Document deleted successfully');
+      } else {
+        throw new Error('Delete request failed');
+      }
     } catch (error) {
       console.error('Delete error:', error);
       toast.error('Error deleting document');

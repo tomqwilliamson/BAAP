@@ -13,4 +13,6 @@ public class AssessmentUpdate
     public int? OverallScore { get; set; }
     public int? SecurityScore { get; set; }
     public int? CloudReadinessScore { get; set; }
+    public string? Timeline { get; set; }
+    public decimal? Budget { get; set; }
 }

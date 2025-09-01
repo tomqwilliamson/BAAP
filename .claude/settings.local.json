@@ -69,7 +69,8 @@
       "Bash(dir:*)",
       "Bash(del \"C:\\Users\\twilliamson\\source\\repos\\BAAP\\BAAP.API\\Models\\BusinessRisk.cs\")",
       "Bash(del \"C:\\Users\\twilliamson\\source\\repos\\BAAP\\BAAP.API\\bin\\Debug\\net8.0\\BAAP.API.exe\")",
-      "Bash(sqlcmd:*)"
+      "Bash(sqlcmd:*)",
+      "Bash(dotnet ef dbcontext scaffold:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"

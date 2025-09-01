@@ -127,6 +127,8 @@ public class AssessmentsController : ControllerBase
             if (assessmentUpdate.OverallScore.HasValue) assessment.OverallScore = assessmentUpdate.OverallScore.Value;
             if (assessmentUpdate.SecurityScore.HasValue) assessment.SecurityScore = assessmentUpdate.SecurityScore.Value;
             if (assessmentUpdate.CloudReadinessScore.HasValue) assessment.CloudReadinessScore = assessmentUpdate.CloudReadinessScore.Value;
+            if (assessmentUpdate.Timeline != null) assessment.Timeline = assessmentUpdate.Timeline;
+            if (assessmentUpdate.Budget.HasValue) assessment.Budget = assessmentUpdate.Budget.Value;
 
             assessment.LastModifiedDate = DateTime.UtcNow;
 
