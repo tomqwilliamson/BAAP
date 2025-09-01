@@ -13,6 +13,7 @@ import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
+import { API_BASE_URL } from '../../services/api';
 
 // Helper functions for generating cross-assessment and log data
 const generateInfrastructureRisks = (securityData) => [
@@ -133,32 +134,67 @@ function SecurityAssessment() {
 
   const loadDocuments = async () => {
     try {
-      const response = await fetch('/api/document');
+      const response = await fetch(`${API_BASE_URL}/Files/assessment/${currentAssessment?.id}?category=Security`);
+      
+      if (!response.ok) {
+        setDocuments([]);
+        return;
+      }
+      
       const data = await response.json();
-      // Filter for security-related documents
-      const securityDocs = data.filter(doc => 
-        doc.documentType === 'Security Documentation' || 
-        doc.documentType === 'Vulnerability Reports' ||
-        doc.documentType === 'Compliance Reports' ||
-        doc.category === 'security'
-      );
+      
+      // Extract files array from the API response structure { summary, files }
+      const filesArray = data.files || [];
+      
+      // Map the files to the expected document format
+      const securityDocs = filesArray.map(file => ({
+        id: file.id,
+        name: file.originalFileName,
+        fileName: file.originalFileName,
+        documentType: 'Security Documentation',
+        category: file.category || 'security',
+        size: file.fileSize,
+        sizeBytes: file.fileSize,
+        uploadedDate: file.uploadedDate,
+        uploadedAt: file.uploadedDate,
+        uploadedBy: file.uploadedBy || 'System',
+        description: file.description,
+        summary: file.description || 'Security documentation',
+        contentType: file.contentType,
+        chunks: file.chunks || [],
+        keyFindings: file.keyFindings || []
+      }));
+      
       setDocuments(securityDocs);
     } catch (error) {
       console.error('Error loading security documents:', error);
+      setDocuments([]);
     }
   };
 
   const loadInsights = async () => {
     try {
-      const response = await fetch('/api/document/analyze-relationships', {
-        method: 'POST'
-      });
+      const assessmentId = currentAssessment?.id || 1;
+      const response = await fetch(`${API_BASE_URL}/Intelligence/recommendations/${assessmentId}`);
       const data = await response.json();
-      // Filter insights for security-related documents
-      const securityInsights = data.filter(insight => 
-        insight.analysisCategory === 'Security' ||
-        insight.documentType === 'Security Documentation'
-      );
+      
+      // Transform recommendations to insights format and filter for Security category
+      const securityInsights = data.filter(recommendation => 
+        recommendation.category === 'Security'
+      ).map(recommendation => ({
+        documentId: recommendation.id || Math.random().toString(36).substr(2, 9),
+        fileName: recommendation.title || 'Security Recommendation',
+        analysisCategory: 'Security',
+        keyThemes: recommendation.tags || [],
+        relatedDocuments: recommendation.relatedItems?.map(item => ({
+          fileName: item.name || item.title,
+          relationshipType: item.type || 'Related'
+        })) || [],
+        insight: recommendation.title,
+        description: recommendation.description || recommendation.content,
+        confidence: recommendation.confidence || 85
+      }));
+      
       setInsights(securityInsights);
     } catch (error) {
       console.error('Error loading security insights:', error);
@@ -177,8 +213,11 @@ function SecurityAssessment() {
         formData.append('file', file);
         formData.append('documentType', 'Security Documentation');
         formData.append('category', 'security');
+        if (currentAssessment?.id) {
+          formData.append('assessmentId', currentAssessment.id);
+        }
         
-        const response = await fetch('/api/document/upload', {
+        const response = await fetch(`${API_BASE_URL}/Files/upload`, {
           method: 'POST',
           body: formData
         });
@@ -222,7 +261,7 @@ function SecurityAssessment() {
     if (!confirm('Are you sure you want to delete this document?')) return;
     
     try {
-      await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
+      await fetch(`${API_BASE_URL}/Files/${documentId}`, { method: 'DELETE' });
       await loadDocuments();
       await loadInsights();
       toast.success('Document deleted successfully');

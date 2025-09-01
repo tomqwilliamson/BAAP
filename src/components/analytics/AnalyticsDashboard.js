@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -74,7 +75,7 @@ const AnalyticsDashboard = () => {
             setLastUpdated(new Date());
 
             // Load alerts
-            const alertsResponse = await fetch('/api/intelligence/alerts/active');
+            const alertsResponse = await fetch(`${API_BASE_URL}/intelligence/alerts/active`);
             const alertsData = await alertsResponse.json();
             setAlerts(alertsData);
 

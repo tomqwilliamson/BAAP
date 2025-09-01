@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BAAP.API.Data;
 using BAAP.API.Models;
+using BAAP.API.Services;
 
 namespace BAAP.API.Controllers;
 
@@ -11,11 +12,13 @@ public class DashboardController : ControllerBase
 {
     private readonly BaapDbContext _context;
     private readonly ILogger<DashboardController> _logger;
+    private readonly DataSeederService _dataSeeder;
 
-    public DashboardController(BaapDbContext context, ILogger<DashboardController> logger)
+    public DashboardController(BaapDbContext context, ILogger<DashboardController> logger, DataSeederService dataSeeder)
     {
         _context = context;
         _logger = logger;
+        _dataSeeder = dataSeeder;
     }
 
     // GET: api/dashboard/overview
@@ -115,6 +118,8 @@ public class DashboardController : ControllerBase
                 lastAnalyzed = app.LastAnalyzedDate,
                 criticalFindings = app.CriticalIssues,
                 highFindings = app.SecurityIssues,
+                criticalIssues = app.CriticalIssues,
+                securityIssues = app.SecurityIssues,
                 assessment = new
                 {
                     id = app.Assessment.Id,
@@ -129,6 +134,155 @@ public class DashboardController : ControllerBase
         {
             _logger.LogError(ex, "Error retrieving portfolio summary");
             return StatusCode(500, "An error occurred while retrieving portfolio summary");
+        }
+    }
+
+    // GET: api/dashboard/debug
+    [HttpGet("debug")]
+    public async Task<ActionResult> GetDebugInfo()
+    {
+        try
+        {
+            var apps = await _context.Applications
+                .Select(a => new { 
+                    a.Id, 
+                    a.Name, 
+                    a.CriticalIssues, 
+                    a.SecurityIssues 
+                })
+                .ToListAsync();
+                
+            var totalCritical = await _context.Applications.SumAsync(a => a.CriticalIssues);
+            var totalSecurity = await _context.Applications.SumAsync(a => a.SecurityIssues);
+                
+            return Ok(new { apps, totalCritical, totalSecurity });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    // POST: api/dashboard/fix-data
+    [HttpPost("fix-data")]
+    public async Task<ActionResult> FixApplicationData()
+    {
+        try
+        {
+            var applications = await _context.Applications.ToListAsync();
+            
+            // Update each application with realistic critical and security issue counts
+            var updates = new Dictionary<int, (int critical, int security)>
+            {
+                { 1, (3, 8) },   // Customer Portal
+                { 2, (5, 12) },  // Payment Service  
+                { 3, (2, 6) },   // Core Banking System
+                { 4, (1, 4) },   // Data Processing Pipeline
+                { 5, (4, 9) },   // Inventory Management System
+                { 6, (2, 7) },   // User Authentication Service
+                { 7, (6, 15) },  // Account Management System - Legacy COBOL system
+                { 8, (2, 5) }    // Real-time Analytics Engine - Scala system
+            };
+
+            foreach (var app in applications)
+            {
+                if (updates.ContainsKey(app.Id))
+                {
+                    app.CriticalIssues = updates[app.Id].critical;
+                    app.SecurityIssues = updates[app.Id].security;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            
+            // Return updated totals
+            var totalCritical = await _context.Applications.SumAsync(a => a.CriticalIssues);
+            var totalSecurity = await _context.Applications.SumAsync(a => a.SecurityIssues);
+            
+            return Ok(new { 
+                message = "Application data updated successfully",
+                totalCritical, 
+                totalSecurity,
+                updatedApps = applications.Select(a => new { a.Id, a.Name, a.CriticalIssues, a.SecurityIssues })
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    // POST: api/dashboard/seed-issues
+    [HttpPost("seed-issues")]
+    public async Task<ActionResult> SeedApplicationIssues()
+    {
+        try
+        {
+            await _dataSeeder.UpdateApplicationIssuesAsync();
+            
+            // Return updated totals
+            var totalCritical = await _context.Applications.SumAsync(a => a.CriticalIssues);
+            var totalSecurity = await _context.Applications.SumAsync(a => a.SecurityIssues);
+            
+            return Ok(new { 
+                message = "Application critical and security issues updated successfully",
+                totalCritical, 
+                totalSecurity
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating application issues");
+            return BadRequest(ex.Message);
+        }
+    }
+
+    // POST: api/dashboard/seed-business-context
+    [HttpPost("seed-business-context")]
+    public async Task<ActionResult> SeedBusinessContextData()
+    {
+        try
+        {
+            var assessments = await _context.Assessments.ToListAsync();
+            
+            if (!assessments.Any())
+            {
+                return BadRequest("No assessments found. Please seed assessments first.");
+            }
+
+            // Check if data already exists
+            var existingBudgets = await _context.BudgetAllocations.AnyAsync();
+            var existingTimelines = await _context.ProjectTimelineItems.AnyAsync();
+            var existingRisks = await _context.BusinessContextRisks.AnyAsync();
+            
+            if (existingBudgets || existingTimelines || existingRisks)
+            {
+                return Ok(new { message = "Business context data already exists." });
+            }
+
+            // Seed business context data
+            await _dataSeeder.SeedBudgetAllocations(assessments);
+            await _dataSeeder.SeedProjectTimelines(assessments);
+            await _dataSeeder.SeedBusinessContextRisks(assessments);
+            
+            await _context.SaveChangesAsync();
+            
+            // Return summary of seeded data
+            var budgetCount = await _context.BudgetAllocations.CountAsync();
+            var timelineCount = await _context.ProjectTimelineItems.CountAsync();
+            var riskCount = await _context.BusinessContextRisks.CountAsync();
+            
+            return Ok(new { 
+                message = "Business context data seeded successfully",
+                budgetAllocations = budgetCount,
+                timelineItems = timelineCount,
+                risks = riskCount
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error seeding business context data");
+            return BadRequest(ex.Message);
         }
     }
 

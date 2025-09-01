@@ -15,6 +15,7 @@ import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { aiAnalysisService } from '../../services/aiAnalysisService';
 import { useAnalysis } from '../../hooks/useAnalysis';
+import { API_BASE_URL } from '../../services/api';
 
 // Helper functions
 const getCompatibilityTarget = (dbType) => {
@@ -156,32 +157,67 @@ function DataArchitecture() {
 
   const loadDocuments = async () => {
     try {
-      const response = await fetch('/api/document');
+      const response = await fetch(`${API_BASE_URL}/Files/assessment/${currentAssessment?.id}?category=Data`);
+      
+      if (!response.ok) {
+        setDocuments([]);
+        return;
+      }
+      
       const data = await response.json();
-      // Filter for data architecture-related documents
-      const dataDocs = data.filter(doc => 
-        doc.documentType === 'Data Architecture' || 
-        doc.documentType === 'Technical Architecture' ||
-        doc.category === 'data-architecture'
-      );
+      
+      // Extract files array from the API response structure { summary, files }
+      const filesArray = data.files || [];
+      
+      // Map the files to the expected document format
+      const dataDocs = filesArray.map(file => ({
+        id: file.id,
+        name: file.originalFileName,
+        fileName: file.originalFileName,
+        documentType: 'Data Architecture',
+        category: file.category || 'data-architecture',
+        size: file.fileSize,
+        sizeBytes: file.fileSize,
+        uploadedDate: file.uploadedDate,
+        uploadedAt: file.uploadedDate,
+        uploadedBy: file.uploadedBy || 'System',
+        description: file.description,
+        summary: file.description || 'Data architecture document',
+        contentType: file.contentType,
+        chunks: file.chunks || [],
+        keyFindings: file.keyFindings || []
+      }));
+      
       setDocuments(dataDocs);
     } catch (error) {
       console.error('Error loading data architecture documents:', error);
+      setDocuments([]);
     }
   };
 
   const loadInsights = async () => {
     try {
-      const response = await fetch('/api/document/analyze-relationships', {
-        method: 'POST'
-      });
+      const assessmentId = currentAssessment?.id || 1;
+      const response = await fetch(`${API_BASE_URL}/Intelligence/recommendations/${assessmentId}`);
       const data = await response.json();
-      // Filter insights for data architecture-related documents
-      const dataInsights = data.filter(insight => 
-        insight.analysisCategory === 'Data' ||
-        insight.analysisCategory === 'Data Architecture' ||
-        insight.documentType === 'Data Architecture'
-      );
+      
+      // Transform recommendations to insights format and filter for Data category
+      const dataInsights = data.filter(recommendation => 
+        recommendation.category === 'Data' || recommendation.category === 'Data Architecture'
+      ).map(recommendation => ({
+        documentId: recommendation.id || Math.random().toString(36).substr(2, 9),
+        fileName: recommendation.title || 'Data Architecture Recommendation',
+        analysisCategory: recommendation.category === 'Data Architecture' ? 'Data Architecture' : 'Data',
+        keyThemes: recommendation.tags || [],
+        relatedDocuments: recommendation.relatedItems?.map(item => ({
+          fileName: item.name || item.title,
+          relationshipType: item.type || 'Related'
+        })) || [],
+        insight: recommendation.title,
+        description: recommendation.description || recommendation.content,
+        confidence: recommendation.confidence || 85
+      }));
+      
       setInsights(dataInsights);
     } catch (error) {
       console.error('Error loading data architecture insights:', error);
@@ -200,8 +236,11 @@ function DataArchitecture() {
         formData.append('file', file);
         formData.append('documentType', 'Data Architecture');
         formData.append('category', 'data-architecture');
+        if (currentAssessment?.id) {
+          formData.append('assessmentId', currentAssessment.id);
+        }
         
-        const response = await fetch('/api/document/upload', {
+        const response = await fetch(`${API_BASE_URL}/Files/upload`, {
           method: 'POST',
           body: formData
         });
@@ -245,7 +284,7 @@ function DataArchitecture() {
     if (!confirm('Are you sure you want to delete this document?')) return;
     
     try {
-      await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
+      await fetch(`${API_BASE_URL}/Files/${documentId}`, { method: 'DELETE' });
       await loadDocuments();
       await loadInsights();
       toast.success('Document deleted successfully');

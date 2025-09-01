@@ -2,7 +2,7 @@
 import { assessmentService } from './assessmentservice';
 import { configurationService } from './configurationService';
 
-let USE_API = process.env.REACT_APP_USE_API === 'true';
+let USE_API = true; // Use actual API data
 console.log('🔧 Initial USE_API from environment:', process.env.REACT_APP_USE_API, '-> USE_API:', USE_API);
 
 // Initialize configuration
@@ -28,10 +28,10 @@ const mockData = {
     metrics: {
       totalApplications: 8,
       averageScore: 76,
-      criticalIssues: 23,
+      criticalIssues: 17,
       potentialSavings: 1240000,
       assessmentProgress: 75,
-      securityIssues: 142,
+      securityIssues: 46,
       cloudReadiness: 72
     },
     trends: [
@@ -64,8 +64,8 @@ const mockData = {
       estimatedMigrationCost: 125000,
       monthlyCost: 2400,
       lastAnalyzed: '2024-12-20T10:30:00Z',
-      criticalFindings: 2,
-      highFindings: 5,
+      criticalFindings: 3,
+      highFindings: 8,
       assessment: {
         id: 1,
         name: 'Q4 2024 Portfolio Assessment',
@@ -106,8 +106,8 @@ const mockData = {
       estimatedMigrationCost: 85000,
       monthlyCost: 1800,
       lastAnalyzed: '2024-12-18T09:45:00Z',
-      criticalFindings: 1,
-      highFindings: 2,
+      criticalFindings: 2,
+      highFindings: 6,
       assessment: {
         id: 2,
         name: 'Security Compliance Review',
@@ -127,12 +127,54 @@ const mockData = {
       estimatedMigrationCost: 450000,
       monthlyCost: 8500,
       lastAnalyzed: '2024-12-17T16:20:00Z',
-      criticalFindings: 15,
-      highFindings: 23,
+      criticalFindings: 1,
+      highFindings: 4,
       assessment: {
         id: 3,
         name: 'Cloud Migration Readiness',
         status: 'Analyzing'
+      }
+    },
+    {
+      id: 5,
+      name: 'Application 5',
+      type: 'Node.js API',
+      category: 'Business Critical',
+      technology: 'Node.js',
+      linesOfCode: 35000,
+      complexityScore: 7.1,
+      securityRating: 'B',
+      cloudReadinessScore: 78,
+      estimatedMigrationCost: 180000,
+      monthlyCost: 3200,
+      lastAnalyzed: '2024-12-16T13:10:00Z',
+      criticalFindings: 4,
+      highFindings: 9,
+      assessment: {
+        id: 1,
+        name: 'Q4 2024 Portfolio Assessment',
+        status: 'Completed'
+      }
+    },
+    {
+      id: 6,
+      name: 'Application 6',
+      type: 'Python Django',
+      category: 'Internal',
+      technology: 'Python',
+      linesOfCode: 28000,
+      complexityScore: 6.3,
+      securityRating: 'B+',
+      cloudReadinessScore: 82,
+      estimatedMigrationCost: 95000,
+      monthlyCost: 1900,
+      lastAnalyzed: '2024-12-15T11:25:00Z',
+      criticalFindings: 2,
+      highFindings: 7,
+      assessment: {
+        id: 2,
+        name: 'Security Compliance Review',
+        status: 'InProgress'
       }
     }
   ],

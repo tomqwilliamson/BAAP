@@ -84,8 +84,10 @@ public class ApplicationsController : ControllerBase
                     estimatedMigrationCost = a.EstimatedMigrationCost,
                     monthlyCost = a.MonthlyCost,
                     lastAnalyzed = a.LastAnalyzedDate,
-                    securityFindings = a.SecurityFindings.Count,
-                    criticalFindings = a.SecurityFindings.Count(sf => sf.Severity == "Critical"),
+                    securityFindings = a.SecurityIssues,
+                    criticalFindings = a.CriticalIssues,
+                    criticalIssues = a.CriticalIssues,
+                    securityIssues = a.SecurityIssues,
                     assessment = a.Assessment == null ? null : new
                     {
                         id = a.Assessment.Id,

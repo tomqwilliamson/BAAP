@@ -13,6 +13,7 @@ import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
+import { API_BASE_URL } from '../../services/api';
 
 function DevOpsAssessment() {
   const { currentAssessment } = useAssessment();
@@ -178,32 +179,67 @@ function DevOpsAssessment() {
 
   const loadDocuments = async () => {
     try {
-      const response = await fetch('/api/document');
+      const response = await fetch(`${API_BASE_URL}/Files/assessment/${currentAssessment?.id}?category=DevOps`);
+      
+      if (!response.ok) {
+        setDocuments([]);
+        return;
+      }
+      
       const data = await response.json();
-      // Filter for devops-related documents
-      const devopsDocs = data.filter(doc => 
-        doc.documentType === 'DevOps Documentation' || 
-        doc.documentType === 'Technical Architecture' ||
-        doc.category === 'devops'
-      );
+      
+      // Extract files array from the API response structure { summary, files }
+      const filesArray = data.files || [];
+      
+      // Map the files to the expected document format
+      const devopsDocs = filesArray.map(file => ({
+        id: file.id,
+        name: file.originalFileName,
+        fileName: file.originalFileName,
+        documentType: 'DevOps Documentation',
+        category: file.category || 'devops',
+        size: file.fileSize,
+        sizeBytes: file.fileSize,
+        uploadedDate: file.uploadedDate,
+        uploadedAt: file.uploadedDate,
+        uploadedBy: file.uploadedBy || 'System',
+        description: file.description,
+        summary: file.description || 'DevOps documentation',
+        contentType: file.contentType,
+        chunks: file.chunks || [],
+        keyFindings: file.keyFindings || []
+      }));
+      
       setDocuments(devopsDocs);
     } catch (error) {
       console.error('Error loading devops documents:', error);
+      setDocuments([]);
     }
   };
 
   const loadInsights = async () => {
     try {
-      const response = await fetch('/api/document/analyze-relationships', {
-        method: 'POST'
-      });
+      const assessmentId = currentAssessment?.id || 1;
+      const response = await fetch(`${API_BASE_URL}/Intelligence/recommendations/${assessmentId}`);
       const data = await response.json();
-      // Filter insights for devops-related documents
-      const devopsInsights = data.filter(insight => 
-        insight.analysisCategory === 'DevOps' ||
-        insight.analysisCategory === 'Development' ||
-        insight.documentType === 'DevOps Documentation'
-      );
+      
+      // Transform recommendations to insights format and filter for DevOps category
+      const devopsInsights = data.filter(recommendation => 
+        recommendation.category === 'DevOps' || recommendation.category === 'Development'
+      ).map(recommendation => ({
+        documentId: recommendation.id || Math.random().toString(36).substr(2, 9),
+        fileName: recommendation.title || 'DevOps Recommendation',
+        analysisCategory: recommendation.category === 'Development' ? 'Development' : 'DevOps',
+        keyThemes: recommendation.tags || [],
+        relatedDocuments: recommendation.relatedItems?.map(item => ({
+          fileName: item.name || item.title,
+          relationshipType: item.type || 'Related'
+        })) || [],
+        insight: recommendation.title,
+        description: recommendation.description || recommendation.content,
+        confidence: recommendation.confidence || 85
+      }));
+      
       setInsights(devopsInsights);
     } catch (error) {
       console.error('Error loading devops insights:', error);
@@ -222,8 +258,11 @@ function DevOpsAssessment() {
         formData.append('file', file);
         formData.append('documentType', 'DevOps Documentation');
         formData.append('category', 'devops');
+        if (currentAssessment?.id) {
+          formData.append('assessmentId', currentAssessment.id);
+        }
         
-        const response = await fetch('/api/document/upload', {
+        const response = await fetch(`${API_BASE_URL}/Files/upload`, {
           method: 'POST',
           body: formData
         });
@@ -267,7 +306,7 @@ function DevOpsAssessment() {
     if (!confirm('Are you sure you want to delete this document?')) return;
     
     try {
-      await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
+      await fetch(`${API_BASE_URL}/Files/${documentId}`, { method: 'DELETE' });
       await loadDocuments();
       await loadInsights();
       toast.success('Document deleted successfully');

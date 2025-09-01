@@ -17,6 +17,7 @@ import {
     CheckCircle,
     AlertCircle
 } from 'lucide-react';
+import { API_BASE_URL } from '../../services/api';
 
 const DocumentInsights = () => {
     const [documents, setDocuments] = useState([]);
@@ -46,21 +47,66 @@ const DocumentInsights = () => {
 
     const loadDocuments = async () => {
         try {
-            const response = await fetch('/api/document');
+            const response = await fetch(`${API_BASE_URL}/Files/assessment/general?category=General`);
+            
+            if (!response.ok) {
+                setDocuments([]);
+                return;
+            }
+            
             const data = await response.json();
-            setDocuments(data);
+            
+            // Extract files array from the API response structure { summary, files }
+            const filesArray = data.files || [];
+            
+            // Map the files to the expected document format
+            const documents = filesArray.map(file => ({
+                id: file.id,
+                name: file.originalFileName,
+                fileName: file.originalFileName,
+                documentType: file.documentType || 'General Documentation',
+                category: file.category || 'general',
+                size: file.fileSize,
+                sizeBytes: file.fileSize,
+                uploadedDate: file.uploadedDate,
+                uploadedAt: file.uploadedDate,
+                uploadedBy: file.uploadedBy || 'System',
+                description: file.description,
+                summary: file.description || 'General document',
+                contentType: file.contentType,
+                chunks: file.chunks || [],
+                keyFindings: file.keyFindings || []
+            }));
+            
+            setDocuments(documents);
         } catch (error) {
             console.error('Error loading documents:', error);
+            setDocuments([]);
         }
     };
 
     const loadInsights = async () => {
         try {
-            const response = await fetch('/api/document/analyze-relationships', {
-                method: 'POST'
-            });
+            const assessmentId = 1; // Default assessment ID for DocumentInsights
+            const response = await fetch(`${API_BASE_URL}/Intelligence/recommendations/${assessmentId}`);
             const data = await response.json();
-            setInsights(data);
+            
+            // Transform recommendations to insights format
+            const transformedInsights = data.map(recommendation => ({
+                documentId: recommendation.id || Math.random().toString(36).substr(2, 9),
+                fileName: recommendation.title || 'General Recommendation',
+                analysisCategory: recommendation.category || 'General',
+                keyThemes: recommendation.tags || [],
+                relatedDocuments: recommendation.relatedItems?.map(item => ({
+                    fileName: item.name || item.title,
+                    relationshipType: item.type || 'Related'
+                })) || [],
+                insight: recommendation.title,
+                description: recommendation.description || recommendation.content,
+                confidence: recommendation.confidence || 85
+            }));
+            
+            setInsights(transformedInsights);
         } catch (error) {
             console.error('Error loading insights:', error);
         }
@@ -76,8 +122,9 @@ const DocumentInsights = () => {
             try {
                 const formData = new FormData();
                 formData.append('file', file);
+                formData.append('category', 'General');
                 
-                const response = await fetch('/api/document/upload', {
+                const response = await fetch(`${API_BASE_URL}/Files/upload`, {
                     method: 'POST',
                     body: formData
                 });
@@ -120,7 +167,7 @@ const DocumentInsights = () => {
         if (!confirm('Are you sure you want to delete this document?')) return;
         
         try {
-            await fetch(`/api/document/${documentId}`, { method: 'DELETE' });
+            await fetch(`${API_BASE_URL}/Files/${documentId}`, { method: 'DELETE' });
             await loadDocuments();
             await loadInsights();
         } catch (error) {

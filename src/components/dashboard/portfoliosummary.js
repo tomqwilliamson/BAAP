@@ -77,68 +77,8 @@ function PortfolioSummary() {
         assessmentName: app.assessment?.name || 'Unknown Assessment'
       }));
 
-      // If we're showing all assessments, ensure we have a reasonable number of applications
-      if (!currentAssessment) {
-        console.log('PORTFOLIO: Original transformed data count:', transformedData.length);
-        
-        // Only add additional applications if we have fewer than the target
-        const targetApplicationCount = 25;
-        const currentCount = transformedData.length;
-        
-        if (currentCount < targetApplicationCount) {
-          console.log('PORTFOLIO: Adding additional applications to reach target of', targetApplicationCount);
-          
-          // Generate additional applications to reach the target
-          const additionalApps = [
-          // Q4 2024 Portfolio Assessment apps (need 6 more: have 2, need 8 total)
-          { id: 'q4-3', name: 'Document Management System', type: '.NET Framework', category: 'Internal', score: 78, assessmentName: 'Q4 2024 Portfolio Assessment' },
-          { id: 'q4-4', name: 'HR Management System', type: 'React', category: 'Internal', score: 89, assessmentName: 'Q4 2024 Portfolio Assessment' },
-          { id: 'q4-5', name: 'Supply Chain Tracker', type: 'Vue.js', category: 'Business Critical', score: 76, assessmentName: 'Q4 2024 Portfolio Assessment' },
-          { id: 'q4-6', name: 'Quality Assurance Portal', type: 'ASP.NET', category: 'Internal', score: 84, assessmentName: 'Q4 2024 Portfolio Assessment' },
-          { id: 'q4-7', name: 'Training Management Portal', type: 'Laravel', category: 'Internal', score: 77, assessmentName: 'Q4 2024 Portfolio Assessment' },
-          { id: 'q4-8', name: 'Asset Management System', type: 'Django', category: 'Business Critical', score: 83, assessmentName: 'Q4 2024 Portfolio Assessment' },
-          
-          // Security Compliance Review apps (need 4 more: have 1, need 5 total)
-          { id: 'sec-2', name: 'Customer Support Portal', type: 'Angular', category: 'Customer-Facing', score: 82, assessmentName: 'Security Compliance Review' },
-          { id: 'sec-3', name: 'Financial Reporting Tool', type: 'Power BI', category: 'Business Critical', score: 73, assessmentName: 'Security Compliance Review' },
-          { id: 'sec-4', name: 'Audit Management System', type: 'Django', category: 'Internal', score: 80, assessmentName: 'Security Compliance Review' },
-          { id: 'sec-5', name: 'Compliance Tracking System', type: '.NET Core', category: 'Business Critical', score: 71, assessmentName: 'Security Compliance Review' },
-          
-          // Cloud Migration Readiness apps (need 11 more: have 1, need 12 total)
-          { id: 'cloud-2', name: 'Inventory Management API', type: 'Node.js', category: 'Business Critical', score: 67, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-3', name: 'Marketing Automation Platform', type: 'Salesforce', category: 'Customer-Facing', score: 91, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-4', name: 'Data Warehouse ETL', type: 'Python', category: 'Business Critical', score: 70, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-5', name: 'Customer Analytics Dashboard', type: 'Tableau', category: 'Internal', score: 85, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-6', name: 'Order Processing System', type: 'Java Spring', category: 'Business Critical', score: 72, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-7', name: 'Notification Service', type: 'Node.js', category: 'Internal', score: 88, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-8', name: 'Product Catalog API', type: 'PHP Laravel', category: 'Customer-Facing', score: 69, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-9', name: 'User Authentication Service', type: 'Go', category: 'Business Critical', score: 93, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-10', name: 'File Storage Service', type: 'AWS Lambda', category: 'Internal', score: 87, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-11', name: 'Backup Management Tool', type: 'PowerShell', category: 'Internal', score: 74, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-12', name: 'API Gateway', type: 'Kong', category: 'Business Critical', score: 81, assessmentName: 'Cloud Migration Readiness' },
-          { id: 'cloud-13', name: 'Monitoring Dashboard', type: 'Grafana', category: 'Internal', score: 86, assessmentName: 'Cloud Migration Readiness' }
-        ].map(app => ({
-          ...app,
-          grade: calculateGrade(app.score),
-          riskLevel: calculateRiskLevel(Math.floor(Math.random() * 3), Math.floor(Math.random() * 5))
-        }));
-
-          // Calculate how many additional apps we need
-          const appsToAdd = Math.min(additionalApps.length, targetApplicationCount - currentCount);
-          const selectedAdditionalApps = additionalApps.slice(0, appsToAdd);
-          
-          // Combine original data with additional apps
-          transformedData = [...transformedData, ...selectedAdditionalApps];
-          
-          console.log('PORTFOLIO: Added', appsToAdd, 'applications. New total:', transformedData.length);
-        } else if (currentCount > targetApplicationCount) {
-          // If we have too many applications, trim to the target
-          console.log('PORTFOLIO: Trimming applications from', currentCount, 'to', targetApplicationCount);
-          transformedData = transformedData.slice(0, targetApplicationCount);
-        } else {
-          console.log('PORTFOLIO: Application count is already at target:', currentCount);
-        }
-      }
+      // Show actual applications from database without artificial padding
+      console.log('PORTFOLIO: Showing actual applications from database, count:', transformedData.length);
       
       console.log('PORTFOLIO: Final transformed applications:', transformedData);
       setApplications(transformedData);

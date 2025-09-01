@@ -57,6 +57,11 @@ public class DataSeederService
             
             // Seed architecture reviews
             await SeedArchitectureReviews(assessments);
+            
+            // Seed business context data
+            await SeedBudgetAllocations(assessments);
+            await SeedProjectTimelines(assessments);
+            await SeedBusinessContextRisks(assessments);
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("Database seeding completed successfully with {AssessmentCount} assessments.", assessments.Count);
@@ -190,6 +195,8 @@ public class DataSeederService
                 CloudReadinessScore = 85,
                 EstimatedMigrationCost = 125000m,
                 MonthlyCost = 2400m,
+                CriticalIssues = 3,
+                SecurityIssues = 8,
                 AssessmentId = assessments[0].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-20T10:30:00Z").ToUniversalTime()
             },
@@ -206,6 +213,8 @@ public class DataSeederService
                 CloudReadinessScore = 72,
                 EstimatedMigrationCost = 275000m,
                 MonthlyCost = 5200m,
+                CriticalIssues = 5,
+                SecurityIssues = 12,
                 AssessmentId = assessments[0].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-19T14:15:00Z").ToUniversalTime()
             },
@@ -222,6 +231,8 @@ public class DataSeederService
                 CloudReadinessScore = 91,
                 EstimatedMigrationCost = 85000m,
                 MonthlyCost = 1800m,
+                CriticalIssues = 2,
+                SecurityIssues = 6,
                 AssessmentId = assessments[1].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-18T09:45:00Z").ToUniversalTime()
             },
@@ -238,6 +249,8 @@ public class DataSeederService
                 CloudReadinessScore = 58,
                 EstimatedMigrationCost = 450000m,
                 MonthlyCost = 8500m,
+                CriticalIssues = 8,
+                SecurityIssues = 15,
                 AssessmentId = assessments[2].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-17T16:20:00Z").ToUniversalTime()
             },
@@ -254,6 +267,8 @@ public class DataSeederService
                 CloudReadinessScore = 60,
                 EstimatedMigrationCost = 180000m,
                 MonthlyCost = 4200m,
+                CriticalIssues = 4,
+                SecurityIssues = 9,
                 AssessmentId = assessments[0].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-16T11:00:00Z").ToUniversalTime()
             },
@@ -270,6 +285,8 @@ public class DataSeederService
                 CloudReadinessScore = 80,
                 EstimatedMigrationCost = 200000m,
                 MonthlyCost = 3800m,
+                CriticalIssues = 3,
+                SecurityIssues = 7,
                 AssessmentId = assessments[1].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-15T13:20:00Z").ToUniversalTime()
             },
@@ -286,6 +303,8 @@ public class DataSeederService
                 CloudReadinessScore = 82,
                 EstimatedMigrationCost = 110000m,
                 MonthlyCost = 2100m,
+                CriticalIssues = 2,
+                SecurityIssues = 7,
                 AssessmentId = assessments[0].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-14T16:45:00Z").ToUniversalTime()
             },
@@ -302,6 +321,8 @@ public class DataSeederService
                 CloudReadinessScore = 55,
                 EstimatedMigrationCost = 95000m,
                 MonthlyCost = 1500m,
+                CriticalIssues = 1,
+                SecurityIssues = 4,
                 AssessmentId = assessments[2].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-13T10:15:00Z").ToUniversalTime()
             },
@@ -318,6 +339,8 @@ public class DataSeederService
                 CloudReadinessScore = 42,
                 EstimatedMigrationCost = 680000m,
                 MonthlyCost = 12500m,
+                CriticalIssues = 12,
+                SecurityIssues = 22,
                 AssessmentId = assessments[2].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-12T08:30:00Z").ToUniversalTime()
             },
@@ -334,6 +357,8 @@ public class DataSeederService
                 CloudReadinessScore = 88,
                 EstimatedMigrationCost = 98000m,
                 MonthlyCost = 2200m,
+                CriticalIssues = 1,
+                SecurityIssues = 5,
                 AssessmentId = assessments[0].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-11T15:20:00Z").ToUniversalTime()
             },
@@ -350,6 +375,8 @@ public class DataSeederService
                 CloudReadinessScore = 75,
                 EstimatedMigrationCost = 85000m,
                 MonthlyCost = 3200m,
+                CriticalIssues = 2,
+                SecurityIssues = 4,
                 AssessmentId = assessments[0].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-10T12:45:00Z").ToUniversalTime()
             },
@@ -366,6 +393,8 @@ public class DataSeederService
                 CloudReadinessScore = 92,
                 EstimatedMigrationCost = 45000m,
                 MonthlyCost = 1200m,
+                CriticalIssues = 1,
+                SecurityIssues = 3,
                 AssessmentId = assessments[1].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-09T14:10:00Z").ToUniversalTime()
             },
@@ -382,6 +411,8 @@ public class DataSeederService
                 CloudReadinessScore = 78,
                 EstimatedMigrationCost = 135000m,
                 MonthlyCost = 2800m,
+                CriticalIssues = 3,
+                SecurityIssues = 8,
                 AssessmentId = assessments[1].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-08T11:30:00Z").ToUniversalTime()
             },
@@ -398,6 +429,8 @@ public class DataSeederService
                 CloudReadinessScore = 85,
                 EstimatedMigrationCost = 72000m,
                 MonthlyCost = 1900m,
+                CriticalIssues = 2,
+                SecurityIssues = 5,
                 AssessmentId = assessments[3].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-07T16:15:00Z").ToUniversalTime()
             },
@@ -414,6 +447,8 @@ public class DataSeederService
                 CloudReadinessScore = 25,
                 EstimatedMigrationCost = 850000m,
                 MonthlyCost = 18500m,
+                CriticalIssues = 15,
+                SecurityIssues = 28,
                 AssessmentId = assessments[2].Id,
                 LastAnalyzedDate = DateTime.Parse("2024-12-06T09:45:00Z").ToUniversalTime()
             }
@@ -421,6 +456,45 @@ public class DataSeederService
 
         _context.Applications.AddRange(applications);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateApplicationIssuesAsync()
+    {
+        _logger.LogInformation("Updating application critical and security issues...");
+        
+        var applications = await _context.Applications.ToListAsync();
+        
+        // Define the updates for each application by name
+        var updates = new Dictionary<string, (int critical, int security)>
+        {
+            { "Customer Portal Web App", (3, 8) },
+            { "Internal ERP System", (5, 12) },
+            { "Mobile Banking App", (2, 6) },
+            { "Legacy Payment Gateway", (8, 15) },
+            { "Employee Management System", (4, 9) },
+            { "Data Analytics Platform", (3, 7) },
+            { "E-commerce API", (2, 7) },
+            { "Document Management System", (1, 4) },
+            { "Supply Chain Management System", (12, 22) },
+            { "Customer Support Portal", (1, 5) },
+            { "Financial Reporting System", (2, 4) },
+            { "Inventory Management API", (1, 3) },
+            { "Marketing Campaign Manager", (3, 8) },
+            { "IoT Device Management Platform", (2, 5) },
+            { "Legacy Mainframe Interface", (15, 28) }
+        };
+
+        foreach (var app in applications)
+        {
+            if (updates.ContainsKey(app.Name))
+            {
+                app.CriticalIssues = updates[app.Name].critical;
+                app.SecurityIssues = updates[app.Name].security;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation($"Updated {applications.Count} applications with critical and security issues.");
     }
 
     private async Task SeedSecurityFindings()
@@ -1259,5 +1333,467 @@ public class DataSeederService
         _context.CodebaseStats.AddRange(dataStats);
 
         _logger.LogInformation("Seeded {Count} architecture reviews with comprehensive data.", architectureReviews.Count);
+    }
+
+    public async Task SeedBudgetAllocations(List<Assessment> assessments)
+    {
+        var budgetAllocations = new[]
+        {
+            new BudgetAllocation
+            {
+                AssessmentCost = 450000m,
+                Implementation = 2800000m,
+                Maintenance = 380000m,
+                Training = 220000m,
+                Contingency = 350000m,
+                Notes = "Q4 2024 Portfolio Assessment budget breakdown with focus on cloud migration and modernization initiatives. Implementation includes Azure infrastructure costs and application refactoring.",
+                AssessmentId = assessments[0].Id
+            },
+            new BudgetAllocation
+            {
+                AssessmentCost = 280000m,
+                Implementation = 1200000m,
+                Maintenance = 180000m,
+                Training = 140000m,
+                Contingency = 180000m,
+                Notes = "Security Compliance Review focused on vulnerability remediation, security tool implementation, and staff training. Includes external security audit costs.",
+                AssessmentId = assessments[1].Id
+            },
+            new BudgetAllocation
+            {
+                AssessmentCost = 650000m,
+                Implementation = 3900000m,
+                Maintenance = 520000m,
+                Training = 180000m,
+                Contingency = 450000m,
+                Notes = "Cloud Migration Readiness comprehensive budget including legacy system modernization, data migration, and infrastructure transformation. Higher contingency due to complexity.",
+                AssessmentId = assessments[2].Id
+            },
+            new BudgetAllocation
+            {
+                AssessmentCost = 320000m,
+                Implementation = 1480000m,
+                Maintenance = 200000m,
+                Training = 150000m,
+                Contingency = 220000m,
+                Notes = "DevOps Transformation Initiative budget covering CI/CD pipeline implementation, automation tools, and process optimization. Includes DevOps coaching and training.",
+                AssessmentId = assessments[3].Id
+            },
+            new BudgetAllocation
+            {
+                AssessmentCost = 480000m,
+                Implementation = 2720000m,
+                Maintenance = 340000m,
+                Training = 160000m,
+                Contingency = 300000m,
+                Notes = "Data Architecture Modernization with focus on data lake implementation, analytics platform upgrade, and AI/ML readiness preparation. Includes data migration costs.",
+                AssessmentId = assessments[4].Id
+            }
+        };
+
+        _context.BudgetAllocations.AddRange(budgetAllocations);
+        _logger.LogInformation("Seeded {Count} budget allocations.", budgetAllocations.Length);
+    }
+
+    public async Task SeedProjectTimelines(List<Assessment> assessments)
+    {
+        var timelineItems = new[]
+        {
+            // Q4 2024 Portfolio Assessment Timeline
+            new ProjectTimelineItem
+            {
+                Phase = "Discovery & Assessment",
+                Description = "Initial application inventory, stakeholder interviews, and technical assessment of current state",
+                StartDate = DateTime.Parse("2024-12-15T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2024-12-29T00:00:00Z").ToUniversalTime(),
+                Progress = 100,
+                Status = "Completed",
+                Dependencies = "Stakeholder availability, access to systems",
+                Owner = "Assessment Team Lead",
+                Notes = "Completed ahead of schedule with excellent stakeholder participation",
+                AssessmentId = assessments[0].Id
+            },
+            new ProjectTimelineItem
+            {
+                Phase = "Architecture Analysis",
+                Description = "Deep dive into application architecture, dependencies mapping, and modernization opportunities",
+                StartDate = DateTime.Parse("2024-12-30T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-01-20T00:00:00Z").ToUniversalTime(),
+                Progress = 85,
+                Status = "In Progress",
+                Dependencies = "Discovery phase completion",
+                Owner = "Senior Architect",
+                Notes = "Architecture reviews progressing well, some legacy systems require additional analysis",
+                AssessmentId = assessments[0].Id
+            },
+            new ProjectTimelineItem
+            {
+                Phase = "Migration Planning",
+                Description = "Detailed migration strategy development with cost estimates and risk assessment",
+                StartDate = DateTime.Parse("2025-01-21T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-02-28T00:00:00Z").ToUniversalTime(),
+                Progress = 0,
+                Status = "Not Started",
+                Dependencies = "Architecture analysis completion",
+                Owner = "Migration Specialist",
+                Notes = "Pending architecture analysis completion",
+                AssessmentId = assessments[0].Id
+            },
+            new ProjectTimelineItem
+            {
+                Phase = "Implementation Roadmap",
+                Description = "Final recommendations report with implementation roadmap and business case",
+                StartDate = DateTime.Parse("2025-03-01T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-03-31T00:00:00Z").ToUniversalTime(),
+                Progress = 0,
+                Status = "Not Started",
+                Dependencies = "Migration planning completion",
+                Owner = "Project Manager",
+                Notes = "Final deliverable including executive summary and technical recommendations",
+                AssessmentId = assessments[0].Id
+            },
+
+            // Security Compliance Review Timeline
+            new ProjectTimelineItem
+            {
+                Phase = "Security Baseline Assessment",
+                Description = "Current security posture evaluation including vulnerability scanning and compliance gap analysis",
+                StartDate = DateTime.Parse("2024-12-18T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-01-10T00:00:00Z").ToUniversalTime(),
+                Progress = 90,
+                Status = "In Progress",
+                Dependencies = "Security team access, vulnerability scanners deployment",
+                Owner = "Security Architect",
+                Notes = "Initial vulnerability scans completed, penetration testing in progress",
+                AssessmentId = assessments[1].Id
+            },
+            new ProjectTimelineItem
+            {
+                Phase = "Compliance Framework Mapping",
+                Description = "Map current controls to required compliance frameworks (SOX, PCI DSS, GDPR)",
+                StartDate = DateTime.Parse("2025-01-11T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-02-15T00:00:00Z").ToUniversalTime(),
+                Progress = 25,
+                Status = "In Progress",
+                Dependencies = "Security baseline completion",
+                Owner = "Compliance Manager",
+                Notes = "SOX mapping completed, working on PCI DSS requirements",
+                AssessmentId = assessments[1].Id
+            },
+            new ProjectTimelineItem
+            {
+                Phase = "Remediation Planning",
+                Description = "Develop detailed remediation plans for identified security gaps and compliance issues",
+                StartDate = DateTime.Parse("2025-02-16T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-03-20T00:00:00Z").ToUniversalTime(),
+                Progress = 0,
+                Status = "Not Started",
+                Dependencies = "Compliance framework mapping",
+                Owner = "Security Team Lead",
+                Notes = "Awaiting compliance analysis completion",
+                AssessmentId = assessments[1].Id
+            },
+
+            // Cloud Migration Readiness Timeline
+            new ProjectTimelineItem
+            {
+                Phase = "Infrastructure Discovery",
+                Description = "Comprehensive infrastructure inventory and dependency mapping",
+                StartDate = DateTime.Parse("2024-12-20T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-02-15T00:00:00Z").ToUniversalTime(),
+                Progress = 60,
+                Status = "In Progress",
+                Dependencies = "Infrastructure team collaboration",
+                Owner = "Infrastructure Architect",
+                Notes = "Physical infrastructure mapping completed, working on network dependencies",
+                AssessmentId = assessments[2].Id
+            },
+            new ProjectTimelineItem
+            {
+                Phase = "Application Modernization Assessment",
+                Description = "Evaluate applications for cloud readiness and modernization requirements",
+                StartDate = DateTime.Parse("2025-02-16T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-04-30T00:00:00Z").ToUniversalTime(),
+                Progress = 0,
+                Status = "Not Started",
+                Dependencies = "Infrastructure discovery completion",
+                Owner = "Application Architect",
+                Notes = "Pending infrastructure analysis completion",
+                AssessmentId = assessments[2].Id
+            },
+            new ProjectTimelineItem
+            {
+                Phase = "Migration Strategy & Costing",
+                Description = "Develop detailed migration strategy with accurate cost projections",
+                StartDate = DateTime.Parse("2025-05-01T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-06-30T00:00:00Z").ToUniversalTime(),
+                Progress = 0,
+                Status = "Not Started",
+                Dependencies = "Application assessment completion",
+                Owner = "Migration Lead",
+                Notes = "Final phase with comprehensive migration roadmap",
+                AssessmentId = assessments[2].Id
+            },
+
+            // DevOps Transformation Timeline
+            new ProjectTimelineItem
+            {
+                Phase = "Current State Analysis",
+                Description = "Assessment of existing development and deployment processes",
+                StartDate = DateTime.Parse("2024-12-23T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-01-15T00:00:00Z").ToUniversalTime(),
+                Progress = 15,
+                Status = "In Progress",
+                Dependencies = "Development team interviews",
+                Owner = "DevOps Consultant",
+                Notes = "Initial interviews completed, process documentation in progress",
+                AssessmentId = assessments[3].Id
+            },
+            new ProjectTimelineItem
+            {
+                Phase = "CI/CD Pipeline Design",
+                Description = "Design modern CI/CD pipelines and automation frameworks",
+                StartDate = DateTime.Parse("2025-01-16T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-03-15T00:00:00Z").ToUniversalTime(),
+                Progress = 0,
+                Status = "Not Started",
+                Dependencies = "Current state analysis",
+                Owner = "Pipeline Architect",
+                Notes = "Waiting for current state analysis completion",
+                AssessmentId = assessments[3].Id
+            },
+
+            // Data Architecture Modernization Timeline
+            new ProjectTimelineItem
+            {
+                Phase = "Data Landscape Assessment",
+                Description = "Comprehensive inventory and assessment of current data assets and architecture",
+                StartDate = DateTime.Parse("2024-12-24T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-02-28T00:00:00Z").ToUniversalTime(),
+                Progress = 10,
+                Status = "In Progress",
+                Dependencies = "Data team access, system documentation",
+                Owner = "Data Architect",
+                Notes = "Data inventory initiated, working on data lineage mapping",
+                AssessmentId = assessments[4].Id
+            },
+            new ProjectTimelineItem
+            {
+                Phase = "Modern Data Platform Design",
+                Description = "Design cloud-native data platform architecture with AI/ML capabilities",
+                StartDate = DateTime.Parse("2025-03-01T00:00:00Z").ToUniversalTime(),
+                EndDate = DateTime.Parse("2025-05-15T00:00:00Z").ToUniversalTime(),
+                Progress = 0,
+                Status = "Not Started",
+                Dependencies = "Data landscape assessment",
+                Owner = "Data Platform Lead",
+                Notes = "Focus on real-time analytics and ML readiness",
+                AssessmentId = assessments[4].Id
+            }
+        };
+
+        _context.ProjectTimelineItems.AddRange(timelineItems);
+        _logger.LogInformation("Seeded {Count} project timeline items.", timelineItems.Length);
+    }
+
+    public async Task SeedBusinessContextRisks(List<Assessment> assessments)
+    {
+        var risks = new[]
+        {
+            // Q4 2024 Portfolio Assessment Risks
+            new BusinessContextRisk
+            {
+                Name = "Legacy System Integration Complexity",
+                Description = "Integration with legacy systems may be more complex than initially estimated, potentially causing delays and cost overruns",
+                Category = "Technical",
+                Probability = "Medium",
+                Impact = "High",
+                RiskScore = 12,
+                Mitigation = "Conduct detailed technical spikes early, engage legacy system experts, create comprehensive fallback plans",
+                Owner = "Technical Lead",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-02-28T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[0].Id
+            },
+            new BusinessContextRisk
+            {
+                Name = "Stakeholder Availability During Holiday Season",
+                Description = "Key stakeholders may have limited availability during December holiday period, impacting assessment timeline",
+                Category = "Business",
+                Probability = "High",
+                Impact = "Medium",
+                RiskScore = 15,
+                Mitigation = "Front-load critical stakeholder sessions, establish backup contacts, adjust timeline for holiday periods",
+                Owner = "Project Manager",
+                Status = "Mitigated",
+                DueDate = DateTime.Parse("2025-01-15T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[0].Id
+            },
+            new BusinessContextRisk
+            {
+                Name = "Budget Approval Delays",
+                Description = "Cloud migration budget approval may be delayed due to economic uncertainty and capital expenditure freezes",
+                Category = "Business",
+                Probability = "Medium",
+                Impact = "High",
+                RiskScore = 12,
+                Mitigation = "Prepare phased implementation options, emphasize cost savings and ROI, identify quick wins",
+                Owner = "Business Sponsor",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-03-31T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[0].Id
+            },
+
+            // Security Compliance Review Risks
+            new BusinessContextRisk
+            {
+                Name = "Critical Vulnerability Discovery",
+                Description = "Discovery of critical security vulnerabilities may require immediate remediation, disrupting assessment timeline",
+                Category = "Security",
+                Probability = "Medium",
+                Impact = "High",
+                RiskScore = 12,
+                Mitigation = "Implement emergency patching procedures, maintain parallel assessment and remediation tracks",
+                Owner = "Security Manager",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-01-31T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[1].Id
+            },
+            new BusinessContextRisk
+            {
+                Name = "Compliance Framework Changes",
+                Description = "Regulatory requirements may change during assessment period, requiring scope adjustments",
+                Category = "Compliance",
+                Probability = "Low",
+                Impact = "High",
+                RiskScore = 5,
+                Mitigation = "Monitor regulatory updates closely, maintain flexible assessment framework, engage compliance experts",
+                Owner = "Compliance Officer",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-04-30T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[1].Id
+            },
+            new BusinessContextRisk
+            {
+                Name = "Security Team Resource Constraints",
+                Description = "Limited security team availability may slow down assessment activities and remediation planning",
+                Category = "Business",
+                Probability = "High",
+                Impact = "Medium",
+                RiskScore = 15,
+                Mitigation = "Engage external security consultants, prioritize high-impact areas, implement automation where possible",
+                Owner = "Security Director",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-02-15T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[1].Id
+            },
+
+            // Cloud Migration Readiness Risks
+            new BusinessContextRisk
+            {
+                Name = "Data Migration Complexity",
+                Description = "Data migration from legacy systems may be more complex than anticipated, especially for mainframe systems",
+                Category = "Technical",
+                Probability = "High",
+                Impact = "High",
+                RiskScore = 20,
+                Mitigation = "Conduct detailed data mapping early, implement pilot migrations, engage data migration specialists",
+                Owner = "Data Migration Lead",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-03-15T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[2].Id
+            },
+            new BusinessContextRisk
+            {
+                Name = "Business Continuity During Migration",
+                Description = "Maintaining business operations during migration phases presents significant operational risk",
+                Category = "Business",
+                Probability = "Medium",
+                Impact = "Critical",
+                RiskScore = 20,
+                Mitigation = "Implement blue-green deployment strategies, extensive testing protocols, rollback procedures",
+                Owner = "Operations Manager",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-06-30T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[2].Id
+            },
+            new BusinessContextRisk
+            {
+                Name = "Cloud Cost Overruns",
+                Description = "Cloud infrastructure costs may exceed estimates due to unforeseen requirements or poor optimization",
+                Category = "Business",
+                Probability = "Medium",
+                Impact = "High",
+                RiskScore = 12,
+                Mitigation = "Implement comprehensive cost monitoring, right-sizing strategies, reserved instance planning",
+                Owner = "Cloud Architect",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-08-31T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[2].Id
+            },
+
+            // DevOps Transformation Risks
+            new BusinessContextRisk
+            {
+                Name = "Development Team Resistance",
+                Description = "Development teams may resist new DevOps practices and tooling, slowing adoption",
+                Category = "Business",
+                Probability = "Medium",
+                Impact = "Medium",
+                RiskScore = 9,
+                Mitigation = "Comprehensive training programs, gradual rollout, champion identification, success story sharing",
+                Owner = "Development Manager",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-04-30T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[3].Id
+            },
+            new BusinessContextRisk
+            {
+                Name = "Tool Integration Challenges",
+                Description = "Integration between existing tools and new DevOps platforms may present technical challenges",
+                Category = "Technical",
+                Probability = "High",
+                Impact = "Medium",
+                RiskScore = 15,
+                Mitigation = "Thorough integration testing, API compatibility verification, fallback tool options",
+                Owner = "DevOps Engineer",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-03-31T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[3].Id
+            },
+
+            // Data Architecture Modernization Risks
+            new BusinessContextRisk
+            {
+                Name = "Data Quality Issues",
+                Description = "Poor data quality in legacy systems may complicate migration and affect analytics outcomes",
+                Category = "Technical",
+                Probability = "High",
+                Impact = "High",
+                RiskScore = 20,
+                Mitigation = "Comprehensive data profiling, cleansing procedures, data validation frameworks",
+                Owner = "Data Quality Lead",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-04-15T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[4].Id
+            },
+            new BusinessContextRisk
+            {
+                Name = "AI/ML Readiness Gap",
+                Description = "Organization may not be ready for advanced AI/ML capabilities, limiting platform value",
+                Category = "Business",
+                Probability = "Medium",
+                Impact = "Medium",
+                RiskScore = 9,
+                Mitigation = "Phased AI/ML adoption strategy, training programs, start with basic analytics use cases",
+                Owner = "Chief Data Officer",
+                Status = "Open",
+                DueDate = DateTime.Parse("2025-07-31T00:00:00Z").ToUniversalTime(),
+                AssessmentId = assessments[4].Id
+            }
+        };
+
+        _context.BusinessContextRisks.AddRange(risks);
+        _logger.LogInformation("Seeded {Count} business context risks.", risks.Length);
     }
 }

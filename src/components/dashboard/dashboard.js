@@ -98,7 +98,8 @@ function Dashboard() {
             potentialSavings: currentAssessment?.potentialSavings || 0,
             assessmentProgress: currentAssessment?.status === 'Completed' ? 100 : currentAssessment?.status === 'InProgress' ? 75 : 25,
             securityIssues: safeApplications.reduce((sum, app) => sum + (app?.securityIssues || ((app?.criticalFindings || 0) + (app?.highFindings || 0))), 0),
-            cloudReadiness: currentAssessment?.cloudReadinessScore || 0
+            cloudReadiness: currentAssessment?.cloudReadinessScore || 0,
+            totalMigrationCost: safeApplications.reduce((sum, app) => sum + (app?.estimatedMigrationCost || 0), 0)
           };
           
           console.log('DASHBOARD: Calculated metrics:', assessmentMetrics);
@@ -111,7 +112,8 @@ function Dashboard() {
             potentialSavings: 0,
             assessmentProgress: 0,
             securityIssues: 0,
-            cloudReadiness: 0
+            cloudReadiness: 0,
+            totalMigrationCost: 0
           };
         }
 
@@ -237,7 +239,8 @@ function Dashboard() {
           potentialSavings: 0, 
           assessmentProgress: 0, 
           securityIssues: 0, 
-          cloudReadiness: 0 
+          cloudReadiness: 0,
+          totalMigrationCost: 0
         },
         trends: [],
         categoryScores: {

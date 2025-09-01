@@ -5,7 +5,7 @@ import { Calendar, Clock, CheckCircle, AlertCircle, PlayCircle, Users } from 'lu
 function ProgressBar({ progress, status }) {
   const getProgressColor = () => {
     if (status === 'Completed') return 'bg-green-500';
-    if (status === 'InProgress') return 'bg-blue-500';
+    if (status === 'InProgress' || status === 'In Progress') return 'bg-blue-500';
     if (status === 'Analyzing') return 'bg-yellow-500';
     return 'bg-gray-300';
   };
@@ -25,6 +25,7 @@ function StatusIcon({ status }) {
     case 'Completed':
       return <CheckCircle className="h-5 w-5 text-green-600" />;
     case 'InProgress':
+    case 'In Progress':
       return <PlayCircle className="h-5 w-5 text-blue-600" />;
     case 'Analyzing':
       return <Clock className="h-5 w-5 text-yellow-600" />;
@@ -47,6 +48,7 @@ function AssessmentProgress({ assessments = [] }) {
       case 'Completed':
         return 100;
       case 'InProgress':
+      case 'In Progress':
         return Math.min(Math.max(timelineProgress, 25), 85); // Between 25-85%
       case 'Analyzing':
         return Math.min(Math.max(timelineProgress, 10), 60); // Between 10-60%
@@ -60,6 +62,7 @@ function AssessmentProgress({ assessments = [] }) {
       case 'Completed':
         return 'text-green-700 bg-green-100 border-green-200';
       case 'InProgress':
+      case 'In Progress':
         return 'text-blue-700 bg-blue-100 border-blue-200';
       case 'Analyzing':
         return 'text-yellow-700 bg-yellow-100 border-yellow-200';
@@ -83,7 +86,7 @@ function AssessmentProgress({ assessments = [] }) {
   // Summary stats
   const totalAssessments = assessments.length;
   const completedAssessments = assessments.filter(a => a.status === 'Completed').length;
-  const inProgressAssessments = assessments.filter(a => a.status === 'InProgress').length;
+  const inProgressAssessments = assessments.filter(a => a.status === 'InProgress' || a.status === 'In Progress').length;
   const totalApplications = assessments.reduce((sum, assessment) => sum + (assessment.applicationCount || 0), 0);
 
   return (
