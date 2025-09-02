@@ -350,6 +350,22 @@ function ArchitectureReview() {
       } catch (error) {
         console.warn('Failed to load AI analysis timestamp from API:', error);
       }
+
+      // Load existing AI analysis results from API
+      try {
+        const aiResults = await apiService.getAIAnalysisResults(currentAssessment.id, 'architecturereview');
+        if (aiResults && aiResults.analysisResults) {
+          setArchitectureData(prev => ({
+            ...prev,
+            ...aiResults.analysisResults
+          }));
+          setShowAnalysisResults(true);
+          console.log('ARCHITECTURE: Loaded existing AI analysis results from API:', aiResults.analysisMode);
+        }
+      } catch (error) {
+        // No existing results found - this is normal for new assessments
+        console.log('ARCHITECTURE: No existing AI analysis results found (this is normal for new assessments)');
+      }
       
       // Try to load from database first
       console.log('ARCHITECTURE: Attempting to load from database for assessment ID:', currentAssessment.id);
@@ -690,6 +706,14 @@ function ArchitectureReview() {
       console.log('ARCHITECTURE: AI analysis timestamp saved to API');
     } catch (error) {
       console.warn('Failed to save AI analysis timestamp to API:', error);
+    }
+
+    // Save AI analysis results to API
+    try {
+      await apiService.saveAIAnalysisResults(currentAssessment.id, 'architecturereview', analysisResults, 'Simulation');
+      console.log('ARCHITECTURE: AI analysis results saved to API');
+    } catch (error) {
+      console.warn('Failed to save AI analysis results to API:', error);
     }
 
     setIsAnalyzing(false);

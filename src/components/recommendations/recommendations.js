@@ -104,6 +104,21 @@ const Recommendations = () => {
         } catch (error) {
           console.warn('Failed to load AI analysis timestamp from API:', error);
         }
+
+        // Load existing AI analysis results from API
+        try {
+          const aiResults = await apiService.getAIAnalysisResults(currentAssessment.id, 'recommendations');
+          if (aiResults && aiResults.analysisResults) {
+            setComprehensiveResults(prev => ({
+              ...prev,
+              ...aiResults.analysisResults
+            }));
+            console.log('RECOMMENDATIONS: Loaded existing AI analysis results from API:', aiResults.analysisMode);
+          }
+        } catch (error) {
+          // No existing results found - this is normal for new assessments
+          console.log('RECOMMENDATIONS: No existing AI analysis results found (this is normal for new assessments)');
+        }
       }
       
       // Generate assessment-specific data
@@ -445,7 +460,7 @@ const Recommendations = () => {
     setIsGeneratingAnalysis(true);
     
     // Simulate AI analysis processing
-    setTimeout(() => {
+    setTimeout(async () => {
       // In production, this would call the actual AI service
       toast.success('AI analysis completed - comprehensive recommendations generated!');
       setIsGeneratingAnalysis(false);
@@ -458,6 +473,19 @@ const Recommendations = () => {
           console.log('RECOMMENDATIONS: AI analysis timestamp saved to API');
         } catch (error) {
           console.warn('Failed to save AI analysis timestamp to API:', error);
+        }
+
+        // Save AI analysis results to API
+        try {
+          await apiService.saveAIAnalysisResults(
+            currentAssessment.id,
+            'recommendations',
+            comprehensiveResults,
+            'Simulation'
+          );
+          console.log('RECOMMENDATIONS: AI analysis results saved to API (Simulation mode)');
+        } catch (error) {
+          console.warn('Failed to save AI analysis results to API:', error);
         }
       }
     }, 3000);

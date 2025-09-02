@@ -445,6 +445,22 @@ function DataArchitecture() {
       } catch (error) {
         console.warn('Failed to load AI analysis timestamp from API:', error);
       }
+
+      // Load existing AI analysis results from API
+      try {
+        const aiResults = await apiService.getAIAnalysisResults(currentAssessment.id, 'dataarchitecture');
+        if (aiResults && aiResults.analysisResults) {
+          setDataArchData(prev => ({
+            ...prev,
+            analysis: aiResults.analysisResults
+          }));
+          setShowAnalysisResults(true);
+          console.log('DATA ARCHITECTURE: Loaded existing AI analysis results from API:', aiResults.analysisMode);
+        }
+      } catch (error) {
+        // No existing results found - this is normal for new assessments
+        console.log('DATA ARCHITECTURE: No existing AI analysis results found (this is normal for new assessments)');
+      }
       
       // Try to load from localStorage first
       const savedDataKey = `dataArchitectureData_${currentAssessment.id}`;
@@ -819,6 +835,20 @@ function DataArchitecture() {
         console.warn('Failed to save AI analysis timestamp to API:', error);
       }
 
+      // Save AI analysis results to API
+      try {
+        const analysisMode = analysisResults.isAiPowered ? 'AI-Powered' : 'Simulation';
+        await apiService.saveAIAnalysisResults(
+          currentAssessment.id,
+          'dataarchitecture',
+          analysisResults,
+          analysisMode
+        );
+        console.log('DATA ARCHITECTURE: AI analysis results saved to API:', analysisMode);
+      } catch (error) {
+        console.warn('Failed to save AI analysis results to API:', error);
+      }
+
       // Add to local notifications as well
       addAnalysisNotification(
         'data-architecture', 
@@ -847,6 +877,19 @@ function DataArchitecture() {
         console.log('DATA ARCHITECTURE: AI analysis timestamp saved to API (simulation mode)');
       } catch (error) {
         console.warn('Failed to save AI analysis timestamp to API:', error);
+      }
+
+      // Save AI analysis results to API (simulation mode)
+      try {
+        await apiService.saveAIAnalysisResults(
+          currentAssessment.id,
+          'dataarchitecture',
+          analysisResults,
+          'Simulation'
+        );
+        console.log('DATA ARCHITECTURE: AI analysis results saved to API (Simulation mode)');
+      } catch (error) {
+        console.warn('Failed to save AI analysis results to API:', error);
       }
       
       toast.success('Analysis completed using simulation mode', { 

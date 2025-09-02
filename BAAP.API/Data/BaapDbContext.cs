@@ -36,6 +36,9 @@ public class BaapDbContext : DbContext
     
     // Development Practices
     public DbSet<DevelopmentPractices> DevelopmentPractices { get; set; } = null!;
+    
+    // AI Analysis Results
+    public DbSet<AIAnalysisResult> AIAnalysisResults { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -185,5 +188,17 @@ public class BaapDbContext : DbContext
             .WithMany()
             .HasForeignKey(cs => cs.ArchitectureReviewId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // AI Analysis Results relationship
+        modelBuilder.Entity<AIAnalysisResult>()
+            .HasOne(aar => aar.Assessment)
+            .WithMany()
+            .HasForeignKey(aar => aar.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Add unique constraint for AssessmentId + ModuleName combination
+        modelBuilder.Entity<AIAnalysisResult>()
+            .HasIndex(aar => new { aar.AssessmentId, aar.ModuleName })
+            .IsUnique();
     }
 }

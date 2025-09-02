@@ -986,6 +986,22 @@ Priority Actions:
         } catch (error) {
           console.warn('Failed to load AI analysis timestamp from API:', error);
         }
+
+        // Load existing AI analysis results from API
+        try {
+          const aiResults = await apiService.getAIAnalysisResults(currentAssessment.id, 'businesscontext');
+          if (aiResults && aiResults.analysisResults) {
+            setBusinessData(prev => ({
+              ...prev,
+              analysis: aiResults.analysisResults
+            }));
+            setShowAnalysisResults(true);
+            console.log('BUSINESS: Loaded existing AI analysis results from API:', aiResults.analysisMode);
+          }
+        } catch (error) {
+          // No existing results found - this is normal for new assessments
+          console.log('BUSINESS: No existing AI analysis results found (this is normal for new assessments)');
+        }
         
         // Load project information from assessment
         const projectInfo = {
@@ -1490,6 +1506,14 @@ Priority Actions:
       console.log('BUSINESS: AI analysis timestamp saved to API');
     } catch (error) {
       console.warn('Failed to save AI analysis timestamp to API:', error);
+    }
+
+    // Save AI analysis results to API
+    try {
+      await apiService.saveAIAnalysisResults(currentAssessment.id, 'businesscontext', analysisResults, 'Simulation');
+      console.log('BUSINESS: AI analysis results saved to API');
+    } catch (error) {
+      console.warn('Failed to save AI analysis results to API:', error);
     }
 
     setIsAnalyzing(false);

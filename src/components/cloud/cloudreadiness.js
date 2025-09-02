@@ -196,6 +196,22 @@ const CloudReadiness = () => {
         } catch (error) {
           console.warn('Failed to load AI analysis timestamp from API:', error);
         }
+
+        // Load existing AI analysis results from API
+        try {
+          const aiResults = await apiService.getAIAnalysisResults(currentAssessment.id, 'cloudmigration');
+          if (aiResults && aiResults.analysisResults) {
+            setCloudReadinessData(prev => ({
+              ...prev,
+              analysis: aiResults.analysisResults
+            }));
+            setShowAnalysisResults(true);
+            console.log('CLOUD MIGRATION: Loaded existing AI analysis results from API:', aiResults.analysisMode);
+          }
+        } catch (error) {
+          // No existing results found - this is normal for new assessments
+          console.log('CLOUD MIGRATION: No existing AI analysis results found (this is normal for new assessments)');
+        }
       }
       
       // Generate assessment-specific data
@@ -692,7 +708,7 @@ const CloudReadiness = () => {
     
     try {
       // Simulate AI analysis
-      setTimeout(() => {
+      setTimeout(async () => {
         const analysisResults = {
           strategicAnalysis: `Cross-domain cloud readiness analysis reveals an overall score of ${cloudReadinessData.crossDomainAnalysis.overallScore}%:
 
@@ -749,6 +765,19 @@ const CloudReadiness = () => {
             console.log('CLOUD: AI analysis timestamp saved to API');
           } catch (error) {
             console.warn('Failed to save AI analysis timestamp to API:', error);
+          }
+
+          // Save AI analysis results to API
+          try {
+            await apiService.saveAIAnalysisResults(
+              currentAssessment.id,
+              'cloudmigration',
+              analysisResults,
+              'Simulation'
+            );
+            console.log('CLOUD MIGRATION: AI analysis results saved to API (Simulation mode)');
+          } catch (error) {
+            console.warn('Failed to save AI analysis results to API:', error);
           }
         }
 

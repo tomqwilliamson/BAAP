@@ -379,6 +379,22 @@ function InfrastructureAssessment() {
       } catch (error) {
         console.warn('Failed to load AI analysis timestamp from API:', error);
       }
+
+      // Load existing AI analysis results from API
+      try {
+        const aiResults = await apiService.getAIAnalysisResults(currentAssessment.id, 'infrastructure');
+        if (aiResults && aiResults.analysisResults) {
+          setAssessmentData(prev => ({
+            ...prev,
+            analysis: aiResults.analysisResults
+          }));
+          setShowAnalysisResults(true);
+          console.log('INFRASTRUCTURE: Loaded existing AI analysis results from API:', aiResults.analysisMode);
+        }
+      } catch (error) {
+        // No existing results found - this is normal for new assessments
+        console.log('INFRASTRUCTURE: No existing AI analysis results found (this is normal for new assessments)');
+      }
       
       // Try to load from localStorage first
       const savedDataKey = `infrastructureData_${currentAssessment.id}`;
@@ -640,6 +656,20 @@ function InfrastructureAssessment() {
         console.warn('Failed to save AI analysis timestamp to API:', error);
       }
 
+      // Save AI analysis results to API
+      try {
+        const analysisMode = analysisResults.isAiPowered ? 'AI-Powered' : 'Simulation';
+        await apiService.saveAIAnalysisResults(
+          currentAssessment.id,
+          'infrastructure',
+          analysisResults,
+          analysisMode
+        );
+        console.log('INFRASTRUCTURE: AI analysis results saved to API:', analysisMode);
+      } catch (error) {
+        console.warn('Failed to save AI analysis results to API:', error);
+      }
+
       // Add to local notifications as well
       addAnalysisNotification(
         'infrastructure', 
@@ -668,6 +698,19 @@ function InfrastructureAssessment() {
         console.log('INFRASTRUCTURE: AI analysis timestamp saved to API (simulation mode)');
       } catch (error) {
         console.warn('Failed to save AI analysis timestamp to API:', error);
+      }
+
+      // Save AI analysis results to API (simulation mode)
+      try {
+        await apiService.saveAIAnalysisResults(
+          currentAssessment.id,
+          'infrastructure',
+          analysisResults,
+          'Simulation'
+        );
+        console.log('INFRASTRUCTURE: AI analysis results saved to API (Simulation mode)');
+      } catch (error) {
+        console.warn('Failed to save AI analysis results to API:', error);
       }
       
       toast.success('Analysis completed using simulation mode', { 

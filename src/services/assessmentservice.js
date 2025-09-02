@@ -326,5 +326,31 @@ export const assessmentService = {
   async delete(url) {
     const response = await apiClient.delete(url);
     return response;
+  },
+
+  // AI Analysis Results endpoints
+  async getAIAnalysisResults(assessmentId, moduleName) {
+    const response = await apiClient.get(`/AIAnalysis/${assessmentId}/${moduleName}`);
+    return response.data;
+  },
+
+  async saveAIAnalysisResults(assessmentId, moduleName, analysisResults, analysisMode = 'Simulation') {
+    const response = await apiClient.post('/AIAnalysis', {
+      assessmentId,
+      moduleName,
+      analysisResults,
+      analysisMode
+    });
+    return response.data;
+  },
+
+  async getAllAIAnalysisResults(assessmentId) {
+    const response = await apiClient.get(`/AIAnalysis/${assessmentId}`);
+    return response.data;
+  },
+
+  async deleteAIAnalysisResults(assessmentId, moduleName) {
+    const response = await apiClient.delete(`/AIAnalysis/${assessmentId}/${moduleName}`);
+    return response.data;
   }
 };

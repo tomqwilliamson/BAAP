@@ -482,6 +482,22 @@ function SecurityAssessment() {
       } catch (error) {
         console.warn('Failed to load AI analysis timestamp from API:', error);
       }
+
+      // Load existing AI analysis results from API
+      try {
+        const aiResults = await apiService.getAIAnalysisResults(currentAssessment.id, 'security');
+        if (aiResults && aiResults.analysisResults) {
+          setSecurityData(prev => ({
+            ...prev,
+            analysis: aiResults.analysisResults
+          }));
+          setShowAnalysisResults(true);
+          console.log('SECURITY: Loaded existing AI analysis results from API:', aiResults.analysisMode);
+        }
+      } catch (error) {
+        // No existing results found - this is normal for new assessments
+        console.log('SECURITY: No existing AI analysis results found (this is normal for new assessments)');
+      }
       
       // Try to load from localStorage first
       const savedDataKey = `securityData_${currentAssessment.id}`;
@@ -690,7 +706,7 @@ function SecurityAssessment() {
     setShowAnalysisResults(false);
     
     // Simulate analysis processing
-    setTimeout(() => {
+    setTimeout(async () => {
       const analysisResults = {
         securityPostureAnalysis: `Cross-assessment security analysis reveals significant vulnerabilities across all technology domains:
 
@@ -736,6 +752,19 @@ function SecurityAssessment() {
         console.log('SECURITY: AI analysis timestamp saved to API');
       } catch (error) {
         console.warn('Failed to save AI analysis timestamp to API:', error);
+      }
+
+      // Save AI analysis results to API
+      try {
+        await apiService.saveAIAnalysisResults(
+          currentAssessment.id,
+          'security',
+          analysisResults,
+          'Simulation'
+        );
+        console.log('SECURITY: AI analysis results saved to API (Simulation mode)');
+      } catch (error) {
+        console.warn('Failed to save AI analysis results to API:', error);
       }
 
       toast.success('Analysis completed successfully!');

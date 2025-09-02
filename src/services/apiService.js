@@ -477,5 +477,11 @@ export const apiService = {
 
   async refreshConfiguration() {
     return await configurationService.refreshConfiguration();
-  }
+  },
+
+  // AI Analysis Results services
+  getAIAnalysisResults: assessmentService.getAIAnalysisResults,
+  saveAIAnalysisResults: assessmentService.saveAIAnalysisResults,
+  getAllAIAnalysisResults: assessmentService.getAllAIAnalysisResults,
+  deleteAIAnalysisResults: assessmentService.deleteAIAnalysisResults
 };
