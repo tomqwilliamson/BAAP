@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { aiAnalysisService } from '../../services/aiAnalysisService';
+import { apiService } from '../../services/apiService';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { API_BASE_URL } from '../../services/api';
 import { dirtyTrackingService } from '../../services/dirtyTrackingService';
@@ -93,6 +94,7 @@ function DataArchitecture() {
   const [dataSaved, setDataSaved] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [lastAiAnalysisTime, setLastAiAnalysisTime] = useState(null);
   const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
   const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
   const [aiCapabilities, setAiCapabilities] = useState(null);
@@ -432,6 +434,17 @@ function DataArchitecture() {
     try {
       setLoading(true);
       console.log('DATA ARCHITECTURE: Loading data for assessment:', currentAssessment?.id, currentAssessment);
+      
+      // Load AI analysis timestamp from API
+      try {
+        const assessmentData = await apiService.getAssessment(currentAssessment.id);
+        if (assessmentData.dataArchitectureLastAiAnalysis) {
+          setLastAiAnalysisTime(new Date(assessmentData.dataArchitectureLastAiAnalysis));
+          console.log('DATA ARCHITECTURE: Loaded AI analysis timestamp from API:', assessmentData.dataArchitectureLastAiAnalysis);
+        }
+      } catch (error) {
+        console.warn('Failed to load AI analysis timestamp from API:', error);
+      }
       
       // Try to load from localStorage first
       const savedDataKey = `dataArchitectureData_${currentAssessment.id}`;
@@ -796,6 +809,15 @@ function DataArchitecture() {
       }));
       
       setShowAnalysisResults(true);
+      setLastAiAnalysisTime(new Date());
+
+      // Save AI analysis timestamp to API
+      try {
+        await apiService.updateAiAnalysisTimestamp(currentAssessment.id, 'dataarchitecture');
+        console.log('DATA ARCHITECTURE: AI analysis timestamp saved to API');
+      } catch (error) {
+        console.warn('Failed to save AI analysis timestamp to API:', error);
+      }
 
       // Add to local notifications as well
       addAnalysisNotification(
@@ -817,6 +839,15 @@ function DataArchitecture() {
       }));
       
       setShowAnalysisResults(true);
+      setLastAiAnalysisTime(new Date());
+
+      // Save AI analysis timestamp to API
+      try {
+        await apiService.updateAiAnalysisTimestamp(currentAssessment.id, 'dataarchitecture');
+        console.log('DATA ARCHITECTURE: AI analysis timestamp saved to API (simulation mode)');
+      } catch (error) {
+        console.warn('Failed to save AI analysis timestamp to API:', error);
+      }
       
       toast.success('Analysis completed using simulation mode', { 
         duration: 3000,
@@ -994,15 +1025,23 @@ function DataArchitecture() {
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-500">
-              {dataSaved && lastSaveTime 
-                ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${isDatabaseMode ? '(DB)' : '(Local)'}`
-                : 'Not saved yet'
-              }
-              {isDatabaseMode ? (
-                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
-              ) : (
-                <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Local Storage</span>
-              )}
+              <div>
+                {dataSaved && lastSaveTime 
+                  ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${isDatabaseMode ? '(DB)' : '(Local)'}`
+                  : 'Not saved yet'
+                }
+                {isDatabaseMode ? (
+                  <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
+                ) : (
+                  <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Local Storage</span>
+                )}
+              </div>
+              <div className="mt-1">
+                {lastAiAnalysisTime 
+                  ? `Last AI Analysis: ${lastAiAnalysisTime.toLocaleDateString()} ${lastAiAnalysisTime.toLocaleTimeString()}`
+                  : 'No AI analysis run yet'
+                }
+              </div>
             </div>
           </div>
         </div>

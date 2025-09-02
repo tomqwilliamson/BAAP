@@ -17,6 +17,7 @@ import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { aiAnalysisService } from '../../services/aiAnalysisService';
+import { apiService } from '../../services/apiService';
 import { API_BASE_URL } from '../../services/api';
 import { dirtyTrackingService } from '../../services/dirtyTrackingService';
 import { notificationService } from '../../services/notificationService';
@@ -31,6 +32,7 @@ function InfrastructureAssessment() {
   const [dataSaved, setDataSaved] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [lastAiAnalysisTime, setLastAiAnalysisTime] = useState(null);
   const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
   const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
   const [aiCapabilities, setAiCapabilities] = useState(null);
@@ -367,6 +369,17 @@ function InfrastructureAssessment() {
     try {
       setLoading(true);
       
+      // Load AI analysis timestamp from API
+      try {
+        const assessmentData = await apiService.getAssessment(currentAssessment.id);
+        if (assessmentData.infrastructureLastAiAnalysis) {
+          setLastAiAnalysisTime(new Date(assessmentData.infrastructureLastAiAnalysis));
+          console.log('INFRASTRUCTURE: Loaded AI analysis timestamp from API:', assessmentData.infrastructureLastAiAnalysis);
+        }
+      } catch (error) {
+        console.warn('Failed to load AI analysis timestamp from API:', error);
+      }
+      
       // Try to load from localStorage first
       const savedDataKey = `infrastructureData_${currentAssessment.id}`;
       const savedData = localStorage.getItem(savedDataKey);
@@ -617,6 +630,15 @@ function InfrastructureAssessment() {
 
       // Show analysis results
       setShowAnalysisResults(true);
+      setLastAiAnalysisTime(new Date());
+
+      // Save AI analysis timestamp to API
+      try {
+        await apiService.updateAiAnalysisTimestamp(currentAssessment.id, 'infrastructure');
+        console.log('INFRASTRUCTURE: AI analysis timestamp saved to API');
+      } catch (error) {
+        console.warn('Failed to save AI analysis timestamp to API:', error);
+      }
 
       // Add to local notifications as well
       addAnalysisNotification(
@@ -638,6 +660,15 @@ function InfrastructureAssessment() {
       }));
       
       setShowAnalysisResults(true);
+      setLastAiAnalysisTime(new Date());
+
+      // Save AI analysis timestamp to API
+      try {
+        await apiService.updateAiAnalysisTimestamp(currentAssessment.id, 'infrastructure');
+        console.log('INFRASTRUCTURE: AI analysis timestamp saved to API (simulation mode)');
+      } catch (error) {
+        console.warn('Failed to save AI analysis timestamp to API:', error);
+      }
       
       toast.success('Analysis completed using simulation mode', { 
         duration: 3000,
@@ -798,6 +829,12 @@ function InfrastructureAssessment() {
                 ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${isDatabaseMode ? '(DB)' : '(Local)'}`
                 : 'Not saved yet'
               }
+              <div>
+                {lastAiAnalysisTime 
+                  ? `Last AI Analysis Run: ${lastAiAnalysisTime?.toLocaleString ? lastAiAnalysisTime.toLocaleString() : 'Unknown time'}`
+                  : 'No AI analysis run yet'
+                }
+              </div>
               {isDatabaseMode ? (
                 <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
               ) : (

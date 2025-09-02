@@ -429,6 +429,7 @@ export const apiService = {
 
   // Pass-through methods for API service methods that don't need mock fallback
   updateAssessment: assessmentService.updateAssessment,
+  updateAiAnalysisTimestamp: assessmentService.updateAiAnalysisTimestamp,
   deleteAssessment: assessmentService.deleteAssessment,
   completeAssessment: assessmentService.completeAssessment,
   analyzeApplication: assessmentService.analyzeApplication,

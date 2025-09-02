@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { API_BASE_URL } from '../../services/api';
+import { apiService } from '../../services/apiService';
 import { developmentPracticesService } from '../../services/developmentPracticesService';
 import { dirtyTrackingService } from '../../services/dirtyTrackingService';
 import { notificationService } from '../../services/notificationService';
@@ -28,6 +29,7 @@ function DevOpsAssessment() {
   const [dataSaved, setDataSaved] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [lastAiAnalysisTime, setLastAiAnalysisTime] = useState(null);
   const [isDatabaseMode, setIsDatabaseMode] = useState(true); // Track if using database mode
   
   // Document management states
@@ -295,6 +297,17 @@ function DevOpsAssessment() {
     try {
       setLoading(true);
       console.log('DEVOPS: Loading data for assessment:', currentAssessment?.id);
+      
+      // Load AI analysis timestamp from API
+      try {
+        const assessmentData = await apiService.getAssessment(currentAssessment.id);
+        if (assessmentData.devOpsLastAiAnalysis) {
+          setLastAiAnalysisTime(new Date(assessmentData.devOpsLastAiAnalysis));
+          console.log('DEVOPS: Loaded AI analysis timestamp from API:', assessmentData.devOpsLastAiAnalysis);
+        }
+      } catch (error) {
+        console.warn('Failed to load AI analysis timestamp from API:', error);
+      }
       
       // Try to load from localStorage first
       const savedDataKey = `devOpsData_${currentAssessment.id}`;
@@ -812,6 +825,15 @@ function DevOpsAssessment() {
       }));
       
       setShowAnalysisResults(true);
+      setLastAiAnalysisTime(new Date());
+
+      // Save AI analysis timestamp to API
+      try {
+        await apiService.updateAiAnalysisTimestamp(currentAssessment.id, 'devops');
+        console.log('DEVOPS: AI analysis timestamp saved to API');
+      } catch (error) {
+        console.warn('Failed to save AI analysis timestamp to API:', error);
+      }
 
       // Add to local notifications as well
       addAnalysisNotification(
@@ -971,6 +993,12 @@ function DevOpsAssessment() {
                 ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${isDatabaseMode ? '(DB)' : '(Local)'}`
                 : 'Not saved yet'
               }
+              <div>
+                {lastAiAnalysisTime 
+                  ? `Last AI Analysis Run: ${lastAiAnalysisTime?.toLocaleString ? lastAiAnalysisTime.toLocaleString() : 'Unknown time'}`
+                  : 'No AI analysis run yet'
+                }
+              </div>
               {isDatabaseMode ? (
                 <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
               ) : (

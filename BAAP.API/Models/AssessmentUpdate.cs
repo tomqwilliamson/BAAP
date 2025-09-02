@@ -21,4 +21,14 @@ public class AssessmentUpdate
     public int? ApplicationCount { get; set; }
     public string? Timeline { get; set; }
     public decimal? Budget { get; set; }
+    
+    // AI Analysis timestamps for each module
+    public DateTime? BusinessContextLastAiAnalysis { get; set; }
+    public DateTime? ArchitectureReviewLastAiAnalysis { get; set; }
+    public DateTime? InfrastructureLastAiAnalysis { get; set; }
+    public DateTime? DataArchitectureLastAiAnalysis { get; set; }
+    public DateTime? DevOpsLastAiAnalysis { get; set; }
+    public DateTime? SecurityLastAiAnalysis { get; set; }
+    public DateTime? CloudMigrationLastAiAnalysis { get; set; }
+    public DateTime? RecommendationsLastAiAnalysis { get; set; }
 }

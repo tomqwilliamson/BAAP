@@ -56,6 +56,14 @@ export const assessmentService = {
     return response.data;
   },
 
+  async updateAiAnalysisTimestamp(assessmentId, module, timestamp = null) {
+    const response = await apiClient.post(`/assessments/${assessmentId}/ai-analysis-timestamp`, {
+      module,
+      timestamp: timestamp || new Date().toISOString()
+    });
+    return response.data;
+  },
+
   async deleteAssessment(id) {
     const response = await apiClient.delete(`/assessments/${id}`);
     return response.data;

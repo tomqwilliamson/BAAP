@@ -26,6 +26,7 @@ import {
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
+import { apiService } from '../../services/apiService';
 import { useReactToPrint } from 'react-to-print';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -42,6 +43,7 @@ const Recommendations = () => {
   const [expandedSections, setExpandedSections] = useState({});
   const [storageMode, setStorageMode] = useState('Local Storage'); // Local Storage, Simulation, Azure DB
   const [lastGeneratedTime, setLastGeneratedTime] = useState(new Date());
+  const [lastAiAnalysisTime, setLastAiAnalysisTime] = useState(null);
   const printRef = useRef();
 
   const [comprehensiveResults, setComprehensiveResults] = useState({
@@ -90,6 +92,19 @@ const Recommendations = () => {
     try {
       setLoading(true);
       console.log('RECOMMENDATIONS: Loading data for assessment:', currentAssessment?.id);
+      
+      // Load AI analysis timestamp from API
+      if (currentAssessment?.id) {
+        try {
+          const assessmentData = await apiService.getAssessment(currentAssessment.id);
+          if (assessmentData.recommendationsLastAiAnalysis) {
+            setLastAiAnalysisTime(new Date(assessmentData.recommendationsLastAiAnalysis));
+            console.log('RECOMMENDATIONS: Loaded AI analysis timestamp from API:', assessmentData.recommendationsLastAiAnalysis);
+          }
+        } catch (error) {
+          console.warn('Failed to load AI analysis timestamp from API:', error);
+        }
+      }
       
       // Generate assessment-specific data
       const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'recommendations');
@@ -434,6 +449,17 @@ const Recommendations = () => {
       // In production, this would call the actual AI service
       toast.success('AI analysis completed - comprehensive recommendations generated!');
       setIsGeneratingAnalysis(false);
+      setLastAiAnalysisTime(new Date());
+
+      // Save AI analysis timestamp to API
+      if (currentAssessment?.id) {
+        try {
+          apiService.updateAiAnalysisTimestamp(currentAssessment.id, 'recommendations');
+          console.log('RECOMMENDATIONS: AI analysis timestamp saved to API');
+        } catch (error) {
+          console.warn('Failed to save AI analysis timestamp to API:', error);
+        }
+      }
     }, 3000);
   };
 
@@ -1536,6 +1562,13 @@ const Recommendations = () => {
               <div className="text-sm text-gray-600">
                 <Clock className="h-4 w-4 inline mr-1" />
                 Generated: {lastGeneratedTime.toLocaleDateString()} {lastGeneratedTime.toLocaleTimeString()}
+                <div>
+                  <Clock className="h-4 w-4 inline mr-1" />
+                  {lastAiAnalysisTime 
+                    ? `Last AI Analysis Run: ${lastAiAnalysisTime?.toLocaleString ? lastAiAnalysisTime.toLocaleString() : 'Unknown time'}`
+                    : 'No AI analysis run yet'
+                  }
+                </div>
               </div>
             )}
           </div>

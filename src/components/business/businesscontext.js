@@ -395,6 +395,7 @@ function BusinessContext() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(true);
   const [lastSaveTime, setLastSaveTime] = useState(new Date());
+  const [lastAiAnalysisTime, setLastAiAnalysisTime] = useState(null);
   const [loading, setLoading] = useState(false);
   const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
   const [usingDatabaseData, setUsingDatabaseData] = useState(false);
@@ -975,6 +976,17 @@ Priority Actions:
       if (currentAssessment?.id) {
         console.log('LOADING: Assessment data for ID:', currentAssessment.id);
         
+        // Load AI analysis timestamp from API
+        try {
+          const assessmentData = await apiService.getAssessment(currentAssessment.id);
+          if (assessmentData.businessContextLastAiAnalysis) {
+            setLastAiAnalysisTime(new Date(assessmentData.businessContextLastAiAnalysis));
+            console.log('BUSINESS: Loaded AI analysis timestamp from API:', assessmentData.businessContextLastAiAnalysis);
+          }
+        } catch (error) {
+          console.warn('Failed to load AI analysis timestamp from API:', error);
+        }
+        
         // Load project information from assessment
         const projectInfo = {
           name: currentAssessment.type || currentAssessment.name || '',
@@ -1470,6 +1482,16 @@ Priority Actions:
     }));
     
     setShowAnalysisResults(true);
+    setLastAiAnalysisTime(new Date());
+
+    // Save AI analysis timestamp to API
+    try {
+      await apiService.updateAiAnalysisTimestamp(currentAssessment.id, 'businesscontext');
+      console.log('BUSINESS: AI analysis timestamp saved to API');
+    } catch (error) {
+      console.warn('Failed to save AI analysis timestamp to API:', error);
+    }
+
     setIsAnalyzing(false);
   };
 
@@ -1656,6 +1678,12 @@ Priority Actions:
               ? `Last saved: ${lastSaveTime.toLocaleString()}`
               : 'Not saved yet'
             }
+            <div>
+              {lastAiAnalysisTime 
+                ? `Last AI Analysis Run: ${lastAiAnalysisTime?.toLocaleString ? lastAiAnalysisTime.toLocaleString() : 'Unknown time'}`
+                : 'No AI analysis run yet'
+              }
+            </div>
           </div>
           <div className={`flex items-center space-x-1 text-xs ${usingDatabaseData ? 'text-green-600' : 'text-orange-600'}`}>
             <div className={`w-2 h-2 rounded-full ${usingDatabaseData ? 'bg-green-500' : 'bg-orange-500'}`}></div>

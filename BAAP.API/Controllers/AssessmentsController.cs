@@ -150,6 +150,16 @@ public class AssessmentsController : ControllerBase
             if (assessmentUpdate.ApplicationCount.HasValue) assessment.ApplicationCount = assessmentUpdate.ApplicationCount.Value;
             if (assessmentUpdate.Timeline != null) assessment.Timeline = assessmentUpdate.Timeline;
             if (assessmentUpdate.Budget.HasValue) assessment.Budget = assessmentUpdate.Budget.Value;
+            
+            // Update AI Analysis timestamps
+            if (assessmentUpdate.BusinessContextLastAiAnalysis.HasValue) assessment.BusinessContextLastAiAnalysis = assessmentUpdate.BusinessContextLastAiAnalysis.Value;
+            if (assessmentUpdate.ArchitectureReviewLastAiAnalysis.HasValue) assessment.ArchitectureReviewLastAiAnalysis = assessmentUpdate.ArchitectureReviewLastAiAnalysis.Value;
+            if (assessmentUpdate.InfrastructureLastAiAnalysis.HasValue) assessment.InfrastructureLastAiAnalysis = assessmentUpdate.InfrastructureLastAiAnalysis.Value;
+            if (assessmentUpdate.DataArchitectureLastAiAnalysis.HasValue) assessment.DataArchitectureLastAiAnalysis = assessmentUpdate.DataArchitectureLastAiAnalysis.Value;
+            if (assessmentUpdate.DevOpsLastAiAnalysis.HasValue) assessment.DevOpsLastAiAnalysis = assessmentUpdate.DevOpsLastAiAnalysis.Value;
+            if (assessmentUpdate.SecurityLastAiAnalysis.HasValue) assessment.SecurityLastAiAnalysis = assessmentUpdate.SecurityLastAiAnalysis.Value;
+            if (assessmentUpdate.CloudMigrationLastAiAnalysis.HasValue) assessment.CloudMigrationLastAiAnalysis = assessmentUpdate.CloudMigrationLastAiAnalysis.Value;
+            if (assessmentUpdate.RecommendationsLastAiAnalysis.HasValue) assessment.RecommendationsLastAiAnalysis = assessmentUpdate.RecommendationsLastAiAnalysis.Value;
 
             assessment.LastModifiedDate = DateTime.UtcNow;
 
@@ -510,6 +520,71 @@ public class AssessmentsController : ControllerBase
         }
     }
 
+    // POST: api/assessments/{id}/ai-analysis-timestamp
+    [HttpPost("{id}/ai-analysis-timestamp")]
+    public async Task<IActionResult> UpdateAiAnalysisTimestamp(int id, [FromBody] UpdateAiAnalysisTimestampRequest request)
+    {
+        try
+        {
+            var assessment = await _context.Assessments.FindAsync(id);
+            if (assessment == null)
+            {
+                return NotFound($"Assessment with ID {id} not found");
+            }
+
+            // Update the specific module's AI analysis timestamp
+            switch (request.Module.ToLower())
+            {
+                case "businesscontext":
+                case "business-context":
+                    assessment.BusinessContextLastAiAnalysis = request.Timestamp ?? DateTime.UtcNow;
+                    break;
+                case "architecturereview":
+                case "architecture-review":
+                    assessment.ArchitectureReviewLastAiAnalysis = request.Timestamp ?? DateTime.UtcNow;
+                    break;
+                case "infrastructure":
+                    assessment.InfrastructureLastAiAnalysis = request.Timestamp ?? DateTime.UtcNow;
+                    break;
+                case "dataarchitecture":
+                case "data-architecture":
+                    assessment.DataArchitectureLastAiAnalysis = request.Timestamp ?? DateTime.UtcNow;
+                    break;
+                case "devops":
+                    assessment.DevOpsLastAiAnalysis = request.Timestamp ?? DateTime.UtcNow;
+                    break;
+                case "security":
+                    assessment.SecurityLastAiAnalysis = request.Timestamp ?? DateTime.UtcNow;
+                    break;
+                case "cloudmigration":
+                case "cloud-migration":
+                    assessment.CloudMigrationLastAiAnalysis = request.Timestamp ?? DateTime.UtcNow;
+                    break;
+                case "recommendations":
+                    assessment.RecommendationsLastAiAnalysis = request.Timestamp ?? DateTime.UtcNow;
+                    break;
+                default:
+                    return BadRequest($"Unknown module: {request.Module}. Valid modules are: businesscontext, architecturereview, infrastructure, dataarchitecture, devops, security, cloudmigration, recommendations");
+            }
+
+            assessment.LastModifiedDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = $"AI analysis timestamp updated successfully for {request.Module}",
+                assessmentId = id,
+                module = request.Module,
+                timestamp = request.Timestamp ?? DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating AI analysis timestamp for assessment ID {AssessmentId}", id);
+            return StatusCode(500, "An error occurred while updating AI analysis timestamp");
+        }
+    }
+
     // POST: api/assessments/{id}/clone
     [HttpPost("{id}/clone")]
     public async Task<ActionResult> CloneAssessment(int id, [FromBody] CloneAssessmentRequest request)
@@ -673,4 +748,10 @@ public class CloneAssessmentRequest
     public string? Name { get; set; }
     public bool IncludeStakeholders { get; set; } = true;
     public bool IncludeBusinessDrivers { get; set; } = true;
+}
+
+public class UpdateAiAnalysisTimestampRequest
+{
+    public string Module { get; set; } = string.Empty;
+    public DateTime? Timestamp { get; set; }
 }

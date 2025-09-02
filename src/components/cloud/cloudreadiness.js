@@ -28,6 +28,7 @@ import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { formatCurrency } from '../../utils/currency';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
+import { apiService } from '../../services/apiService';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 // import { assessmentService } from '../../services/assessmentservice'; // Commented out since we're using mock data for now
@@ -98,6 +99,7 @@ const CloudReadiness = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [lastAiAnalysisTime, setLastAiAnalysisTime] = useState(null);
   const [loading, setLoading] = useState(true);
   const [storageMode, setStorageMode] = useState('Local Storage'); // Local Storage, Simulation, Azure DB
 
@@ -182,6 +184,19 @@ const CloudReadiness = () => {
     try {
       setLoading(true);
       console.log('CLOUD READINESS: Loading data for assessment:', currentAssessment?.id);
+      
+      // Load AI analysis timestamp from API
+      if (currentAssessment?.id) {
+        try {
+          const assessmentData = await apiService.getAssessment(currentAssessment.id);
+          if (assessmentData.cloudMigrationLastAiAnalysis) {
+            setLastAiAnalysisTime(new Date(assessmentData.cloudMigrationLastAiAnalysis));
+            console.log('CLOUD: Loaded AI analysis timestamp from API:', assessmentData.cloudMigrationLastAiAnalysis);
+          }
+        } catch (error) {
+          console.warn('Failed to load AI analysis timestamp from API:', error);
+        }
+      }
       
       // Generate assessment-specific data
       const assessmentSpecificData = generateAssessmentSpecificData(currentAssessment, 'cloudReadiness');
@@ -725,6 +740,18 @@ const CloudReadiness = () => {
         
         setIsAnalyzing(false);
         setShowAnalysisResults(true);
+        setLastAiAnalysisTime(new Date());
+
+        // Save AI analysis timestamp to API
+        if (currentAssessment?.id) {
+          try {
+            await apiService.updateAiAnalysisTimestamp(currentAssessment.id, 'cloudmigration');
+            console.log('CLOUD: AI analysis timestamp saved to API');
+          } catch (error) {
+            console.warn('Failed to save AI analysis timestamp to API:', error);
+          }
+        }
+
         toast.success('Analysis completed successfully!');
       }, 3000);
     } catch (error) {
@@ -858,6 +885,13 @@ const CloudReadiness = () => {
                 ? `Last saved: ${new Date(lastSaveTime).toLocaleDateString()} ${new Date(lastSaveTime).toLocaleTimeString()}`
                 : 'Not saved yet'
               }
+              <div>
+                <Clock className="h-4 w-4 inline mr-1" />
+                {lastAiAnalysisTime 
+                  ? `Last AI Analysis Run: ${lastAiAnalysisTime?.toLocaleString ? lastAiAnalysisTime.toLocaleString() : 'Unknown time'}`
+                  : 'No AI analysis run yet'
+                }
+              </div>
             </div>
           </div>
         </div>

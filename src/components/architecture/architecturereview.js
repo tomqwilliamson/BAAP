@@ -14,6 +14,7 @@ import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { assessmentService } from '../../services/assessmentservice';
+import { apiService } from '../../services/apiService';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import { aiAnalysisService } from '../../services/aiAnalysisService';
 import { architectureService } from '../../services/architectureService';
@@ -29,6 +30,7 @@ function ArchitectureReview() {
   const [repositoryConnected, setRepositoryConnected] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [lastAiAnalysisTime, setLastAiAnalysisTime] = useState(null);
   const [aiAnalysisResults, setAiAnalysisResults] = useState(null);
   const [aiServiceAvailable, setAiServiceAvailable] = useState(false);
   const [aiCapabilities, setAiCapabilities] = useState(null);
@@ -338,6 +340,17 @@ function ArchitectureReview() {
     }
 
     try {
+      // Load AI analysis timestamp from API
+      try {
+        const assessmentData = await apiService.getAssessment(currentAssessment.id);
+        if (assessmentData.architectureReviewLastAiAnalysis) {
+          setLastAiAnalysisTime(new Date(assessmentData.architectureReviewLastAiAnalysis));
+          console.log('ARCHITECTURE: Loaded AI analysis timestamp from API:', assessmentData.architectureReviewLastAiAnalysis);
+        }
+      } catch (error) {
+        console.warn('Failed to load AI analysis timestamp from API:', error);
+      }
+      
       // Try to load from database first
       console.log('ARCHITECTURE: Attempting to load from database for assessment ID:', currentAssessment.id);
       const dbData = await architectureService.getArchitectureReview(currentAssessment.id);
@@ -669,6 +682,16 @@ function ArchitectureReview() {
     }));
     
     setShowAnalysisResults(true);
+    setLastAiAnalysisTime(new Date());
+
+    // Save AI analysis timestamp to API
+    try {
+      await apiService.updateAiAnalysisTimestamp(currentAssessment.id, 'architecturereview');
+      console.log('ARCHITECTURE: AI analysis timestamp saved to API');
+    } catch (error) {
+      console.warn('Failed to save AI analysis timestamp to API:', error);
+    }
+
     setIsAnalyzing(false);
   };
 
@@ -914,6 +937,12 @@ function ArchitectureReview() {
               ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${architectureService.isDatabaseCrudEnabled() ? '(DB)' : '(Local)'}`
               : 'Not saved yet'
             }
+            <div>
+              {lastAiAnalysisTime 
+                ? `Last AI Analysis Run: ${lastAiAnalysisTime?.toLocaleString ? lastAiAnalysisTime.toLocaleString() : 'Unknown time'}`
+                : 'No AI analysis run yet'
+              }
+            </div>
             {architectureService.isDatabaseCrudEnabled() ? (
               <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
             ) : (
