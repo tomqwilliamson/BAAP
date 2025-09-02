@@ -1,19 +1,21 @@
 // src/components/common/AssessmentSelectionGuard.js - Assessment selection requirement guard
 import React, { useEffect, useState } from 'react';
-import { useLocation, Navigate } from 'react-router-dom';
+import { useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { ClipboardList, ArrowRight, Calendar, BarChart3, Users } from 'lucide-react';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import toast from 'react-hot-toast';
 
 function AssessmentSelectionGuard({ children }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentAssessment, assessments, loadAssessment, loading: assessmentsLoading } = useAssessment();
   const [autoSelecting, setAutoSelecting] = useState(false);
 
   // Pages that don't require assessment selection
   const publicPages = [
     '/app',
-    '/app/dashboard'
+    '/app/dashboard',
+    '/app/assessments/new'
   ];
 
   const isPublicPage = publicPages.includes(location.pathname);
@@ -187,30 +189,18 @@ function AssessmentSelectionGuard({ children }) {
             <div className="text-center py-12">
               <ClipboardList className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Assessments Available</h3>
-              <p className="text-gray-500 mb-6">Create your first assessment to get started</p>
-              <button 
-                onClick={() => window.location.href = '/app/assessments/new'}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Create Assessment
-              </button>
+              <p className="text-gray-500">Use the "+ New Assessment" button in the sidebar to create your first assessment</p>
             </div>
           )}
 
           {/* Footer Actions */}
           {assessments.length > 0 && (
-            <div className="border-t border-gray-200 pt-6 flex items-center justify-between">
+            <div className="border-t border-gray-200 pt-6 flex items-center justify-center">
               <button
-                onClick={() => window.location.href = '/app/dashboard'}
+                onClick={() => navigate('/app/dashboard')}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Back to Dashboard
-              </button>
-              <button
-                onClick={() => window.location.href = '/app/assessments/new'}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Create New Assessment
               </button>
             </div>
           )}
