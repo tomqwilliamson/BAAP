@@ -70,7 +70,7 @@ INSERT INTO DevelopmentPractices (
 ) VALUES 
 -- Development Practices for Assessment 1 (E-commerce)
 (
-    1, 
+    (SELECT TOP 1 Id FROM Assessments WHERE [Name] LIKE '%E-commerce%'), 
     'Agile/Scrum', 
     '2 weeks', 
     'Bi-weekly', 
@@ -93,7 +93,7 @@ INSERT INTO DevelopmentPractices (
 
 -- Development Practices for Assessment 2 (Banking)
 (
-    2, 
+    (SELECT TOP 1 Id FROM Assessments WHERE [Name] LIKE '%Banking%'), 
     'Waterfall', 
     '4 weeks', 
     'Quarterly', 
@@ -116,7 +116,7 @@ INSERT INTO DevelopmentPractices (
 
 -- Development Practices for Assessment 3 (Healthcare)
 (
-    3, 
+    (SELECT TOP 1 Id FROM Assessments WHERE [Name] LIKE '%Healthcare%'), 
     'Kanban', 
     'Continuous', 
     'Monthly', 
