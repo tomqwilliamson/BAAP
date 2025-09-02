@@ -2,35 +2,35 @@
 PRINT 'Seeding InfrastructureServers table...'
 
 INSERT INTO InfrastructureServers (
-    ServerName,
-    ServerType,
-    OperatingSystem,
-    CPUCores,
-    RAMInGB,
-    StorageInGB,
-    Location,
-    [Status],
-    AssessmentId,
-    CreatedDate
+    [Name],
+    [Type],
+    ServerCount,
+    UtilizationPercent,
+    CloudReadiness,
+    CurrentHosting,
+    RecommendedAzureTarget,
+    MigrationEffort,
+    EstimatedMonthlyCost,
+    CreatedDate,
+    AssessmentId
 ) VALUES 
 -- Infrastructure for Assessment 1 (E-commerce)
-('EC-WEB-01', 'Web Server', 'Windows Server 2019', 8, 32, 500, 'On-Premise Data Center', 'Active', 1, GETDATE()),
-('EC-API-01', 'Application Server', 'Ubuntu 20.04', 16, 64, 1000, 'On-Premise Data Center', 'Active', 1, GETDATE()),
-('EC-DB-01', 'Database Server', 'Windows Server 2019', 24, 128, 2000, 'On-Premise Data Center', 'Active', 1, GETDATE()),
-('EC-CACHE-01', 'Cache Server', 'CentOS 8', 4, 16, 200, 'On-Premise Data Center', 'Active', 1, GETDATE()),
+('Web Servers', 'IIS', 3, 75, 'High', 'On-Premise Data Center', 'Azure App Service', 'Medium', '$2,400', GETDATE(), 1),
+('Application Servers', 'Linux', 2, 68, 'High', 'On-Premise Data Center', 'Azure Container Instances', 'Low', '$1,800', GETDATE(), 1),
+('Database Servers', 'SQL Server', 1, 82, 'Medium', 'On-Premise Data Center', 'Azure SQL Database', 'High', '$3,200', GETDATE(), 1),
+('Cache Servers', 'Redis', 2, 45, 'High', 'On-Premise Data Center', 'Azure Cache for Redis', 'Low', '$800', GETDATE(), 1),
 
 -- Infrastructure for Assessment 2 (Banking)
-('BK-CORE-01', 'Mainframe', 'z/OS', 32, 256, 10000, 'Secure Data Center', 'Active', 2, GETDATE()),
-('BK-WEB-01', 'Web Server', 'Red Hat Enterprise Linux 8', 12, 48, 800, 'Secure Data Center', 'Active', 2, GETDATE()),
-('BK-APP-01', 'Application Server', 'AIX', 16, 64, 1200, 'Secure Data Center', 'Active', 2, GETDATE()),
-('BK-DB-01', 'Database Server', 'IBM DB2 on Linux', 20, 96, 5000, 'Secure Data Center', 'Active', 2, GETDATE()),
-('BK-SEC-01', 'Security Server', 'Ubuntu 22.04', 8, 32, 500, 'Secure Data Center', 'Active', 2, GETDATE()),
+('Core Banking Mainframe', 'Mainframe', 1, 95, 'Low', 'Secure Data Center', 'Azure Virtual Machines', 'High', '$15,000', GETDATE(), 2),
+('Web Application Servers', 'Linux', 4, 78, 'Medium', 'Secure Data Center', 'Azure App Service', 'Medium', '$4,800', GETDATE(), 2),
+('Database Cluster', 'DB2', 3, 88, 'Low', 'Secure Data Center', 'Azure SQL Managed Instance', 'High', '$8,500', GETDATE(), 2),
+('Security Infrastructure', 'Linux', 2, 65, 'Medium', 'Secure Data Center', 'Azure Security Center', 'Medium', '$2,200', GETDATE(), 2),
 
 -- Infrastructure for Assessment 3 (Healthcare)
-('HC-EMR-01', 'EMR Server', 'Windows Server 2022', 16, 64, 2000, 'Healthcare Data Center', 'Active', 3, GETDATE()),
-('HC-IMG-01', 'Imaging Server', 'CentOS Stream 8', 32, 128, 20000, 'Healthcare Data Center', 'Active', 3, GETDATE()),
-('HC-API-01', 'API Gateway', 'Ubuntu 22.04', 8, 32, 500, 'Healthcare Data Center', 'Active', 3, GETDATE()),
-('HC-DB-01', 'Database Server', 'SQL Server on Windows', 20, 96, 5000, 'Healthcare Data Center', 'Active', 3, GETDATE());
+('EMR Application Servers', 'IIS', 2, 72, 'High', 'Healthcare Data Center', 'Azure App Service', 'Medium', '$3,600', GETDATE(), 3),
+('Medical Imaging Storage', 'Linux', 4, 85, 'Medium', 'Healthcare Data Center', 'Azure Blob Storage', 'Medium', '$12,000', GETDATE(), 3),
+('API Gateway Cluster', 'Linux', 2, 60, 'High', 'Healthcare Data Center', 'Azure API Management', 'Low', '$1,400', GETDATE(), 3),
+('Healthcare Database', 'SQL Server', 2, 90, 'Medium', 'Healthcare Data Center', 'Azure SQL Database', 'High', '$5,200', GETDATE(), 3);
 
 PRINT 'InfrastructureServers seeded successfully!'
 SELECT COUNT(*) as [InfrastructureServers Count] FROM InfrastructureServers;

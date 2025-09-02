@@ -2,44 +2,87 @@
 PRINT 'Seeding CodeMetrics table...'
 
 INSERT INTO CodeMetrics (
-    ApplicationId,
-    LinesOfCode,
-    CyclomaticComplexity,
-    CodeDuplication,
-    TechnicalDebt,
-    TestCoverage,
-    Maintainability,
-    MeasuredDate
+    MetricName,
+    [Value],
+    Unit,
+    Category,
+    MeasuredDate,
+    ApplicationId
 ) VALUES 
 -- Code Metrics for Assessment 1 Applications (E-commerce)
 -- Customer Web Portal
-(1, 85000, 245, 15.2, 180000.00, 78.5, 7.2, GETDATE()),
+('Cyclomatic Complexity', 245, 'count', 'Complexity', GETDATE(), 1),
+('Code Duplication', 15.2, 'percentage', 'Maintainability', GETDATE(), 1),
+('Test Coverage', 78.5, 'percentage', 'Quality', GETDATE(), 1),
+('Maintainability Score', 7.2, 'score', 'Maintainability', GETDATE(), 1),
+
 -- Payment Processing API
-(2, 42000, 128, 8.7, 95000.00, 85.2, 8.1, GETDATE()),
+('Cyclomatic Complexity', 128, 'count', 'Complexity', GETDATE(), 2),
+('Code Duplication', 8.7, 'percentage', 'Maintainability', GETDATE(), 2),
+('Test Coverage', 85.2, 'percentage', 'Quality', GETDATE(), 2),
+('Maintainability Score', 8.1, 'score', 'Maintainability', GETDATE(), 2),
+
 -- Inventory Management System
-(3, 67000, 189, 12.4, 145000.00, 72.8, 6.8, GETDATE()),
+('Cyclomatic Complexity', 189, 'count', 'Complexity', GETDATE(), 3),
+('Code Duplication', 12.4, 'percentage', 'Maintainability', GETDATE(), 3),
+('Test Coverage', 72.8, 'percentage', 'Quality', GETDATE(), 3),
+('Maintainability Score', 6.8, 'score', 'Maintainability', GETDATE(), 3),
+
 -- Mobile Shopping App
-(4, 58000, 156, 10.9, 120000.00, 81.3, 7.6, GETDATE()),
+('Cyclomatic Complexity', 156, 'count', 'Complexity', GETDATE(), 4),
+('Code Duplication', 10.9, 'percentage', 'Maintainability', GETDATE(), 4),
+('Test Coverage', 81.3, 'percentage', 'Quality', GETDATE(), 4),
+('Maintainability Score', 7.6, 'score', 'Maintainability', GETDATE(), 4),
 
 -- Code Metrics for Assessment 2 Applications (Banking)
 -- Core Banking Engine
-(5, 250000, 892, 35.8, 850000.00, 45.2, 4.1, GETDATE()),
+('Cyclomatic Complexity', 892, 'count', 'Complexity', GETDATE(), 5),
+('Code Duplication', 35.8, 'percentage', 'Maintainability', GETDATE(), 5),
+('Test Coverage', 45.2, 'percentage', 'Quality', GETDATE(), 5),
+('Maintainability Score', 4.1, 'score', 'Maintainability', GETDATE(), 5),
+
 -- Online Banking Portal
-(6, 95000, 298, 18.3, 220000.00, 68.7, 6.4, GETDATE()),
+('Cyclomatic Complexity', 298, 'count', 'Complexity', GETDATE(), 6),
+('Code Duplication', 18.3, 'percentage', 'Maintainability', GETDATE(), 6),
+('Test Coverage', 68.7, 'percentage', 'Quality', GETDATE(), 6),
+('Maintainability Score', 6.4, 'score', 'Maintainability', GETDATE(), 6),
+
 -- ATM Network Controller
-(7, 78000, 234, 22.1, 185000.00, 62.5, 5.8, GETDATE()),
+('Cyclomatic Complexity', 234, 'count', 'Complexity', GETDATE(), 7),
+('Code Duplication', 22.1, 'percentage', 'Maintainability', GETDATE(), 7),
+('Test Coverage', 62.5, 'percentage', 'Quality', GETDATE(), 7),
+('Maintainability Score', 5.8, 'score', 'Maintainability', GETDATE(), 7),
+
 -- Fraud Detection System
-(8, 52000, 167, 9.4, 98000.00, 88.9, 8.7, GETDATE()),
+('Cyclomatic Complexity', 167, 'count', 'Complexity', GETDATE(), 8),
+('Code Duplication', 9.4, 'percentage', 'Maintainability', GETDATE(), 8),
+('Test Coverage', 88.9, 'percentage', 'Quality', GETDATE(), 8),
+('Maintainability Score', 8.7, 'score', 'Maintainability', GETDATE(), 8),
 
 -- Code Metrics for Assessment 3 Applications (Healthcare)
 -- Patient Management System
-(9, 76000, 201, 14.6, 165000.00, 75.4, 7.0, GETDATE()),
+('Cyclomatic Complexity', 201, 'count', 'Complexity', GETDATE(), 9),
+('Code Duplication', 14.6, 'percentage', 'Maintainability', GETDATE(), 9),
+('Test Coverage', 75.4, 'percentage', 'Quality', GETDATE(), 9),
+('Maintainability Score', 7.0, 'score', 'Maintainability', GETDATE(), 9),
+
 -- Medical Imaging Platform
-(10, 125000, 445, 25.7, 380000.00, 58.3, 5.2, GETDATE()),
+('Cyclomatic Complexity', 445, 'count', 'Complexity', GETDATE(), 10),
+('Code Duplication', 25.7, 'percentage', 'Maintainability', GETDATE(), 10),
+('Test Coverage', 58.3, 'percentage', 'Quality', GETDATE(), 10),
+('Maintainability Score', 5.2, 'score', 'Maintainability', GETDATE(), 10),
+
 -- Lab Results API
-(11, 45000, 142, 11.2, 105000.00, 82.7, 7.8, GETDATE()),
+('Cyclomatic Complexity', 142, 'count', 'Complexity', GETDATE(), 11),
+('Code Duplication', 11.2, 'percentage', 'Maintainability', GETDATE(), 11),
+('Test Coverage', 82.7, 'percentage', 'Quality', GETDATE(), 11),
+('Maintainability Score', 7.8, 'score', 'Maintainability', GETDATE(), 11),
+
 -- Telehealth Platform
-(12, 68000, 178, 13.5, 140000.00, 79.1, 7.4, GETDATE());
+('Cyclomatic Complexity', 178, 'count', 'Complexity', GETDATE(), 12),
+('Code Duplication', 13.5, 'percentage', 'Maintainability', GETDATE(), 12),
+('Test Coverage', 79.1, 'percentage', 'Quality', GETDATE(), 12),
+('Maintainability Score', 7.4, 'score', 'Maintainability', GETDATE(), 12);
 
 PRINT 'CodeMetrics seeded successfully!'
 SELECT COUNT(*) as [CodeMetrics Count] FROM CodeMetrics;

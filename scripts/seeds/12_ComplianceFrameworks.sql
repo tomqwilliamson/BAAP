@@ -2,31 +2,31 @@
 PRINT 'Seeding ComplianceFrameworks table...'
 
 INSERT INTO ComplianceFrameworks (
-    FrameworkName,
-    [Description],
-    ComplianceScore,
-    RequiredControls,
-    ImplementedControls,
+    [Name],
     [Status],
-    AssessmentId,
-    CreatedDate
+    CoveragePercent,
+    Notes,
+    AssessmentType,
+    CreatedDate,
+    LastAssessedDate,
+    AssessmentId
 ) VALUES 
 -- Compliance for Assessment 1 (E-commerce)
-('PCI DSS', 'Payment Card Industry Data Security Standard for e-commerce transactions', 78, 12, 9, 'Partial', 1, GETDATE()),
-('GDPR', 'General Data Protection Regulation for customer data privacy', 85, 8, 7, 'Mostly Compliant', 1, GETDATE()),
-('SOC 2 Type II', 'Service Organization Control 2 for security and availability', 72, 5, 3, 'Partial', 1, GETDATE()),
+('PCI DSS', 'Partial', 78, 'Payment Card Industry Data Security Standard implementation in progress with 3 remaining controls', 'Data', GETDATE(), '2024-01-15', 1),
+('GDPR', 'Compliant', 85, 'General Data Protection Regulation compliance with minor documentation updates needed', 'Data', GETDATE(), '2024-01-10', 1),
+('SOC 2 Type II', 'Partial', 72, 'Service Organization Control 2 audit scheduled for Q2 2024', 'Security', GETDATE(), '2023-12-20', 1),
 
 -- Compliance for Assessment 2 (Banking)
-('SOX', 'Sarbanes-Oxley Act financial reporting compliance', 88, 15, 13, 'Mostly Compliant', 2, GETDATE()),
-('Basel III', 'International banking regulations for capital adequacy', 92, 10, 9, 'Compliant', 2, GETDATE()),
-('PCI DSS', 'Payment Card Industry Data Security Standard', 95, 12, 12, 'Compliant', 2, GETDATE()),
-('FFIEC', 'Federal Financial Institutions Examination Council guidelines', 85, 25, 21, 'Mostly Compliant', 2, GETDATE()),
+('SOX', 'Compliant', 88, 'Sarbanes-Oxley Act financial reporting compliance maintained with quarterly reviews', 'Security', GETDATE(), '2024-01-05', 2),
+('Basel III', 'Compliant', 92, 'International banking regulations for capital adequacy - fully compliant', 'Security', GETDATE(), '2024-01-20', 2),
+('PCI DSS', 'Compliant', 95, 'Payment Card Industry Data Security Standard - fully compliant with regular audits', 'Data', GETDATE(), '2024-02-01', 2),
+('FFIEC', 'Compliant', 85, 'Federal Financial Institutions Examination Council guidelines compliance maintained', 'Security', GETDATE(), '2024-01-25', 2),
 
 -- Compliance for Assessment 3 (Healthcare)
-('HIPAA', 'Health Insurance Portability and Accountability Act', 78, 18, 14, 'Partial', 3, GETDATE()),
-('HITECH', 'Health Information Technology for Economic and Clinical Health Act', 82, 12, 10, 'Mostly Compliant', 3, GETDATE()),
-('FDA 21 CFR Part 820', 'FDA Quality System Regulation for medical devices', 75, 8, 6, 'Partial', 3, GETDATE()),
-('SOC 2 Type II', 'Service Organization Control 2 for healthcare data security', 80, 5, 4, 'Mostly Compliant', 3, GETDATE());
+('HIPAA', 'Partial', 78, 'Health Insurance Portability and Accountability Act compliance with PHI access control improvements needed', 'Data', GETDATE(), '2024-01-12', 3),
+('HITECH', 'Compliant', 82, 'Health Information Technology for Economic and Clinical Health Act compliance maintained', 'Data', GETDATE(), '2024-01-18', 3),
+('FDA 21 CFR Part 820', 'Partial', 75, 'FDA Quality System Regulation for medical devices with documentation updates in progress', 'Infrastructure', GETDATE(), '2023-12-15', 3),
+('SOC 2 Type II', 'Compliant', 80, 'Service Organization Control 2 for healthcare data security - annual audit completed', 'Security', GETDATE(), '2024-01-08', 3);
 
 PRINT 'ComplianceFrameworks seeded successfully!'
 SELECT COUNT(*) as [ComplianceFrameworks Count] FROM ComplianceFrameworks;

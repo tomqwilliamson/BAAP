@@ -10,7 +10,7 @@ INSERT INTO BudgetAllocations (
     Notes,
     AssessmentId,
     CreatedDate,
-    UpdatedDate
+    LastModifiedDate
 ) VALUES 
 -- Budget for Assessment 1 (E-commerce)
 (250000.00, 1500000.00, 300000.00, 150000.00, 300000.00, 'E-commerce platform migration budget with focus on scalability and performance improvements', 1, GETDATE(), GETDATE()),
