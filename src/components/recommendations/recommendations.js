@@ -14,8 +14,10 @@ import {
   Download, FileText, BarChart3, CheckCircle, AlertTriangle, DollarSign,
   Clock, Users, Settings, Monitor, Brain, RefreshCw, ArrowRight, 
   Award, Lightbulb, ChevronDown, ChevronUp, Printer, FileSpreadsheet,
-  Building, Calendar, Layers, Code, ExternalLink, TrendingDown, AlertCircle
+  Building, Calendar, Layers, Code, ExternalLink, TrendingDown, AlertCircle,
+  Upload, Save
 } from 'lucide-react';
+import ExportDropdown from '../ui/ExportDropdown';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, RadarChart, PolarGrid, 
@@ -38,6 +40,8 @@ const Recommendations = () => {
   const [showBusinessCase, setShowBusinessCase] = useState(false);
   const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState({});
+  const [storageMode, setStorageMode] = useState('Local Storage'); // Local Storage, Simulation, Azure DB
+  const [lastGeneratedTime, setLastGeneratedTime] = useState(new Date());
   const printRef = useRef();
 
   const [comprehensiveResults, setComprehensiveResults] = useState({
@@ -55,7 +59,8 @@ const Recommendations = () => {
       security: { score: 0, issues: 0, recommendations: 0 },
       infrastructure: { score: 0, servers: 0, savings: 0 },
       devops: { score: 0, pipelines: 0, maturity: 0 },
-      cloudReadiness: { score: 0, strategy: '', timeline: '' }
+      cloudReadiness: { score: 0, strategy: '', timeline: '' },
+      dataArchitecture: { score: 0, databases: 0, readiness: 0 }
     },
     businessCase: {
       currentStateCosts: 0,
@@ -112,7 +117,8 @@ const Recommendations = () => {
             security: { score: 78, issues: 102, recommendations: 12 },
             infrastructure: { score: 45, servers: 12, savings: 3490 },
             devops: { score: 78, pipelines: 8, maturity: 65 },
-            cloudReadiness: { score: 72, strategy: 'Hybrid Migration', timeline: '12-18 months' }
+            cloudReadiness: { score: 72, strategy: 'Hybrid Migration', timeline: '12-18 months' },
+            dataArchitecture: { score: 75, databases: 6, readiness: 68 }
           },
           strategicRecommendations: assessmentSpecificData.strategicRecommendations || [],
           tacticalRecommendations: assessmentSpecificData.tacticalRecommendations || [],
@@ -276,6 +282,11 @@ const Recommendations = () => {
           score: data?.cloudReadiness.overallScore || 72, 
           strategy: data?.cloudReadiness.strategy || 'Hybrid Migration', 
           timeline: data?.cloudReadiness.timeline || '12-18 months' 
+        },
+        dataArchitecture: { 
+          score: data?.dataArchitecture.overallScore || 75, 
+          databases: data?.dataArchitecture.databases || 6, 
+          readiness: data?.dataArchitecture.readiness || 68 
         }
       },
       businessCase: {
@@ -636,7 +647,7 @@ const Recommendations = () => {
       {/* Domain Assessment Results */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-semibold mb-6">Assessment Results by Domain</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <div className="text-center p-4 border rounded-lg">
             <Shield className="h-12 w-12 text-red-500 mx-auto mb-3" />
             <div className={`text-3xl font-bold mb-2 ${getScoreColor(comprehensiveResults.domainResults.security.score)}`}>
@@ -671,6 +682,15 @@ const Recommendations = () => {
             </div>
             <div className="text-lg font-medium text-gray-900">Cloud Ready</div>
             <div className="text-sm text-gray-600">{comprehensiveResults.domainResults.cloudReadiness.timeline}</div>
+          </div>
+
+          <div className="text-center p-4 border rounded-lg">
+            <Database className="h-12 w-12 text-indigo-500 mx-auto mb-3" />
+            <div className={`text-3xl font-bold mb-2 ${getScoreColor(comprehensiveResults.domainResults.dataArchitecture.score)}`}>
+              {comprehensiveResults.domainResults.dataArchitecture.score}%
+            </div>
+            <div className="text-lg font-medium text-gray-900">Data Architecture</div>
+            <div className="text-sm text-gray-600">{comprehensiveResults.domainResults.dataArchitecture.databases} databases assessed</div>
           </div>
         </div>
       </div>
@@ -751,23 +771,11 @@ const Recommendations = () => {
 
       {/* AI-Generated Insights */}
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <h3 className="text-xl font-semibold flex items-center">
             <Brain className="h-6 w-6 text-purple-600 mr-2" />
             AI-Powered Strategic Insights
           </h3>
-          <button
-            onClick={generateAIRecommendations}
-            disabled={isGeneratingAnalysis}
-            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-          >
-            {isGeneratingAnalysis ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Brain className="h-4 w-4 mr-2" />
-            )}
-            {isGeneratingAnalysis ? 'Analyzing...' : 'Refresh Analysis'}
-          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1452,36 +1460,6 @@ const Recommendations = () => {
                 <p className="text-blue-100">Comprehensive assessment results and strategic recommendations</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handlePrint}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                Print
-              </button>
-              <button
-                onClick={exportToPDF}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                PDF
-              </button>
-              <button
-                onClick={exportToExcel}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Excel
-              </button>
-              <button
-                onClick={exportPowerPointData}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                PowerPoint Data
-              </button>
-            </div>
           </div>
           
           {/* Tab Navigation */}
@@ -1513,6 +1491,53 @@ const Recommendations = () => {
               <ArrowRight className="h-4 w-4 inline mr-2" />
               Implementation Roadmap
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Bar - Matching Data Architecture Layout */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
+          <div className="flex space-x-3">
+            <button
+              onClick={handlePrint}
+              className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </button>
+            <ExportDropdown 
+              onExportPDF={exportToPDF}
+              onExportExcel={exportToExcel}
+              onExportJSON={exportPowerPointData}
+            />
+            <button
+              onClick={generateAIRecommendations}
+              disabled={isGeneratingAnalysis}
+              className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            >
+              {isGeneratingAnalysis ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Brain className="h-4 w-4 mr-2" />
+              )}
+              {isGeneratingAnalysis ? 'Analyzing...' : 'Refresh Analysis'}
+            </button>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              storageMode === 'Azure DB' ? 'bg-blue-100 text-blue-800' : 
+              storageMode === 'Simulation' ? 'bg-yellow-100 text-yellow-800' : 
+              'bg-green-100 text-green-800'
+            }`}>
+              {storageMode}
+            </span>
+            {comprehensiveResults && (
+              <div className="text-sm text-gray-600">
+                <Clock className="h-4 w-4 inline mr-1" />
+                Generated: {lastGeneratedTime.toLocaleDateString()} {lastGeneratedTime.toLocaleTimeString()}
+              </div>
+            )}
           </div>
         </div>
       </div>

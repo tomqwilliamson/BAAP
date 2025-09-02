@@ -926,6 +926,21 @@ function ArchitectureReview() {
       {/* Overview View */}
       {currentView === 'overview' && (
         <div className="space-y-6">
+          {/* Analysis Required Notice */}
+          {architectureData.healthMetrics.maintainability === 0 && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center">
+                <Brain className="h-5 w-5 text-blue-600 mr-2" />
+                <p className="text-sm font-medium text-blue-900">
+                  Run analysis to view all metrics
+                </p>
+              </div>
+              <p className="text-sm text-blue-700 mt-1 ml-7">
+                Connect your repository and run the AI-powered analysis to calculate maintainability scores, detect code issues, and receive architectural recommendations.
+              </p>
+            </div>
+          )}
+
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
@@ -953,7 +968,14 @@ function ArchitectureReview() {
                 <Monitor className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Maintainability</p>
-                  <p className="text-2xl font-bold text-gray-900">{architectureData.healthMetrics.maintainability}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {architectureData.healthMetrics.maintainability > 0 
+                      ? architectureData.healthMetrics.maintainability 
+                      : '--'}
+                  </p>
+                  {architectureData.healthMetrics.maintainability === 0 && (
+                    <p className="text-xs text-gray-500">Pending analysis</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -963,7 +985,14 @@ function ArchitectureReview() {
                 <AlertCircle className="h-8 w-8 text-orange-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Code Issues</p>
-                  <p className="text-2xl font-bold text-gray-900">{architectureData.codeQuality.codeSmells + architectureData.codeQuality.bugs}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {(architectureData.codeQuality.codeSmells + architectureData.codeQuality.bugs) > 0 
+                      ? (architectureData.codeQuality.codeSmells + architectureData.codeQuality.bugs)
+                      : '--'}
+                  </p>
+                  {(architectureData.codeQuality.codeSmells + architectureData.codeQuality.bugs) === 0 && (
+                    <p className="text-xs text-gray-500">Pending analysis</p>
+                  )}
                 </div>
               </div>
             </div>

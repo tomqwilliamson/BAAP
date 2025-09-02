@@ -15,8 +15,10 @@ import React, { useEffect, useState } from 'react';
 import { 
   Cloud, Shield, GitBranch, Server, Database, Zap, Activity, AlertTriangle,
   CheckCircle, Upload, Download, Save, Brain, RefreshCw, Clock, DollarSign,
-  TrendingUp, BarChart3, Target, Edit3, Plus, Minus, Settings, Monitor
+  TrendingUp, BarChart3, Target, Edit3, Plus, Minus, Settings, Monitor,
+  Code, Building2
 } from 'lucide-react';
+import ExportDropdown from '../ui/ExportDropdown';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -97,6 +99,7 @@ const CloudReadiness = () => {
   const [dataSaved, setDataSaved] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [storageMode, setStorageMode] = useState('Local Storage'); // Local Storage, Simulation, Azure DB
 
   const [cloudReadinessData, setCloudReadinessData] = useState({
     crossDomainAnalysis: {
@@ -104,6 +107,8 @@ const CloudReadiness = () => {
       infrastructureReadiness: 0,
       devopsReadiness: 0,
       dataReadiness: 0,
+      architectureReadiness: 0,
+      businessReadiness: 0,
       overallScore: 0
     },
     domainScores: {
@@ -293,12 +298,20 @@ const CloudReadiness = () => {
 
     // Data Score (placeholder - would be calculated from data assessment)
     const dataScore = 70;
+    
+    // Architecture Score (based on code quality and maintainability)
+    const architectureScore = 72; // Default based on typical maintainability scores
+    
+    // Business Context Score (based on business alignment and drivers)
+    const businessScore = 85; // Default based on typical business readiness
 
     // Use assessment-specific scores if available
     const finalSecurityScore = assessmentSpecificData?.readinessScores?.security || securityScore;
     const finalInfrastructureScore = assessmentSpecificData?.readinessScores?.infrastructure || infrastructureScore;
     const finalDevopsScore = assessmentSpecificData?.readinessScores?.operations || devopsScore;
     const finalDataScore = assessmentSpecificData?.readinessScores?.data || dataScore;
+    const finalArchitectureScore = assessmentSpecificData?.readinessScores?.architecture || architectureScore;
+    const finalBusinessScore = assessmentSpecificData?.readinessScores?.business || businessScore;
     
     // Overall Score (weighted average)
     const overallScore = Math.round(
@@ -314,6 +327,8 @@ const CloudReadiness = () => {
         infrastructureReadiness: Math.round(finalInfrastructureScore),
         devopsReadiness: Math.round(finalDevopsScore),
         dataReadiness: Math.round(finalDataScore),
+        architectureReadiness: Math.round(finalArchitectureScore),
+        businessReadiness: Math.round(finalBusinessScore),
         overallScore
       },
       domainScores: {
@@ -763,54 +778,6 @@ const CloudReadiness = () => {
                 <p className="text-blue-100">Comprehensive cross-domain assessment with AI-powered insights</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              {dataSaved && lastSaveTime && (
-                <div className="text-sm text-blue-200">
-                  <Clock className="h-4 w-4 inline mr-1" />
-                  Saved {new Date(lastSaveTime).toLocaleTimeString()}
-                </div>
-              )}
-              <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors">
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={importAssessment}
-                  className="hidden"
-                />
-              </label>
-              <div className="relative inline-block text-left">
-                <div className="inline-flex rounded-md shadow-sm">
-                  <button
-                    onClick={exportToPDF}
-                    className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-l-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </button>
-                  <button
-                    onClick={exportToExcel}
-                    className="inline-flex items-center px-4 py-2 border-t border-b border-blue-300 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-                  >
-                    Excel
-                  </button>
-                  <button
-                    onClick={exportAssessment}
-                    className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-r-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-                  >
-                    JSON
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={saveAssessment}
-                className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </button>
-            </div>
           </div>
           
           {/* Tab Navigation */}
@@ -842,6 +809,56 @@ const CloudReadiness = () => {
               <Brain className="h-4 w-4 inline mr-2" />
               AI Analysis
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Bar - Matching Data Architecture Layout */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
+          <div className="flex space-x-3">
+            <button
+              onClick={saveAssessment}
+              className={`flex items-center px-4 py-2 text-white rounded-md transition-colors ${
+                !dataSaved 
+                  ? 'bg-orange-600 hover:bg-orange-700 animate-pulse' 
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {!dataSaved ? 'Save Data (Required)' : 'Save Data'}
+            </button>
+            <ExportDropdown 
+              onExportPDF={exportToPDF}
+              onExportExcel={exportToExcel}
+              onExportJSON={exportAssessment}
+            />
+            <label className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors cursor-pointer">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+              <input
+                type="file"
+                accept=".json"
+                onChange={importAssessment}
+                className="hidden"
+              />
+            </label>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              storageMode === 'Azure DB' ? 'bg-blue-100 text-blue-800' : 
+              storageMode === 'Simulation' ? 'bg-yellow-100 text-yellow-800' : 
+              'bg-green-100 text-green-800'
+            }`}>
+              {storageMode}
+            </span>
+            <div className="text-sm text-gray-600">
+              <Clock className="h-4 w-4 inline mr-1" />
+              {dataSaved && lastSaveTime 
+                ? `Last saved: ${new Date(lastSaveTime).toLocaleDateString()} ${new Date(lastSaveTime).toLocaleTimeString()}`
+                : 'Not saved yet'
+              }
+            </div>
           </div>
         </div>
       </div>
@@ -995,6 +1012,38 @@ const CloudReadiness = () => {
                         />
                       </div>
                       <span className="text-sm font-medium w-12 text-right">{cloudReadinessData.crossDomainAnalysis.dataReadiness}%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Code className="h-5 w-5 text-indigo-600 mr-2" />
+                      <span className="font-medium">Architecture Review (code)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full bg-indigo-500"
+                          style={{ width: `${cloudReadinessData.crossDomainAnalysis.architectureReadiness}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium w-12 text-right">{cloudReadinessData.crossDomainAnalysis.architectureReadiness}%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Building2 className="h-5 w-5 text-amber-600 mr-2" />
+                      <span className="font-medium">Business Context</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full bg-amber-500"
+                          style={{ width: `${cloudReadinessData.crossDomainAnalysis.businessReadiness}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium w-12 text-right">{cloudReadinessData.crossDomainAnalysis.businessReadiness}%</span>
                     </div>
                   </div>
                 </div>
@@ -1274,7 +1323,7 @@ const CloudReadiness = () => {
                 <p className="text-gray-600 mb-6">
                   Your cross-domain assessment data is ready. Run AI analysis to generate comprehensive insights and strategic recommendations.
                 </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 text-sm">
                   <div className="bg-blue-50 p-3 rounded">
                     <div className="font-medium text-blue-900">Security</div>
                     <div className="text-blue-600">{cloudReadinessData.crossDomainAnalysis.securityReadiness}%</div>
@@ -1288,8 +1337,16 @@ const CloudReadiness = () => {
                     <div className="text-yellow-600">{cloudReadinessData.crossDomainAnalysis.devopsReadiness}%</div>
                   </div>
                   <div className="bg-purple-50 p-3 rounded">
-                    <div className="font-medium text-purple-900">Overall</div>
-                    <div className="text-purple-600">{cloudReadinessData.crossDomainAnalysis.overallScore}%</div>
+                    <div className="font-medium text-purple-900">Data</div>
+                    <div className="text-purple-600">{cloudReadinessData.crossDomainAnalysis.dataReadiness}%</div>
+                  </div>
+                  <div className="bg-indigo-50 p-3 rounded">
+                    <div className="font-medium text-indigo-900">Architecture</div>
+                    <div className="text-indigo-600">{cloudReadinessData.crossDomainAnalysis.architectureReadiness}%</div>
+                  </div>
+                  <div className="bg-amber-50 p-3 rounded">
+                    <div className="font-medium text-amber-900">Business</div>
+                    <div className="text-amber-600">{cloudReadinessData.crossDomainAnalysis.businessReadiness}%</div>
                   </div>
                 </div>
               </div>

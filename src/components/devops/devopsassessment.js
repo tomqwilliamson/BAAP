@@ -1034,38 +1034,88 @@ function DevOpsAssessment() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">DevOps Maturity Assessment</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <RadarChart data={devopsData.maturity}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="category" />
-              <PolarRadiusAxis domain={[0, 100]} />
-              <Radar
-                name="Score"
-                dataKey="score"
-                stroke="#3B82F6"
-                fill="#3B82F6"
-                fillOpacity={0.1}
-                strokeWidth={2}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
+          {devopsData.maturity && devopsData.maturity.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart data={devopsData.maturity}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="category" />
+                <PolarRadiusAxis domain={[0, 100]} />
+                <Radar
+                  name="Score"
+                  dataKey="score"
+                  stroke="#3B82F6"
+                  fill="#3B82F6"
+                  fillOpacity={0.1}
+                  strokeWidth={2}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-[300px] text-gray-500">
+              <div className="text-center">
+                <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm">Loading maturity assessment...</p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Automation Levels</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={devopsData.automation} layout="horizontal" margin={{ top: 5, right: 30, left: 5, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} />
-              <YAxis type="category" dataKey="process" width={150} tick={{ fontSize: 11 }} />
-              <Tooltip 
-                formatter={(value, name) => [`${value}%`, name]}
-                contentStyle={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}
-              />
-              <Bar dataKey="automated" stackId="a" fill="#10b981" name="Automated" radius={[0, 2, 2, 0]} />
-              <Bar dataKey="manual" stackId="a" fill="#ef4444" name="Manual" radius={[0, 2, 2, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {devopsData.automation && devopsData.automation.length > 0 ? (
+            <div className="space-y-4">
+              {devopsData.automation.map((item, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">{item.process}</span>
+                    <span className="text-sm text-gray-500">{item.automated}% Automated</span>
+                  </div>
+                  <div className="relative w-full h-8 bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-green-500 transition-all duration-500"
+                      style={{ width: `${item.automated}%` }}
+                    >
+                      <div className="h-full flex items-center justify-end pr-2">
+                        {item.automated > 10 && (
+                          <span className="text-xs text-white font-medium">{item.automated}%</span>
+                        )}
+                      </div>
+                    </div>
+                    <div 
+                      className="absolute top-0 h-full bg-red-400 transition-all duration-500"
+                      style={{ 
+                        left: `${item.automated}%`,
+                        width: `${item.manual}%` 
+                      }}
+                    >
+                      <div className="h-full flex items-center justify-end pr-2">
+                        {item.manual > 10 && (
+                          <span className="text-xs text-white font-medium">{item.manual}%</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span className="flex items-center">
+                      <span className="w-3 h-3 bg-green-500 rounded-full mr-1"></span>
+                      Automated
+                    </span>
+                    <span className="flex items-center">
+                      <span className="w-3 h-3 bg-red-400 rounded-full mr-1"></span>
+                      Manual
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[300px] text-gray-500">
+              <div className="text-center">
+                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm">Loading automation data...</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
