@@ -101,7 +101,8 @@
       "Bash(set \"ConnectionStrings__DefaultConnection=Server=tcp:baap-dev-sql-wsnmnw.database.windows.net,1433;Initial Catalog=baap_dev;Persist Security Info=False;User ID=baapadmin;Password=YourSecurePassword123!;MultipleActiveResultSets=True;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;\")",
       "Bash(az extension:*)",
       "Bash(del test-phase2-ui.js)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(sed:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"

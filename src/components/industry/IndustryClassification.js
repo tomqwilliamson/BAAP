@@ -7,7 +7,7 @@ import { Badge } from '../ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 
 const IndustryClassification = () => {
-  const { selectedAssessment } = useAssessment();
+  const { currentAssessment } = useAssessment();
   const [industryClassification, setIndustryClassification] = useState(null);
   const [industries, setIndustries] = useState([]);
   const [analysis, setAnalysis] = useState(null);
@@ -20,10 +20,10 @@ const IndustryClassification = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (selectedAssessment?.id) {
+    if (currentAssessment?.id) {
       loadIndustryData();
     }
-  }, [selectedAssessment]);
+  }, [currentAssessment]);
 
   const loadIndustryData = async () => {
     try {
@@ -35,7 +35,7 @@ const IndustryClassification = () => {
 
       // Try to classify the assessment if not already classified
       try {
-        const classificationData = await industryClassificationService.classifyAssessment(selectedAssessment.id);
+        const classificationData = await industryClassificationService.classifyAssessment(currentAssessment.id);
         setIndustryClassification(classificationData);
         
         // Load industry-specific data
@@ -63,12 +63,12 @@ const IndustryClassification = () => {
         intelligenceData,
         patternsData
       ] = await Promise.allSettled([
-        industryClassificationService.getIndustryAnalysis(selectedAssessment.id),
-        industryClassificationService.getIndustryRecommendations(selectedAssessment.id),
+        industryClassificationService.getIndustryAnalysis(currentAssessment.id),
+        industryClassificationService.getIndustryRecommendations(currentAssessment.id),
         industryClassificationService.getIndustryBenchmarks(classification.industryClassificationId),
-        industryClassificationService.getComplianceRequirements(classification.industryClassificationId),
-        industryClassificationService.getIndustryIntelligence(selectedAssessment.id),
-        industryClassificationService.getCrossAssessmentPatterns(selectedAssessment.id)
+        industryClassificationService.getComplianceRequirements(currentAssessment.id),
+        industryClassificationService.getIndustryIntelligence(currentAssessment.id),
+        industryClassificationService.getCrossAssessmentPatterns(currentAssessment.id)
       ]);
 
       if (analysisData.status === 'fulfilled') setAnalysis(analysisData.value);
@@ -87,7 +87,7 @@ const IndustryClassification = () => {
     try {
       setLoading(true);
       const classification = await industryClassificationService.updateIndustryClassification(
-        selectedAssessment.id,
+        currentAssessment.id,
         industryId,
         1.0,
         'Manually classified by user'
@@ -112,7 +112,7 @@ const IndustryClassification = () => {
     return 'bg-red-500';
   };
 
-  if (!selectedAssessment) {
+  if (!currentAssessment) {
     return (
       <div className="p-6">
         <Card className="p-6">

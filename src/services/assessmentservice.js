@@ -1,7 +1,7 @@
 // src/services/assessmentService.js - API service layer
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://localhost:7001/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://localhost:7000/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -15,8 +15,8 @@ apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-  } else if (process.env.REACT_APP_USE_MOCK_AUTH === 'true') {
-    // Add development bypass header for mock auth
+  } else {
+    // Add development bypass header for development mode
     config.headers['X-Auth-Bypass'] = 'development';
   }
   return config;

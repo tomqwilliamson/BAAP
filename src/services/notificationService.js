@@ -26,7 +26,7 @@ class NotificationService {
 
         this.connectionAttempted = true;
 
-        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'https://localhost:7001/api';
+        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'https://localhost:7000/api';
         const hubUrl = apiBaseUrl.replace('/api', '/hubs/notification');
         
         this.connection = new signalR.HubConnectionBuilder()
@@ -72,7 +72,7 @@ class NotificationService {
             // Common SSL certificate issue in development
             if (err.message.includes('Failed to fetch') || err.message.includes('negotiation')) {
                 console.info('💡 To fix SSL certificate issues:');
-                console.info('   1. Open https://localhost:7001/swagger in a new tab');
+                console.info('   1. Open https://localhost:7000/swagger in a new tab');
                 console.info('   2. Accept the SSL certificate warning');
                 console.info('   3. Refresh this page');
             }
