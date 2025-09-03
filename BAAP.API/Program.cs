@@ -239,12 +239,13 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Seed Phase 4 industry classification data
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    var seeder = scope.ServiceProvider.GetRequiredService<DataSeederService>();
-    await seeder.SeedDataAsync();
-}
+// Seed data in development environment - DISABLED AFTER PHASE 4 SEEDING
+// Phase 4 industry classification data has been seeded via SQL scripts
+// if (app.Environment.IsDevelopment())
+// {
+//     using var scope = app.Services.CreateScope();
+//     var seeder = scope.ServiceProvider.GetRequiredService<DataSeederService>();
+//     await seeder.SeedDataAsync();
+// }
 
 app.Run();
