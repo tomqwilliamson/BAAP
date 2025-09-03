@@ -19,7 +19,8 @@ import {
   Settings,
   Users,
   TrendingUp,
-  Brain
+  Brain,
+  Factory
 } from 'lucide-react';
 import classNames from 'classnames';
 
@@ -87,6 +88,18 @@ const navigationItems = [
         href: '/app/cloud-readiness',
         icon: Cloud,
         description: 'Migration strategies and readiness'
+      }
+    ]
+  },
+  {
+    name: 'AI Intelligence',
+    icon: Brain,
+    children: [
+      {
+        name: 'Industry Classification',
+        href: '/app/industry-classification',
+        icon: Factory,
+        description: 'Industry-specific analysis and recommendations'
       }
     ]
   },
@@ -180,6 +193,7 @@ function Sidebar() {
     'Assessment Framework': true,
     'Technical Assessment': true,
     'Cloud & Modernization': false,
+    'AI Intelligence': true,
     'Results & Insights': true
   });
 

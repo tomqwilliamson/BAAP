@@ -19,6 +19,7 @@ import CreateAssessment from '../assessment/createassessment';
 import ChatAssistant from '../chat/ChatAssistant';
 import AssessmentSelectionGuard from '../common/AssessmentSelectionGuard';
 import DocumentInsights from '../documents/DocumentInsights';
+import IndustryClassification from '../industry/IndustryClassification';
 
 function Layout() {
   return (
@@ -47,6 +48,7 @@ function Layout() {
                 <Route path="/architecture-review" element={<ArchitectureReview />} />
                 <Route path="/cloud-readiness" element={<CloudReadiness />} />
                 <Route path="/recommendations" element={<Recommendations />} />
+                <Route path="/industry-classification" element={<IndustryClassification />} />
                 <Route path="/documents" element={<DocumentInsights />} /> {/* Legacy redirect */}
               </Routes>
             </AssessmentSelectionGuard>
