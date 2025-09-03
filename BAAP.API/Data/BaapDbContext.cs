@@ -40,6 +40,11 @@ public class BaapDbContext : DbContext
     
     // AI Analysis Results
     public DbSet<AIAnalysisResult> AIAnalysisResults { get; set; } = null!;
+    
+    // Phase 4: Industry Classification models
+    public DbSet<IndustryClassification> IndustryClassifications { get; set; } = null!;
+    public DbSet<AssessmentIndustryClassification> AssessmentIndustryClassifications { get; set; } = null!;
+    public DbSet<IndustryBenchmark> IndustryBenchmarks { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -221,5 +226,91 @@ public class BaapDbContext : DbContext
         modelBuilder.Entity<AIAnalysisResult>()
             .HasIndex(aar => new { aar.AssessmentId, aar.ModuleName })
             .IsUnique();
+
+        // Phase 4: Industry Classification configurations
+        modelBuilder.Entity<IndustryClassification>(entity =>
+        {
+            entity.HasKey(ic => ic.Id);
+            entity.HasIndex(ic => ic.IndustryCode).IsUnique();
+            
+            // Self-referencing relationship for hierarchical industries
+            entity.HasOne(ic => ic.ParentIndustry)
+                .WithMany(ic => ic.SubIndustries)
+                .HasForeignKey(ic => ic.ParentIndustryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // JSON conversions for complex properties
+            entity.Property(ic => ic.ComplianceFrameworks)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<string>());
+
+            entity.Property(ic => ic.TechnologyPatterns)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<string>());
+
+            entity.Property(ic => ic.RegulatoryConsiderations)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<string>());
+
+            entity.Property(ic => ic.KeyPerformanceIndicators)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<string>());
+
+            entity.Property(ic => ic.RiskFactors)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<string>());
+
+            entity.Property(ic => ic.BestPractices)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<string>());
+
+            entity.Property(ic => ic.SecurityRequirements)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<string>());
+        });
+
+        modelBuilder.Entity<AssessmentIndustryClassification>(entity =>
+        {
+            entity.HasKey(aic => aic.Id);
+            
+            entity.HasOne(aic => aic.Assessment)
+                .WithMany()
+                .HasForeignKey(aic => aic.AssessmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(aic => aic.IndustryClassification)
+                .WithMany()
+                .HasForeignKey(aic => aic.IndustryClassificationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Unique constraint - one classification per assessment
+            entity.HasIndex(aic => aic.AssessmentId).IsUnique();
+        });
+
+        modelBuilder.Entity<IndustryBenchmark>(entity =>
+        {
+            entity.HasKey(ib => ib.Id);
+            
+            entity.HasOne(ib => ib.IndustryClassification)
+                .WithMany()
+                .HasForeignKey(ib => ib.IndustryClassificationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // JSON conversion for percentile data
+            entity.Property(ib => ib.PercentileData)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, double>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new Dictionary<string, double>());
+
+            // Index for efficient querying
+            entity.HasIndex(ib => new { ib.IndustryClassificationId, ib.MetricCategory });
+        });
     }
 }

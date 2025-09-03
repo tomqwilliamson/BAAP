@@ -65,6 +65,9 @@ public class DataSeederService
             
             // Seed development practices
             await SeedDevelopmentPractices(assessments);
+            
+            // Phase 4: Seed industry classifications
+            await SeedIndustryClassifications();
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("Database seeding completed successfully with {AssessmentCount} assessments.", assessments.Count);
@@ -2220,4 +2223,231 @@ public class DataSeederService
             throw;
         }
     }
+
+    #region Phase 4: Industry Classification Seeding
+
+    private async Task SeedIndustryClassifications()
+    {
+        _logger.LogInformation("Seeding industry classifications...");
+
+        if (await _context.IndustryClassifications.AnyAsync())
+        {
+            _logger.LogInformation("Industry classifications already exist, skipping seeding.");
+            return;
+        }
+
+        var industries = new List<IndustryClassification>
+        {
+            // E-commerce/Retail
+            new IndustryClassification
+            {
+                IndustryCode = "ECOMMERCE",
+                IndustryName = "E-commerce & Retail",
+                Description = "Online retail platforms, marketplaces, and digital commerce solutions",
+                ComplianceFrameworks = new List<string> { "PCI DSS", "GDPR", "CCPA", "SOX" },
+                TechnologyPatterns = new List<string> { "Microservices", "API Gateway", "Event-Driven Architecture", "CDN", "Real-time Inventory" },
+                RegulatoryConsiderations = new List<string> { "Consumer protection laws", "Payment processing regulations", "Data privacy compliance", "Cross-border commerce rules" },
+                KeyPerformanceIndicators = new List<string> { "Conversion Rate", "Cart Abandonment Rate", "Customer Lifetime Value", "Page Load Time", "Availability" },
+                RiskFactors = new List<string> { "Payment fraud", "Data breaches", "Supply chain disruption", "Seasonal traffic spikes", "Third-party integrations" },
+                BestPractices = new List<string> { "Real-time inventory management", "Fraud detection systems", "Mobile-first design", "A/B testing", "Personalization engines" },
+                CloudAdoptionPattern = "Multi-cloud with CDN and global distribution for performance optimization",
+                TypicalComplexityScore = 7,
+                SecurityRequirements = new List<string> { "PCI DSS compliance", "SSL/TLS encryption", "Fraud detection", "DDoS protection", "Secure payment processing" },
+                CustomPromptTemplate = "Focus on scalability, performance optimization, payment security, and customer experience. Consider seasonal traffic patterns and global distribution requirements."
+            },
+
+            // Financial Services
+            new IndustryClassification
+            {
+                IndustryCode = "FINANCIAL",
+                IndustryName = "Financial Services & Banking",
+                Description = "Banks, credit unions, investment firms, and financial technology companies",
+                ComplianceFrameworks = new List<string> { "SOX", "Basel III", "PCI DSS", "GDPR", "GLBA", "FFIEC", "MiFID II" },
+                TechnologyPatterns = new List<string> { "Zero Trust Architecture", "Immutable Ledgers", "Real-time Processing", "Risk Management Systems", "Regulatory Reporting" },
+                RegulatoryConsiderations = new List<string> { "Banking regulations", "Anti-money laundering (AML)", "Know Your Customer (KYC)", "Stress testing", "Capital requirements", "Consumer finance protection" },
+                KeyPerformanceIndicators = new List<string> { "Transaction Processing Time", "System Availability", "Regulatory Compliance Score", "Risk-Adjusted Returns", "Capital Adequacy Ratio" },
+                RiskFactors = new List<string> { "Cyber security threats", "Regulatory penalties", "Market volatility", "Operational risk", "Liquidity risk", "Credit risk" },
+                BestPractices = new List<string> { "Multi-factor authentication", "Real-time fraud detection", "Disaster recovery planning", "Regular security audits", "Segregation of duties" },
+                CloudAdoptionPattern = "Hybrid cloud with strict data residency and regulatory compliance requirements",
+                TypicalComplexityScore = 9,
+                SecurityRequirements = new List<string> { "End-to-end encryption", "Multi-factor authentication", "Advanced threat protection", "Audit logging", "Access controls" },
+                CustomPromptTemplate = "Prioritize security, regulatory compliance, and risk management. Consider real-time processing requirements, audit trails, and data residency constraints."
+            },
+
+            // Healthcare
+            new IndustryClassification
+            {
+                IndustryCode = "HEALTHCARE",
+                IndustryName = "Healthcare & Life Sciences",
+                Description = "Hospitals, clinics, pharmaceutical companies, and healthcare technology providers",
+                ComplianceFrameworks = new List<string> { "HIPAA", "HITECH", "FDA 21 CFR Part 11", "GDPR", "SOX", "GxP" },
+                TechnologyPatterns = new List<string> { "FHIR Standards", "HL7 Integration", "Interoperability", "AI/ML Diagnostics", "Telehealth Platforms" },
+                RegulatoryConsiderations = new List<string> { "Patient privacy protection", "Medical device regulations", "Clinical trial compliance", "Drug safety reporting", "Quality management systems" },
+                KeyPerformanceIndicators = new List<string> { "Patient Safety Scores", "Treatment Outcomes", "System Interoperability", "Data Security Incidents", "Regulatory Audit Results" },
+                RiskFactors = new List<string> { "Patient data breaches", "Medical errors", "Regulatory non-compliance", "System downtime", "Integration failures" },
+                BestPractices = new List<string> { "Data encryption at rest and in transit", "Role-based access control", "Regular security training", "Backup and disaster recovery", "Interoperability standards" },
+                CloudAdoptionPattern = "HIPAA-compliant cloud services with Business Associate Agreements and data residency controls",
+                TypicalComplexityScore = 8,
+                SecurityRequirements = new List<string> { "HIPAA compliance", "Data encryption", "Access controls", "Audit logging", "Incident response" },
+                CustomPromptTemplate = "Emphasize patient safety, data privacy, regulatory compliance, and system interoperability. Consider clinical workflows and emergency access requirements."
+            },
+
+            // Manufacturing
+            new IndustryClassification
+            {
+                IndustryCode = "MANUFACTURING",
+                IndustryName = "Manufacturing & Industrial",
+                Description = "Manufacturing companies, industrial automation, and supply chain operations",
+                ComplianceFrameworks = new List<string> { "ISO 9001", "ISO 27001", "SOX", "GDPR", "OSHA", "FDA GMP" },
+                TechnologyPatterns = new List<string> { "IoT Integration", "Industrial Automation", "Supply Chain Management", "Predictive Maintenance", "Quality Management" },
+                RegulatoryConsiderations = new List<string> { "Product safety standards", "Environmental regulations", "Worker safety compliance", "Supply chain transparency", "Quality certifications" },
+                KeyPerformanceIndicators = new List<string> { "Overall Equipment Effectiveness (OEE)", "First Pass Yield", "Supply Chain Reliability", "Safety Incidents", "Energy Efficiency" },
+                RiskFactors = new List<string> { "Supply chain disruption", "Equipment failures", "Cybersecurity threats", "Regulatory changes", "Quality issues" },
+                BestPractices = new List<string> { "Predictive maintenance", "Supply chain visibility", "Quality management systems", "Industrial cybersecurity", "Lean manufacturing" },
+                CloudAdoptionPattern = "Hybrid cloud with edge computing for real-time operations and centralized analytics",
+                TypicalComplexityScore = 6,
+                SecurityRequirements = new List<string> { "Industrial control system security", "Network segmentation", "Access controls", "Endpoint protection", "Incident response" },
+                CustomPromptTemplate = "Focus on operational efficiency, supply chain optimization, quality management, and industrial cybersecurity. Consider real-time requirements and legacy system integration."
+            },
+
+            // General/Technology
+            new IndustryClassification
+            {
+                IndustryCode = "GENERAL",
+                IndustryName = "General Technology",
+                Description = "General business applications and technology companies not fitting specific verticals",
+                ComplianceFrameworks = new List<string> { "SOC 2", "ISO 27001", "GDPR", "SOX" },
+                TechnologyPatterns = new List<string> { "Cloud-Native Architecture", "Microservices", "DevOps", "API-First Design", "Data Analytics" },
+                RegulatoryConsiderations = new List<string> { "Data privacy laws", "Intellectual property protection", "Employment regulations", "General business compliance" },
+                KeyPerformanceIndicators = new List<string> { "System Performance", "User Satisfaction", "Security Posture", "Cost Efficiency", "Innovation Rate" },
+                RiskFactors = new List<string> { "Cybersecurity threats", "Technology obsolescence", "Competitive pressure", "Talent shortage", "Market changes" },
+                BestPractices = new List<string> { "Agile development", "Continuous integration", "Security by design", "Cloud adoption", "Data-driven decisions" },
+                CloudAdoptionPattern = "Cloud-first strategy with multi-cloud and hybrid options for flexibility and cost optimization",
+                TypicalComplexityScore = 5,
+                SecurityRequirements = new List<string> { "Data encryption", "Access controls", "Security monitoring", "Incident response", "Regular assessments" },
+                CustomPromptTemplate = "Provide balanced recommendations focusing on scalability, security, cost-effectiveness, and modern architecture patterns."
+            }
+        };
+
+        _context.IndustryClassifications.AddRange(industries);
+
+        // Add industry benchmarks
+        await SeedIndustryBenchmarks(industries);
+
+        _logger.LogInformation("Seeded {Count} industry classifications", industries.Count);
+    }
+
+    private async Task SeedIndustryBenchmarks(List<IndustryClassification> industries)
+    {
+        var benchmarks = new List<IndustryBenchmark>();
+
+        foreach (var industry in industries)
+        {
+            // Add common benchmarks for each industry
+            benchmarks.AddRange(new[]
+            {
+                new IndustryBenchmark
+                {
+                    IndustryClassification = industry,
+                    MetricName = "Cloud Adoption Rate",
+                    MetricCategory = "Performance",
+                    BenchmarkValue = GetCloudAdoptionRate(industry.IndustryCode),
+                    Unit = "percentage",
+                    PercentileData = new Dictionary<string, double>
+                    {
+                        ["P25"] = GetCloudAdoptionRate(industry.IndustryCode) - 0.15,
+                        ["P50"] = GetCloudAdoptionRate(industry.IndustryCode),
+                        ["P75"] = GetCloudAdoptionRate(industry.IndustryCode) + 0.10,
+                        ["P90"] = GetCloudAdoptionRate(industry.IndustryCode) + 0.20
+                    },
+                    DataSource = "Industry Research 2024",
+                    SampleSize = 500,
+                    LastUpdated = DateTime.UtcNow,
+                    ValidUntil = DateTime.UtcNow.AddYears(1)
+                },
+                new IndustryBenchmark
+                {
+                    IndustryClassification = industry,
+                    MetricName = "Average Security Score",
+                    MetricCategory = "Security",
+                    BenchmarkValue = GetSecurityScore(industry.IndustryCode),
+                    Unit = "score",
+                    PercentileData = new Dictionary<string, double>
+                    {
+                        ["P25"] = GetSecurityScore(industry.IndustryCode) - 10,
+                        ["P50"] = GetSecurityScore(industry.IndustryCode),
+                        ["P75"] = GetSecurityScore(industry.IndustryCode) + 8,
+                        ["P90"] = GetSecurityScore(industry.IndustryCode) + 15
+                    },
+                    DataSource = "Security Assessment Database",
+                    SampleSize = 1000,
+                    LastUpdated = DateTime.UtcNow,
+                    ValidUntil = DateTime.UtcNow.AddYears(1)
+                },
+                new IndustryBenchmark
+                {
+                    IndustryClassification = industry,
+                    MetricName = "Average Migration Timeline",
+                    MetricCategory = "Performance",
+                    BenchmarkValue = GetMigrationTimeline(industry.IndustryCode),
+                    Unit = "months",
+                    PercentileData = new Dictionary<string, double>
+                    {
+                        ["P25"] = GetMigrationTimeline(industry.IndustryCode) - 2,
+                        ["P50"] = GetMigrationTimeline(industry.IndustryCode),
+                        ["P75"] = GetMigrationTimeline(industry.IndustryCode) + 3,
+                        ["P90"] = GetMigrationTimeline(industry.IndustryCode) + 6
+                    },
+                    DataSource = "Migration Analytics Platform",
+                    SampleSize = 300,
+                    LastUpdated = DateTime.UtcNow,
+                    ValidUntil = DateTime.UtcNow.AddYears(1)
+                }
+            });
+        }
+
+        _context.IndustryBenchmarks.AddRange(benchmarks);
+        _logger.LogInformation("Seeded {Count} industry benchmarks", benchmarks.Count);
+    }
+
+    private static double GetCloudAdoptionRate(string industryCode)
+    {
+        return industryCode switch
+        {
+            "ECOMMERCE" => 0.78,
+            "FINANCIAL" => 0.65,
+            "HEALTHCARE" => 0.52,
+            "MANUFACTURING" => 0.61,
+            "GENERAL" => 0.68,
+            _ => 0.65
+        };
+    }
+
+    private static double GetSecurityScore(string industryCode)
+    {
+        return industryCode switch
+        {
+            "FINANCIAL" => 92,
+            "HEALTHCARE" => 88,
+            "ECOMMERCE" => 82,
+            "MANUFACTURING" => 75,
+            "GENERAL" => 78,
+            _ => 78
+        };
+    }
+
+    private static int GetMigrationTimeline(string industryCode)
+    {
+        return industryCode switch
+        {
+            "FINANCIAL" => 18,
+            "HEALTHCARE" => 15,
+            "MANUFACTURING" => 12,
+            "ECOMMERCE" => 8,
+            "GENERAL" => 10,
+            _ => 10
+        };
+    }
+
+    #endregion
 }

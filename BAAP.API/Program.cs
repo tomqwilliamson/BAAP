@@ -127,6 +127,9 @@ builder.Services.AddScoped<IPredictiveAnalyticsServiceClean, CleanPredictiveAnal
 // Register Phase 3 Vector Search Services
 builder.Services.AddScoped<IVectorSearchService, VectorSearchService>();
 
+// Register Phase 4 Industry Classification Services
+builder.Services.AddScoped<IIndustryClassificationService, IndustryClassificationService>();
+
 // Add SignalR for real-time notifications
 builder.Services.AddSignalR();
 
@@ -236,12 +239,12 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Seed data in development environment - DISABLED AFTER SEEDING
-// if (app.Environment.IsDevelopment())
-// {
-//     using var scope = app.Services.CreateScope();
-//     var seeder = scope.ServiceProvider.GetRequiredService<DataSeederService>();
-//     await seeder.SeedDataAsync();
-// }
+// Seed Phase 4 industry classification data
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<DataSeederService>();
+    await seeder.SeedDataAsync();
+}
 
 app.Run();
