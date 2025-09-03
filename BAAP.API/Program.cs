@@ -124,6 +124,9 @@ builder.Services.AddScoped<IRiskAssessmentServiceClean, CleanRiskAssessmentServi
 builder.Services.AddScoped<ICostAnalysisServiceClean, CleanCostAnalysisService>();
 builder.Services.AddScoped<IPredictiveAnalyticsServiceClean, CleanPredictiveAnalyticsService>();
 
+// Register Phase 3 Vector Search Services
+builder.Services.AddScoped<IVectorSearchService, VectorSearchService>();
+
 // Add SignalR for real-time notifications
 builder.Services.AddSignalR();
 

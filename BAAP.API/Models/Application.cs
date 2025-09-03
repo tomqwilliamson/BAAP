@@ -23,6 +23,27 @@ public class Application
     [StringLength(100)]
     public string Technology { get; set; } = string.Empty;
     
+    // Enhanced categorization and business context
+    [StringLength(100)]
+    public string? BusinessDomain { get; set; } // Finance, Sales, Marketing, Operations, etc.
+    
+    [StringLength(500)] 
+    public string? Tags { get; set; } // JSON array: ["critical", "legacy", "cloud-ready"]
+    
+    [StringLength(50)]
+    public string? DeploymentModel { get; set; } // OnPremise, Cloud, Hybrid
+    
+    [StringLength(20)]
+    public string? BusinessCriticality { get; set; } // Critical, Important, Standard
+    
+    public int ModernizationPriority { get; set; } = 3; // 1-5 scale (1=highest priority)
+    
+    [StringLength(500)]
+    public string? RepositoryUrl { get; set; } // Git repository URL
+    
+    [StringLength(200)]
+    public string? TechnologyStack { get; set; } // Full tech stack description
+    
     public int LinesOfCode { get; set; } = 0;
     public int ComplexityScore { get; set; } = 0;
     public int SecurityRating { get; set; } = 0;

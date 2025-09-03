@@ -27,6 +27,7 @@ public class BaapDbContext : DbContext
     public DbSet<BudgetAllocation> BudgetAllocations { get; set; } = null!;
     public DbSet<ProjectTimelineItem> ProjectTimelineItems { get; set; } = null!;
     public DbSet<BusinessContextRisk> BusinessContextRisks { get; set; } = null!;
+    public DbSet<DocumentEmbedding> DocumentEmbeddings { get; set; } = null!;
     
     // Architecture Review models
     public DbSet<ArchitectureReview> ArchitectureReviews { get; set; } = null!;
@@ -134,6 +135,26 @@ public class BaapDbContext : DbContext
             .WithMany()
             .HasForeignKey(bcr => bcr.AssessmentId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure DocumentEmbedding entity
+        modelBuilder.Entity<DocumentEmbedding>()
+            .HasOne(de => de.Assessment)
+            .WithMany()
+            .HasForeignKey(de => de.AssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure complex properties as JSON
+        modelBuilder.Entity<DocumentEmbedding>()
+            .Property(de => de.KeyFindings)
+            .HasConversion(
+                v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<string>());
+
+        modelBuilder.Entity<DocumentEmbedding>()
+            .Property(de => de.Metadata)
+            .HasConversion(
+                v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                v => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new Dictionary<string, object>());
 
         // Configure decimal precision for currency fields
         modelBuilder.Entity<Assessment>()

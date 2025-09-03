@@ -77,6 +77,13 @@ public class ApplicationsController : ControllerBase
                     type = a.Type,
                     category = a.Category,
                     technology = a.Technology,
+                    businessDomain = a.BusinessDomain,
+                    businessCriticality = a.BusinessCriticality,
+                    deploymentModel = a.DeploymentModel,
+                    modernizationPriority = a.ModernizationPriority,
+                    repositoryUrl = a.RepositoryUrl,
+                    technologyStack = a.TechnologyStack,
+                    tags = a.Tags,
                     linesOfCode = a.LinesOfCode,
                     complexityScore = a.ComplexityScore,
                     securityRating = a.SecurityRating,
@@ -146,6 +153,13 @@ public class ApplicationsController : ControllerBase
                 Type = request.Type,
                 Category = request.Category ?? "",
                 Technology = request.Technology ?? "",
+                BusinessDomain = request.BusinessDomain,
+                BusinessCriticality = request.BusinessCriticality ?? "Standard",
+                DeploymentModel = request.DeploymentModel ?? "OnPremise",
+                ModernizationPriority = request.ModernizationPriority ?? 3,
+                RepositoryUrl = request.RepositoryUrl,
+                TechnologyStack = request.TechnologyStack,
+                Tags = request.Tags,
                 LinesOfCode = request.LinesOfCode ?? 0,
                 ComplexityScore = request.ComplexityScore ?? 0,
                 SecurityRating = request.SecurityRating ?? 0,
@@ -206,6 +220,20 @@ public class ApplicationsController : ControllerBase
                 application.Category = request.Category;
             if (request.Technology != null)
                 application.Technology = request.Technology;
+            if (request.BusinessDomain != null)
+                application.BusinessDomain = request.BusinessDomain;
+            if (request.BusinessCriticality != null)
+                application.BusinessCriticality = request.BusinessCriticality;
+            if (request.DeploymentModel != null)
+                application.DeploymentModel = request.DeploymentModel;
+            if (request.ModernizationPriority.HasValue)
+                application.ModernizationPriority = request.ModernizationPriority.Value;
+            if (request.RepositoryUrl != null)
+                application.RepositoryUrl = request.RepositoryUrl;
+            if (request.TechnologyStack != null)
+                application.TechnologyStack = request.TechnologyStack;
+            if (request.Tags != null)
+                application.Tags = request.Tags;
             if (request.LinesOfCode.HasValue)
                 application.LinesOfCode = request.LinesOfCode.Value;
             if (request.ComplexityScore.HasValue)
@@ -545,6 +573,131 @@ public class ApplicationsController : ControllerBase
             return StatusCode(500, "An error occurred while retrieving code metrics");
         }
     }
+
+    // GET: api/applications/categories
+    [HttpGet("categories")]
+    public ActionResult GetApplicationCategories()
+    {
+        var categories = new
+        {
+            ApplicationTypes = new[]
+            {
+                "WebApplication",
+                "MobileApp", 
+                "DesktopApplication",
+                "Service",
+                "Database",
+                "API",
+                "Microservice",
+                "LegacySystem",
+                "COTS"
+            },
+            Categories = new[]
+            {
+                "Customer-Facing",
+                "Internal",
+                "Financial",
+                "Analytics", 
+                "Integration",
+                "Infrastructure",
+                "Security",
+                "Compliance"
+            },
+            BusinessDomains = new[]
+            {
+                "Finance",
+                "Sales & Marketing",
+                "Operations",
+                "Human Resources",
+                "Customer Experience",
+                "Analytics & BI",
+                "Security & Compliance",
+                "IT Infrastructure",
+                "Supply Chain",
+                "Research & Development"
+            },
+            BusinessCriticality = new[]
+            {
+                "Critical",
+                "Important", 
+                "Standard"
+            },
+            DeploymentModels = new[]
+            {
+                "OnPremise",
+                "Cloud",
+                "Hybrid"
+            },
+            ModernizationPriorities = new[]
+            {
+                new { value = 1, label = "Highest Priority" },
+                new { value = 2, label = "High Priority" },
+                new { value = 3, label = "Medium Priority" },
+                new { value = 4, label = "Low Priority" },
+                new { value = 5, label = "Lowest Priority" }
+            }
+        };
+        
+        return Ok(categories);
+    }
+
+    // POST: api/applications/{id}/clone
+    [HttpPost("{id}/clone")]
+    public async Task<ActionResult<Application>> CloneApplication(int id, [FromBody] CloneApplicationRequest request)
+    {
+        try
+        {
+            var originalApp = await _context.Applications.FindAsync(id);
+            if (originalApp == null)
+            {
+                return NotFound($"Application with ID {id} not found");
+            }
+
+            // Validate target assessment exists if provided
+            if (request.AssessmentId.HasValue)
+            {
+                var assessmentExists = await _context.Assessments.AnyAsync(a => a.Id == request.AssessmentId.Value);
+                if (!assessmentExists)
+                {
+                    return BadRequest("Target assessment not found");
+                }
+            }
+
+            var clonedApp = new Application
+            {
+                Name = request.NewName ?? $"{originalApp.Name} (Copy)",
+                Description = originalApp.Description,
+                Type = originalApp.Type,
+                Category = originalApp.Category,
+                Technology = originalApp.Technology,
+                BusinessDomain = originalApp.BusinessDomain,
+                BusinessCriticality = originalApp.BusinessCriticality,
+                DeploymentModel = originalApp.DeploymentModel,
+                ModernizationPriority = originalApp.ModernizationPriority,
+                RepositoryUrl = originalApp.RepositoryUrl,
+                TechnologyStack = originalApp.TechnologyStack,
+                Tags = originalApp.Tags,
+                LinesOfCode = originalApp.LinesOfCode,
+                ComplexityScore = 0, // Reset scores for new assessment
+                SecurityRating = 0,
+                CloudReadinessScore = 0,
+                EstimatedMigrationCost = originalApp.EstimatedMigrationCost,
+                MonthlyCost = originalApp.MonthlyCost,
+                AssessmentId = request.AssessmentId ?? originalApp.AssessmentId,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            _context.Applications.Add(clonedApp);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetApplication), new { id = clonedApp.Id }, clonedApp);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cloning application with ID {ApplicationId}", id);
+            return StatusCode(500, "An error occurred while cloning the application");
+        }
+    }
 }
 
 public class CreateApplicationRequest
@@ -554,6 +707,17 @@ public class CreateApplicationRequest
     public string Type { get; set; } = string.Empty;
     public string? Category { get; set; }
     public string? Technology { get; set; }
+    
+    // Enhanced categorization fields
+    public string? BusinessDomain { get; set; }
+    public string? BusinessCriticality { get; set; }
+    public string? DeploymentModel { get; set; }
+    public int? ModernizationPriority { get; set; }
+    public string? RepositoryUrl { get; set; }
+    public string? TechnologyStack { get; set; }
+    public string? Tags { get; set; }
+    
+    // Existing fields
     public int? LinesOfCode { get; set; }
     public int? ComplexityScore { get; set; }
     public int? SecurityRating { get; set; }
@@ -570,6 +734,17 @@ public class UpdateApplicationRequest
     public string? Type { get; set; }
     public string? Category { get; set; }
     public string? Technology { get; set; }
+    
+    // Enhanced categorization fields
+    public string? BusinessDomain { get; set; }
+    public string? BusinessCriticality { get; set; }
+    public string? DeploymentModel { get; set; }
+    public int? ModernizationPriority { get; set; }
+    public string? RepositoryUrl { get; set; }
+    public string? TechnologyStack { get; set; }
+    public string? Tags { get; set; }
+    
+    // Existing fields
     public int? LinesOfCode { get; set; }
     public int? ComplexityScore { get; set; }
     public int? SecurityRating { get; set; }
@@ -584,4 +759,10 @@ public class UpdateApplicationRequest
 public class BulkImportApplicationsRequest
 {
     public List<CreateApplicationRequest> Applications { get; set; } = new();
+}
+
+public class CloneApplicationRequest
+{
+    public string? NewName { get; set; }
+    public int? AssessmentId { get; set; }
 }

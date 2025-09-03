@@ -28,6 +28,31 @@ const applicationCategories = [
   'Compliance'
 ];
 
+const businessDomains = [
+  'Finance',
+  'Sales & Marketing', 
+  'Operations',
+  'Human Resources',
+  'Customer Experience',
+  'Analytics & BI',
+  'Security & Compliance',
+  'IT Infrastructure',
+  'Supply Chain',
+  'Research & Development'
+];
+
+const businessCriticality = [
+  'Critical',
+  'Important',
+  'Standard'
+];
+
+const deploymentModels = [
+  'OnPremise',
+  'Cloud', 
+  'Hybrid'
+];
+
 function CreateAssessment() {
   const navigate = useNavigate();
   const { createAssessment } = useAssessment();
@@ -42,8 +67,13 @@ function CreateAssessment() {
         description: '',
         type: 'WebApplication',
         category: 'Customer-Facing',
+        businessDomain: 'Customer Experience',
+        businessCriticality: 'Standard',
+        deploymentModel: 'OnPremise',
+        modernizationPriority: 3,
         technologyStack: '',
-        repositoryUrl: ''
+        repositoryUrl: '',
+        tags: ''
       }
     ]
   });
@@ -77,8 +107,13 @@ function CreateAssessment() {
           description: '',
           type: 'WebApplication',
           category: 'Customer-Facing',
+          businessDomain: 'Customer Experience',
+          businessCriticality: 'Standard',
+          deploymentModel: 'OnPremise',
+          modernizationPriority: 3,
           technologyStack: '',
-          repositoryUrl: ''
+          repositoryUrl: '',
+          tags: ''
         }
       ]
     });
@@ -231,6 +266,68 @@ function CreateAssessment() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
+                        Business Domain
+                      </label>
+                      <select
+                        value={app.businessDomain}
+                        onChange={(e) => handleApplicationChange(index, 'businessDomain', e.target.value)}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        {businessDomains.map(domain => (
+                          <option key={domain} value={domain}>{domain}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Business Criticality
+                      </label>
+                      <select
+                        value={app.businessCriticality}
+                        onChange={(e) => handleApplicationChange(index, 'businessCriticality', e.target.value)}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        {businessCriticality.map(criticality => (
+                          <option key={criticality} value={criticality}>{criticality}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Deployment Model
+                      </label>
+                      <select
+                        value={app.deploymentModel}
+                        onChange={(e) => handleApplicationChange(index, 'deploymentModel', e.target.value)}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        {deploymentModels.map(model => (
+                          <option key={model} value={model}>{model}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Modernization Priority
+                      </label>
+                      <select
+                        value={app.modernizationPriority}
+                        onChange={(e) => handleApplicationChange(index, 'modernizationPriority', parseInt(e.target.value))}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value={1}>1 - Highest Priority</option>
+                        <option value={2}>2 - High Priority</option>
+                        <option value={3}>3 - Medium Priority</option>
+                        <option value={4}>4 - Low Priority</option>
+                        <option value={5}>5 - Lowest Priority</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
                         Repository URL
                       </label>
                       <input
@@ -239,6 +336,19 @@ function CreateAssessment() {
                         onChange={(e) => handleApplicationChange(index, 'repositoryUrl', e.target.value)}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="https://github.com/company/app"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Tags
+                      </label>
+                      <input
+                        type="text"
+                        value={app.tags}
+                        onChange={(e) => handleApplicationChange(index, 'tags', e.target.value)}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="legacy, critical, cloud-ready (comma separated)"
                       />
                     </div>
 

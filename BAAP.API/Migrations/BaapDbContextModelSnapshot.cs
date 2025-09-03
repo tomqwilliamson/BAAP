@@ -71,7 +71,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("AssessmentFiles");
+                    b.ToTable("AssessmentFiles", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.AIAnalysisResult", b =>
@@ -115,7 +115,7 @@ namespace BAAP.API.Migrations
                     b.HasIndex("AssessmentId", "ModuleName")
                         .IsUnique();
 
-                    b.ToTable("AIAnalysisResults");
+                    b.ToTable("AIAnalysisResults", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.Application", b =>
@@ -194,7 +194,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("Applications");
+                    b.ToTable("Applications", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.ArchitecturePattern", b =>
@@ -236,7 +236,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("ArchitectureReviewId");
 
-                    b.ToTable("ArchitecturePatterns");
+                    b.ToTable("ArchitecturePatterns", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.ArchitectureReview", b =>
@@ -329,7 +329,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("ArchitectureReviews");
+                    b.ToTable("ArchitectureReviews", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.Assessment", b =>
@@ -447,7 +447,7 @@ namespace BAAP.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Assessments");
+                    b.ToTable("Assessments", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.BudgetAllocation", b =>
@@ -489,7 +489,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("BudgetAllocations");
+                    b.ToTable("BudgetAllocations", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.BusinessContextRisk", b =>
@@ -553,7 +553,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("BusinessContextRisks");
+                    b.ToTable("BusinessContextRisks", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.BusinessDriver", b =>
@@ -596,7 +596,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("BusinessDrivers");
+                    b.ToTable("BusinessDrivers", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.CodeMetric", b =>
@@ -634,7 +634,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("ApplicationId");
 
-                    b.ToTable("CodeMetrics");
+                    b.ToTable("CodeMetrics", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.CodebaseStats", b =>
@@ -669,7 +669,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("ArchitectureReviewId");
 
-                    b.ToTable("CodebaseStats");
+                    b.ToTable("CodebaseStats", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.ComplianceFramework", b =>
@@ -713,7 +713,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("ComplianceFrameworks");
+                    b.ToTable("ComplianceFrameworks", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.DashboardMetric", b =>
@@ -751,7 +751,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("DashboardMetrics");
+                    b.ToTable("DashboardMetrics", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.DatabaseInstance", b =>
@@ -815,7 +815,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("DatabaseInstances");
+                    b.ToTable("DatabaseInstances", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.DevelopmentPractices", b =>
@@ -1032,7 +1032,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("DevelopmentPractices");
+                    b.ToTable("DevelopmentPractices", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.InfrastructureServer", b =>
@@ -1090,7 +1090,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("InfrastructureServers");
+                    b.ToTable("InfrastructureServers", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.ProjectTimelineItem", b =>
@@ -1145,7 +1145,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("ProjectTimelineItems");
+                    b.ToTable("ProjectTimelineItems", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.Recommendation", b =>
@@ -1232,7 +1232,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("Recommendations");
+                    b.ToTable("Recommendations", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.SecurityFinding", b =>
@@ -1289,7 +1289,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("ApplicationId");
 
-                    b.ToTable("SecurityFindings");
+                    b.ToTable("SecurityFindings", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.SecurityVulnerability", b =>
@@ -1352,7 +1352,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("SecurityVulnerabilities");
+                    b.ToTable("SecurityVulnerabilities", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.Stakeholder", b =>
@@ -1405,7 +1405,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("Stakeholders");
+                    b.ToTable("Stakeholders", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Models.TechnologyStack", b =>
@@ -1454,7 +1454,7 @@ namespace BAAP.API.Migrations
 
                     b.HasIndex("ArchitectureReviewId");
 
-                    b.ToTable("TechnologyStacks");
+                    b.ToTable("TechnologyStacks", (string)null);
                 });
 
             modelBuilder.Entity("BAAP.API.Controllers.AssessmentFile", b =>
