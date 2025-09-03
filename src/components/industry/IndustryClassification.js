@@ -17,7 +17,7 @@ const IndustryClassification = () => {
   const [intelligence, setIntelligence] = useState(null);
   const [patterns, setPatterns] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('analysis');
 
   useEffect(() => {
     if (currentAssessment?.id) {
