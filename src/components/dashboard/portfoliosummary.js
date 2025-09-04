@@ -1,7 +1,7 @@
 // src/components/Dashboard/PortfolioSummary.js - Portfolio overview table
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Code, ExternalLink, Eye, Edit, Copy } from 'lucide-react';
+import { Code, ExternalLink, Eye, Edit, Copy, Trash2 } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
@@ -167,6 +167,22 @@ function PortfolioSummary() {
     setEditingAppId(null);
     // Refresh portfolio data after edit
     loadPortfolioData();
+  };
+
+  const handleDeleteApplication = async (appId, appName) => {
+    if (!confirm(`Are you sure you want to delete "${appName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await apiService.deleteApplication(appId);
+      // Refresh the portfolio data
+      await loadPortfolioData();
+      console.log(`✅ Application "${appName}" deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting application:', error);
+      alert('Error deleting application. Please try again.');
+    }
   };
 
   if (loading) {
@@ -339,6 +355,14 @@ function PortfolioSummary() {
                       >
                         <Copy className="h-3 w-3 mr-1" />
                         Clone
+                      </button>
+                      <button
+                        onClick={() => handleDeleteApplication(app.id, app.name)}
+                        className="text-red-600 hover:text-red-900 flex items-center transition-colors px-2 py-1 rounded hover:bg-red-50"
+                        title="Delete Application"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
                       </button>
                     </div>
                   </td>

@@ -358,5 +358,11 @@ export const assessmentService = {
   async cloneApplication(id, data) {
     const response = await apiClient.post(`/applications/${id}/clone`, data);
     return response.data;
+  },
+
+  // Application delete endpoint
+  async deleteApplication(id) {
+    const response = await apiClient.delete(`/applications/${id}`);
+    return response.data;
   }
 };

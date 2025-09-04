@@ -5,6 +5,7 @@ import {
   Brain, RefreshCw, Clock, Activity, Database, Server, Wifi, Monitor, Trash2,
   TrendingUp, Network, BarChart3
 } from 'lucide-react';
+import ActionPanel from '../ui/ActionPanel';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -878,59 +879,20 @@ function SecurityAssessment() {
         </div>
       </div>
 
-      {/* Action Bar */}
+      {/* Action Panel */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
-          <div className="flex space-x-3">
-            <button
-              onClick={saveSecurityData}
-              className={`flex items-center px-4 py-2 text-white rounded-md transition-colors ${
-                isDirty 
-                  ? 'bg-orange-600 hover:bg-orange-700 animate-pulse' 
-                  : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isDirty ? 'Save Data (Required)' : 'Save Data'}
-            </button>
-            <button
-              onClick={exportData}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </button>
-            <label className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors cursor-pointer">
-              <Upload className="h-4 w-4 mr-2" />
-              Import
-              <input
-                type="file"
-                accept=".json"
-                onChange={importData}
-                className="hidden"
-              />
-            </label>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-sm text-gray-500">
-              {dataSaved && lastSaveTime 
-                ? `Last saved: ${lastSaveTime?.toLocaleString ? lastSaveTime.toLocaleString() : 'Unknown time'} ${isDatabaseMode ? '(DB)' : '(Local)'}`
-                : 'Not saved yet'
-              }
-              <div>
-                {lastAiAnalysisTime 
-                  ? `Last AI Analysis Run: ${lastAiAnalysisTime?.toLocaleString ? lastAiAnalysisTime.toLocaleString() : 'Unknown time'}`
-                  : 'No AI analysis run yet'
-                }
-              </div>
-              {isDatabaseMode ? (
-                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Database Mode</span>
-              ) : (
-                <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Local Storage</span>
-              )}
-            </div>
-          </div>
-        </div>
+        <ActionPanel
+          onSave={saveSecurityData}
+          onExport={exportData}
+          onImport={importData}
+          isDirty={isDirty}
+          dataSaved={dataSaved}
+          lastSaveTime={lastSaveTime}
+          lastAiAnalysisTime={lastAiAnalysisTime}
+          isDatabaseMode={isDatabaseMode}
+          loading={loading}
+          saveButtonText="Save Security Data"
+        />
       </div>
 
       {/* Content Area */}

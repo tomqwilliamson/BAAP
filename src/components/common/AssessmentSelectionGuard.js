@@ -84,17 +84,72 @@ function AssessmentSelectionGuard({ children }) {
 
   const getPageContext = () => {
     const pathname = location.pathname;
-    if (pathname.includes('/security')) return { name: 'Security Assessment', icon: BarChart3, color: 'red' };
-    if (pathname.includes('/infrastructure')) return { name: 'Infrastructure Review', icon: BarChart3, color: 'blue' };
-    if (pathname.includes('/data')) return { name: 'Data Architecture', icon: BarChart3, color: 'purple' };
-    if (pathname.includes('/devops')) return { name: 'DevOps Assessment', icon: BarChart3, color: 'green' };
-    if (pathname.includes('/business')) return { name: 'Business Context', icon: Users, color: 'indigo' };
-    if (pathname.includes('/architecture')) return { name: 'Architecture Review', icon: BarChart3, color: 'orange' };
-    if (pathname.includes('/cloud-readiness')) return { name: 'Cloud Readiness', icon: BarChart3, color: 'cyan' };
-    if (pathname.includes('/recommendations')) return { name: 'Recommendations', icon: BarChart3, color: 'teal' };
-    if (pathname.includes('/applications')) return { name: 'Application Details', icon: BarChart3, color: 'violet' };
-    if (pathname.includes('/assessments')) return { name: 'Assessment Details', icon: ClipboardList, color: 'slate' };
-    return { name: 'Assessment Tool', icon: BarChart3, color: 'gray' };
+    if (pathname.includes('/security')) return { 
+      name: 'Security Assessment', 
+      icon: BarChart3, 
+      bgColor: 'bg-red-100', 
+      iconColor: 'text-red-600' 
+    };
+    if (pathname.includes('/infrastructure')) return { 
+      name: 'Infrastructure Review', 
+      icon: BarChart3, 
+      bgColor: 'bg-blue-100', 
+      iconColor: 'text-blue-600' 
+    };
+    if (pathname.includes('/data')) return { 
+      name: 'Data Architecture', 
+      icon: BarChart3, 
+      bgColor: 'bg-purple-100', 
+      iconColor: 'text-purple-600' 
+    };
+    if (pathname.includes('/devops')) return { 
+      name: 'DevOps Assessment', 
+      icon: BarChart3, 
+      bgColor: 'bg-green-100', 
+      iconColor: 'text-green-600' 
+    };
+    if (pathname.includes('/business')) return { 
+      name: 'Business Context', 
+      icon: Users, 
+      bgColor: 'bg-indigo-100', 
+      iconColor: 'text-indigo-600' 
+    };
+    if (pathname.includes('/architecture')) return { 
+      name: 'Architecture Review', 
+      icon: BarChart3, 
+      bgColor: 'bg-orange-100', 
+      iconColor: 'text-orange-600' 
+    };
+    if (pathname.includes('/cloud-readiness')) return { 
+      name: 'Cloud Readiness', 
+      icon: BarChart3, 
+      bgColor: 'bg-cyan-100', 
+      iconColor: 'text-cyan-600' 
+    };
+    if (pathname.includes('/recommendations')) return { 
+      name: 'Recommendations', 
+      icon: BarChart3, 
+      bgColor: 'bg-teal-100', 
+      iconColor: 'text-teal-600' 
+    };
+    if (pathname.includes('/applications')) return { 
+      name: 'Application Details', 
+      icon: BarChart3, 
+      bgColor: 'bg-violet-100', 
+      iconColor: 'text-violet-600' 
+    };
+    if (pathname.includes('/assessments')) return { 
+      name: 'Assessment Details', 
+      icon: ClipboardList, 
+      bgColor: 'bg-slate-100', 
+      iconColor: 'text-slate-600' 
+    };
+    return { 
+      name: 'Assessment Tool', 
+      icon: BarChart3, 
+      bgColor: 'bg-gray-100', 
+      iconColor: 'text-gray-600' 
+    };
   };
 
   const pageContext = getPageContext();
@@ -103,13 +158,13 @@ function AssessmentSelectionGuard({ children }) {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Completed':
-        return 'border-green-200 bg-green-50 hover:bg-green-100';
+        return 'border-green-300 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 shadow-green-100/50';
       case 'InProgress':
-        return 'border-blue-200 bg-blue-50 hover:bg-blue-100';
+        return 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 shadow-blue-100/50';
       case 'Analyzing':
-        return 'border-yellow-200 bg-yellow-50 hover:bg-yellow-100';
+        return 'border-yellow-300 bg-gradient-to-br from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 shadow-yellow-100/50';
       default:
-        return 'border-gray-200 bg-gray-50 hover:bg-gray-100';
+        return 'border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 shadow-gray-100/50';
     }
   };
 
@@ -132,8 +187,8 @@ function AssessmentSelectionGuard({ children }) {
         <div className="bg-white rounded-lg shadow-lg p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-${pageContext.color}-100 mb-4`}>
-              <IconComponent className={`h-8 w-8 text-${pageContext.color}-600`} />
+            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${pageContext.bgColor} mb-4`}>
+              <IconComponent className={`h-8 w-8 ${pageContext.iconColor}`} />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">
               {assessments.length === 1 ? 'Loading Assessment' : 'Select Assessment'}

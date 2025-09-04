@@ -5,6 +5,16 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
+import { 
+  Building2, Target, TrendingUp, Shield, AlertTriangle, 
+  CheckCircle, BarChart3, PieChart, Award, Lightbulb,
+  FileText, Users, Settings, RefreshCw, Download,
+  Search, Filter, Star, Clock, DollarSign
+} from 'lucide-react';
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+
+// Chart color palette
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
 const IndustryClassification = () => {
   const { currentAssessment } = useAssessment();
@@ -124,76 +134,207 @@ const IndustryClassification = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Industry Classification</h1>
-        <Button 
-          onClick={loadIndustryData} 
-          disabled={loading}
-          className="flex items-center gap-2"
-        >
-          {loading ? '🔄' : '🔄'} Refresh Analysis
-        </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="p-6 space-y-6">
+        {/* Enhanced Header - Match Recommendations styling */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg p-6 text-white">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-white bg-opacity-20 rounded-lg">
+              <Building2 className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Industry Classification</h1>
+              <p className="text-blue-100 mt-1">
+                AI-powered industry analysis and benchmarking for {currentAssessment?.name}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button 
+              onClick={loadIndustryData} 
+              disabled={loading}
+              className="bg-white bg-opacity-20 text-white hover:bg-opacity-30 border-white border"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh Analysis
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Classification Overview */}
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Current Classification</h2>
-        {industryClassification ? (
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <h3 className="text-lg font-medium">
-                {getIndustryName(industryClassification.industryClassificationId)}
-              </h3>
-              <Badge 
-                className={`text-white ${getConfidenceColor(industryClassification.classificationConfidence)}`}
-              >
-                {Math.round(industryClassification.classificationConfidence * 100)}% Confidence
-              </Badge>
-              {industryClassification.isVerified && (
-                <Badge className="bg-blue-500 text-white">✓ Verified</Badge>
-              )}
+      {/* Enhanced Classification Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card className="p-6 border-l-4 border-blue-500">
+            <div className="flex items-center mb-4">
+              <Target className="h-6 w-6 text-blue-600 mr-2" />
+              <h2 className="text-xl font-semibold">Current Classification</h2>
             </div>
-            <p className="text-gray-600">
-              <strong>Classification Method:</strong> {industryClassification.classificationMethod}
-            </p>
-            {industryClassification.classificationReason && (
-              <p className="text-gray-600">
-                <strong>Reason:</strong> {industryClassification.classificationReason}
-              </p>
+            {industryClassification ? (
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-blue-100 rounded-lg">
+                        <Building2 className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {getIndustryName(industryClassification.industryClassificationId)}
+                        </h3>
+                        <p className="text-sm text-gray-600">Primary Industry Classification</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge 
+                        className={`text-white text-lg px-3 py-1 ${getConfidenceColor(industryClassification.classificationConfidence)}`}
+                      >
+                        {Math.round(industryClassification.classificationConfidence * 100)}%
+                      </Badge>
+                      <p className="text-xs text-gray-500 mt-1">Confidence</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center p-3 bg-green-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 mr-3" />
+                    <div>
+                      <p className="font-medium text-green-900">Classification Method</p>
+                      <p className="text-sm text-green-700">{industryClassification.classificationMethod}</p>
+                    </div>
+                  </div>
+                  {industryClassification.isVerified && (
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <Award className="h-5 w-5 text-blue-600 mr-3" />
+                      <div>
+                        <p className="font-medium text-blue-900">Verification Status</p>
+                        <p className="text-sm text-blue-700">Expert Verified</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {industryClassification.classificationReason && (
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <div className="flex items-start">
+                      <Lightbulb className="h-5 w-5 text-yellow-600 mr-3 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-yellow-900">Classification Reasoning</p>
+                        <p className="text-sm text-yellow-800 mt-1">{industryClassification.classificationReason}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-center py-8">
+                  <Search className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Industry Classification Needed</h3>
+                  <p className="text-gray-600 mb-6">This assessment hasn't been classified yet. Select the most appropriate industry below.</p>
+                </div>
+                <div className="space-y-3">
+                  <p className="font-medium flex items-center">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Select Industry:
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {industries.map(industry => (
+                      <Button
+                        key={industry.id}
+                        variant="outline"
+                        className="justify-start h-auto py-3 px-4 hover:bg-blue-50 hover:border-blue-300"
+                        onClick={() => handleManualClassification(industry.id)}
+                        disabled={loading}
+                      >
+                        <Building2 className="h-4 w-4 mr-2" />
+                        {industry.industryName}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-gray-600">This assessment has not been classified yet.</p>
-            <div className="space-y-2">
-              <p className="font-medium">Select Industry:</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {industries.map(industry => (
-                  <Button
-                    key={industry.id}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleManualClassification(industry.id)}
-                    disabled={loading}
-                  >
-                    {industry.industryName}
-                  </Button>
-                ))}
+          </Card>
+        </div>
+        
+        {/* Statistics Sidebar */}
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="flex items-center mb-3">
+              <BarChart3 className="h-5 w-5 text-purple-600 mr-2" />
+              <h3 className="font-semibold">Quick Stats</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Total Industries</span>
+                <Badge variant="outline">{industries.length}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Benchmarks Available</span>
+                <Badge variant="outline">{benchmarks.length}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Recommendations</span>
+                <Badge variant="outline">{recommendations.length}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Compliance Items</span>
+                <Badge variant="outline">{complianceRequirements.length}</Badge>
               </div>
             </div>
-          </div>
-        )}
-      </Card>
+          </Card>
+          
+          {industryClassification && (
+            <Card className="p-4">
+              <div className="flex items-center mb-3">
+                <Clock className="h-5 w-5 text-green-600 mr-2" />
+                <h3 className="font-semibold">Analysis Status</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                  <span>Classification Complete</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <TrendingUp className="h-4 w-4 text-blue-600 mr-2" />
+                  <span>Benchmarks Loaded</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <Shield className="h-4 w-4 text-purple-600 mr-2" />
+                  <span>Compliance Analyzed</span>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
 
       {industryClassification && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="analysis">Analysis</TabsTrigger>
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-            <TabsTrigger value="benchmarks">Benchmarks</TabsTrigger>
-            <TabsTrigger value="compliance">Compliance</TabsTrigger>
-            <TabsTrigger value="patterns">Patterns</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 h-12">
+            <TabsTrigger value="analysis" className="flex items-center space-x-2">
+              <FileText className="h-4 w-4" />
+              <span>Analysis</span>
+            </TabsTrigger>
+            <TabsTrigger value="recommendations" className="flex items-center space-x-2">
+              <Lightbulb className="h-4 w-4" />
+              <span>Recommendations</span>
+            </TabsTrigger>
+            <TabsTrigger value="benchmarks" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span>Benchmarks</span>
+            </TabsTrigger>
+            <TabsTrigger value="compliance" className="flex items-center space-x-2">
+              <Shield className="h-4 w-4" />
+              <span>Compliance</span>
+            </TabsTrigger>
+            <TabsTrigger value="patterns" className="flex items-center space-x-2">
+              <TrendingUp className="h-4 w-4" />
+              <span>Patterns</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analysis" className="space-y-4">
@@ -245,13 +386,119 @@ const IndustryClassification = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="benchmarks" className="space-y-4">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Industry Benchmarks</h3>
-              {benchmarks && benchmarks.length > 0 ? (
+          <TabsContent value="benchmarks" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <div className="flex items-center mb-4">
+                  <BarChart3 className="h-6 w-6 text-blue-600 mr-2" />
+                  <h3 className="text-lg font-semibold">Performance Benchmarks</h3>
+                </div>
+                {benchmarks && benchmarks.length > 0 ? (
+                  <div className="space-y-4">
+                    {benchmarks.slice(0, 4).map((benchmark, index) => (
+                      <div key={index} className="border-l-4 border-blue-500 bg-blue-50 rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{benchmark.metricName}</h4>
+                            <p className="text-sm text-gray-600 mt-1">{benchmark.metricCategory}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-blue-600">
+                              {benchmark.benchmarkValue} {benchmark.unit}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Sample: {benchmark.sampleSize}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Industry benchmarks are loading...</p>
+                  </div>
+                )}
+              </Card>
+              
+              <Card className="p-6">
+                <div className="flex items-center mb-4">
+                  <PieChart className="h-6 w-6 text-purple-600 mr-2" />
+                  <h3 className="text-lg font-semibold">Benchmark Distribution</h3>
+                </div>
+                {benchmarks && benchmarks.length > 0 ? (
+                  <div className="space-y-4">
+                    <ResponsiveContainer width="100%" height={220}>
+                      <RechartsPieChart>
+                        <Pie
+                          data={benchmarks.slice(0, 6).map((benchmark, index) => ({
+                            name: benchmark.metricName.length > 15 
+                              ? benchmark.metricName.substring(0, 15) + '...' 
+                              : benchmark.metricName,
+                            fullName: benchmark.metricName,
+                            value: parseFloat(benchmark.benchmarkValue) || (index + 1) * 10,
+                            unit: benchmark.unit || '',
+                            category: benchmark.metricCategory || 'General',
+                            fill: COLORS[index % COLORS.length]
+                          }))}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={45}
+                          outerRadius={85}
+                          paddingAngle={2}
+                          dataKey="value"
+                          label={({name, value, unit}) => `${value}${unit ? ` ${unit}` : ''}`}
+                          labelLine={false}
+                        >
+                          {benchmarks.slice(0, 6).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value, name, props) => [
+                            `${value}${props.payload.unit ? ` ${props.payload.unit}` : ''}`,
+                            props.payload.fullName
+                          ]}
+                        />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                    
+                    {/* Custom Legend */}
+                    <div className="grid grid-cols-1 gap-2">
+                      {benchmarks.slice(0, 6).map((benchmark, index) => (
+                        <div key={index} className="flex items-center text-xs">
+                          <div 
+                            className="w-3 h-3 rounded-full mr-2 flex-shrink-0" 
+                            style={{backgroundColor: COLORS[index % COLORS.length]}}
+                          ></div>
+                          <span className="text-gray-700 truncate" title={benchmark.metricName}>
+                            {benchmark.metricName}: <span className="font-medium">
+                              {parseFloat(benchmark.benchmarkValue) || (index + 1) * 10}{benchmark.unit ? ` ${benchmark.unit}` : ''}
+                            </span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center">
+                    <div className="text-center">
+                      <PieChart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600">No benchmark data available</p>
+                      <p className="text-sm text-gray-500 mt-2">Benchmarks will appear here once industry classification is complete</p>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+            
+            {benchmarks && benchmarks.length > 4 && (
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Additional Benchmarks</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {benchmarks.map((benchmark, index) => (
-                    <div key={index} className="border rounded-lg p-4">
+                  {benchmarks.slice(4).map((benchmark, index) => (
+                    <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                       <h4 className="font-semibold">{benchmark.metricName}</h4>
                       <p className="text-2xl font-bold text-blue-600">
                         {benchmark.benchmarkValue} {benchmark.unit}
@@ -263,10 +510,8 @@ const IndustryClassification = () => {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-gray-600">Industry benchmarks are loading...</p>
-              )}
-            </Card>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="compliance" className="space-y-4">
@@ -326,6 +571,7 @@ const IndustryClassification = () => {
           </TabsContent>
         </Tabs>
       )}
+      </div>
     </div>
   );
 };

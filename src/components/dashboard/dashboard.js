@@ -1,6 +1,7 @@
 // src/components/Dashboard/Dashboard.js - Main dashboard component
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Calendar, X, Phone, Mail, User, Clock } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import MetricsOverview from './metricsoverview';
 import PortfolioSummary from './portfoliosummary';
@@ -12,6 +13,15 @@ import toast from 'react-hot-toast';
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showScheduleDemo, setShowScheduleDemo] = useState(false);
+  const [demoRequestData, setDemoRequestData] = useState({
+    name: '',
+    email: '',
+    company: '',
+    phone: '',
+    preferredTime: '',
+    message: ''
+  });
   const { assessments, currentAssessment, loadAssessment, clearCurrentAssessment, loading: assessmentsLoading } = useAssessment();
 
   useEffect(() => {
@@ -281,6 +291,50 @@ function Dashboard() {
     }
   };
 
+  const handleScheduleDemo = async (e) => {
+    e.preventDefault();
+    
+    try {
+      // In a real implementation, this would send to your email API
+      // For now, we'll simulate sending a notification email
+      const emailData = {
+        to: 'tom.williamson@quisitive.com',
+        subject: `BAAP Demo Request from ${demoRequestData.name}`,
+        body: `
+          New demo request received:
+          
+          Name: ${demoRequestData.name}
+          Email: ${demoRequestData.email}
+          Company: ${demoRequestData.company}
+          Phone: ${demoRequestData.phone}
+          Preferred Time: ${demoRequestData.preferredTime}
+          Message: ${demoRequestData.message}
+          
+          Please reach out to schedule the demo.
+        `
+      };
+      
+      console.log('Sending demo request email:', emailData);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success(`Demo request sent! Tom will contact you at ${demoRequestData.email} to schedule.`);
+      setShowScheduleDemo(false);
+      setDemoRequestData({
+        name: '',
+        email: '',
+        company: '',
+        phone: '',
+        preferredTime: '',
+        message: ''
+      });
+    } catch (error) {
+      console.error('Error sending demo request:', error);
+      toast.error('Failed to send demo request. Please try again.');
+    }
+  };
+
   if (loading || assessmentsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -410,6 +464,138 @@ function Dashboard() {
           </Link>
         </div>
       </div>
+      
+      {/* Floating Schedule Demo Button */}
+      <button
+        onClick={() => setShowScheduleDemo(true)}
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 z-50"
+      >
+        <Calendar className="h-6 w-6" />
+      </button>
+      
+      {/* Schedule Demo Modal */}
+      {showScheduleDemo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <Calendar className="h-6 w-6 text-blue-600 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Schedule a Demo</h3>
+                </div>
+                <button
+                  onClick={() => setShowScheduleDemo(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <p className="text-gray-600 text-sm mb-6">
+                Get a personalized demo of BAAP's AI-powered assessment capabilities. Our team will show you how to accelerate your cloud transformation journey.
+              </p>
+              
+              <form onSubmit={handleScheduleDemo} className="space-y-4">
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <User className="h-4 w-4 mr-1" />
+                    Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={demoRequestData.name}
+                    onChange={(e) => setDemoRequestData({...demoRequestData, name: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <Mail className="h-4 w-4 mr-1" />
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={demoRequestData.email}
+                    onChange={(e) => setDemoRequestData({...demoRequestData, email: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">
+                    Company
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={demoRequestData.company}
+                    onChange={(e) => setDemoRequestData({...demoRequestData, company: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <Phone className="h-4 w-4 mr-1" />
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={demoRequestData.phone}
+                    onChange={(e) => setDemoRequestData({...demoRequestData, phone: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <Clock className="h-4 w-4 mr-1" />
+                    Preferred Time
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Next week, weekdays 2-4 PM EST"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={demoRequestData.preferredTime}
+                    onChange={(e) => setDemoRequestData({...demoRequestData, preferredTime: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">
+                    Additional Message
+                  </label>
+                  <textarea
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Tell us about your assessment needs..."
+                    value={demoRequestData.message}
+                    onChange={(e) => setDemoRequestData({...demoRequestData, message: e.target.value})}
+                  />
+                </div>
+                
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowScheduleDemo(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors"
+                  >
+                    Request Demo
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -24,6 +24,38 @@ import {
 } from 'lucide-react';
 import classNames from 'classnames';
 
+// Color scheme for categories and icons
+const categoryColors = {
+  'Dashboard': { bg: 'bg-green-100', text: 'text-green-700', icon: 'text-green-600', activeBg: 'bg-green-50' },
+  'Assessment Framework': { bg: 'bg-blue-100', text: 'text-blue-700', icon: 'text-blue-600', activeBg: 'bg-blue-50' },
+  'Technical Assessment': { bg: 'bg-purple-100', text: 'text-purple-700', icon: 'text-purple-600', activeBg: 'bg-purple-50' },
+  'Cloud & Modernization': { bg: 'bg-sky-100', text: 'text-sky-700', icon: 'text-sky-600', activeBg: 'bg-sky-50' },
+  'AI Intelligence': { bg: 'bg-orange-100', text: 'text-orange-700', icon: 'text-orange-600', activeBg: 'bg-orange-50' },
+  'Results & Insights': { bg: 'bg-teal-100', text: 'text-teal-700', icon: 'text-teal-600', activeBg: 'bg-teal-50' }
+};
+
+// Child item specific colors
+const childColors = {
+  // Assessment Framework
+  'Business Context': 'text-blue-500',
+  'Architecture Review': 'text-indigo-500',
+  
+  // Technical Assessment  
+  'Infrastructure & Compute': 'text-sky-500',
+  'Data Architecture': 'text-cyan-500',
+  'DevOps & Development': 'text-green-500',
+  'Security Assessment': 'text-red-500',
+  
+  // Cloud & Modernization
+  'Cloud Readiness': 'text-sky-500',
+  
+  // AI Intelligence
+  'Industry Classification': 'text-orange-500',
+  
+  // Results & Insights
+  'Recommendations': 'text-teal-500'
+};
+
 const navigationItems = [
   {
     name: 'Dashboard',
@@ -121,6 +153,7 @@ function NavItem({ item, isExpanded, onToggle }) {
   const location = useLocation();
   const isActive = item.href && location.pathname === item.href;
   const hasActiveChild = item.children?.some(child => location.pathname === child.href);
+  const colors = categoryColors[item.name] || categoryColors['Dashboard'];
 
   if (item.children) {
     return (
@@ -128,14 +161,17 @@ function NavItem({ item, isExpanded, onToggle }) {
         <button
           onClick={onToggle}
           className={classNames(
-            'w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200',
+            'w-full flex items-center justify-between px-3 py-2 text-sm font-bold rounded-md transition-colors duration-200',
             hasActiveChild
-              ? 'bg-blue-100 text-blue-700'
-              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              ? `${colors.bg} ${colors.text}`
+              : `text-gray-700 hover:${colors.activeBg} hover:${colors.text}`
           )}
         >
           <div className="flex items-center">
-            <item.icon className="mr-3 h-5 w-5" />
+            <item.icon className={classNames(
+              "mr-3 h-5 w-5",
+              hasActiveChild ? colors.icon : `${colors.icon} group-hover:${colors.icon}`
+            )} />
             {item.name}
           </div>
           {isExpanded ? (
@@ -146,26 +182,34 @@ function NavItem({ item, isExpanded, onToggle }) {
         </button>
         {isExpanded && (
           <div className="ml-6 mt-1 space-y-1">
-            {item.children.map((child) => (
-              <Link
-                key={child.name}
-                to={child.href}
-                className={classNames(
-                  'group flex items-start px-3 py-2 text-sm rounded-md transition-colors duration-200',
-                  location.pathname === child.href
-                    ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-500'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                )}
-              >
-                <child.icon className="mr-3 h-4 w-4 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="font-medium">{child.name}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {child.description}
+            {item.children.map((child) => {
+              const isChildActive = location.pathname === child.href;
+              const childIconColor = childColors[child.name] || colors.icon;
+              
+              return (
+                <Link
+                  key={child.name}
+                  to={child.href}
+                  className={classNames(
+                    'group flex items-start px-3 py-2 text-sm rounded-md transition-colors duration-200',
+                    isChildActive
+                      ? `${colors.activeBg} ${colors.text} border-r-2 ${colors.icon.replace('text-', 'border-')}`
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  )}
+                >
+                  <child.icon className={classNames(
+                    "mr-3 h-4 w-4 mt-0.5 flex-shrink-0",
+                    isChildActive ? colors.icon : childIconColor
+                  )} />
+                  <div>
+                    <div className="font-medium">{child.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {child.description}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
@@ -176,13 +220,16 @@ function NavItem({ item, isExpanded, onToggle }) {
     <Link
       to={item.href}
       className={classNames(
-        'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200',
+        'group flex items-center px-3 py-2 text-sm font-bold rounded-md transition-colors duration-200',
         isActive
-          ? 'bg-blue-100 text-blue-700'
-          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+          ? `${colors.bg} ${colors.text}`
+          : `text-gray-700 hover:${colors.activeBg} hover:${colors.text}`
       )}
     >
-      <item.icon className="mr-3 h-5 w-5" />
+      <item.icon className={classNames(
+        "mr-3 h-5 w-5",
+        isActive ? colors.icon : `${colors.icon} group-hover:${colors.icon}`
+      )} />
       {item.name}
     </Link>
   );
