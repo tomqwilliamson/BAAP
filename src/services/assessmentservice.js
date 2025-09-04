@@ -1,7 +1,7 @@
 // src/services/assessmentService.js - API service layer
 import axios from 'axios';
 
-const API_BASE_URL = 'https://localhost:7000/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://localhost:7000/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -351,6 +351,12 @@ export const assessmentService = {
 
   async deleteAIAnalysisResults(assessmentId, moduleName) {
     const response = await apiClient.delete(`/AIAnalysis/${assessmentId}/${moduleName}`);
+    return response.data;
+  },
+
+  // Application clone endpoint
+  async cloneApplication(id, data) {
+    const response = await apiClient.post(`/applications/${id}/clone`, data);
     return response.data;
   }
 };

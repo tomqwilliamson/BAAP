@@ -62,6 +62,10 @@ export const apiService = {
     return await assessmentService.getApplication(id);
   },
 
+  async cloneApplication(id, data) {
+    return await assessmentService.cloneApplication(id, data);
+  },
+
   // Recommendations services
   async getRecommendations(assessmentId) {
     return await assessmentService.getRecommendations(assessmentId);

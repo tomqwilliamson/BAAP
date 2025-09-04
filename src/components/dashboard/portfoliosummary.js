@@ -1,11 +1,12 @@
 // src/components/Dashboard/PortfolioSummary.js - Portfolio overview table
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Code, ExternalLink, Eye } from 'lucide-react';
+import { Code, ExternalLink, Eye, Edit, Copy } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import { generateAssessmentSpecificData } from '../../utils/assessmentDataGenerator';
 import ApplicationDetailsModal from '../common/ApplicationDetailsModal';
+import ApplicationEditModal from '../application/ApplicationEditModal';
 
 function PortfolioSummary() {
   const { currentAssessment, assessments } = useAssessment();
@@ -14,6 +15,8 @@ function PortfolioSummary() {
   const [loading, setLoading] = useState(true);
   const [selectedAppId, setSelectedAppId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingAppId, setEditingAppId] = useState(null);
   const [assessmentFilter, setAssessmentFilter] = useState('all');
 
   useEffect(() => {
@@ -129,6 +132,41 @@ function PortfolioSummary() {
       case 'Critical': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
     }
+  };
+
+  const handleEditApplication = (appId) => {
+    setEditingAppId(appId);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloneApplication = async (appId, appName) => {
+    if (!confirm(`Are you sure you want to clone "${appName}"?`)) {
+      return;
+    }
+
+    try {
+      const newName = prompt(`Enter a name for the cloned application:`, `${appName} (Copy)`);
+      if (!newName) return;
+
+      await apiService.cloneApplication(appId, {
+        newName,
+        assessmentId: currentAssessment?.id
+      });
+
+      // Refresh the portfolio data
+      await loadPortfolioData();
+      console.log(`✅ Application "${appName}" cloned successfully as "${newName}"`);
+    } catch (error) {
+      console.error('Error cloning application:', error);
+      alert('Error cloning application. Please try again.');
+    }
+  };
+
+  const handleEditComplete = () => {
+    setIsEditModalOpen(false);
+    setEditingAppId(null);
+    // Refresh portfolio data after edit
+    loadPortfolioData();
   };
 
   if (loading) {
@@ -274,16 +312,35 @@ function PortfolioSummary() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button
-                      onClick={() => {
-                        setSelectedAppId(app.id);
-                        setIsModalOpen(true);
-                      }}
-                      className="text-blue-600 hover:text-blue-900 flex items-center transition-colors"
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View Details
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedAppId(app.id);
+                          setIsModalOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900 flex items-center transition-colors px-2 py-1 rounded hover:bg-blue-50"
+                        title="View Details"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleEditApplication(app.id)}
+                        className="text-green-600 hover:text-green-900 flex items-center transition-colors px-2 py-1 rounded hover:bg-green-50"
+                        title="Edit Application"
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleCloneApplication(app.id, app.name)}
+                        className="text-purple-600 hover:text-purple-900 flex items-center transition-colors px-2 py-1 rounded hover:bg-purple-50"
+                        title="Clone Application"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Clone
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -307,6 +364,17 @@ function PortfolioSummary() {
           setSelectedAppId(null);
         }}
         applicationId={selectedAppId}
+      />
+
+      {/* Application Edit Modal */}
+      <ApplicationEditModal 
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingAppId(null);
+        }}
+        applicationId={editingAppId}
+        onSave={handleEditComplete}
       />
     </>
   );
