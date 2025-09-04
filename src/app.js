@@ -9,6 +9,11 @@ import UnifiedLoginPage from './components/auth/UnifiedLoginPage';
 import UnifiedProtectedRoute from './components/auth/UnifiedProtectedRoute';
 import { AssessmentProvider } from './contexts/assessmentcontext';
 import { NotificationProvider } from './contexts/notificationcontext';
+import TourWelcome from './components/tour/TourWelcome';
+import TourAIAnalysis from './components/tour/TourAIAnalysis';
+import TourTechnical from './components/tour/TourTechnical';
+import TourInsights from './components/tour/TourInsights';
+import TourGetStarted from './components/tour/TourGetStarted';
 import './app.css';
 
 // Redirect component for assessment routes with parameters
@@ -31,6 +36,14 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<UnifiedLoginPage />} />
+            
+            {/* Tour Routes */}
+            <Route path="/tour" element={<Navigate to="/tour/welcome" replace />} />
+            <Route path="/tour/welcome" element={<TourWelcome />} />
+            <Route path="/tour/ai-analysis" element={<TourAIAnalysis />} />
+            <Route path="/tour/technical" element={<TourTechnical />} />
+            <Route path="/tour/insights" element={<TourInsights />} />
+            <Route path="/tour/get-started" element={<TourGetStarted />} />
             
             {/* Redirect old routes to new app structure */}
             <Route path="/assessments/new" element={<Navigate to="/app/assessments/new" replace />} />
