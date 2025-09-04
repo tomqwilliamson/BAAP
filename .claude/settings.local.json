@@ -104,7 +104,8 @@
       "Bash(timeout:*)",
       "Bash(sed:*)",
       "WebFetch(domain:baap-dev-api-wsnmnw.azurewebsites.net)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git push:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
