@@ -1,7 +1,7 @@
 // src/components/common/AssessmentSelectionGuard.js - Assessment selection requirement guard
 import React, { useEffect, useState } from 'react';
 import { useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { ClipboardList, ArrowRight, Calendar, BarChart3, Users } from 'lucide-react';
+import { ClipboardList, ArrowRight, Calendar, BarChart3, Users, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { useAssessment } from '../../contexts/assessmentcontext';
 import toast from 'react-hot-toast';
 
@@ -158,107 +158,173 @@ function AssessmentSelectionGuard({ children }) {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Completed':
-        return 'border-green-300 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 shadow-green-100/50';
+        return 'border-green-300 bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 hover:from-green-100 hover:via-emerald-100 hover:to-green-200 shadow-2xl shadow-green-100/50';
       case 'InProgress':
-        return 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 shadow-blue-100/50';
+        return 'border-blue-300 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 hover:from-blue-100 hover:via-indigo-100 hover:to-blue-200 shadow-2xl shadow-blue-100/50';
       case 'Analyzing':
-        return 'border-yellow-300 bg-gradient-to-br from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 shadow-yellow-100/50';
+        return 'border-yellow-300 bg-gradient-to-br from-yellow-50 via-amber-50 to-yellow-100 hover:from-yellow-100 hover:via-amber-100 hover:to-yellow-200 shadow-2xl shadow-yellow-100/50';
       default:
-        return 'border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 shadow-gray-100/50';
+        return 'border-gray-300 bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 hover:from-gray-100 hover:via-slate-100 hover:to-gray-200 shadow-2xl shadow-gray-100/50';
     }
   };
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
       case 'Completed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300 shadow-lg';
       case 'InProgress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-300 shadow-lg';
       case 'Analyzing':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 border-yellow-300 shadow-lg';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-300 shadow-lg';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="max-w-4xl w-full">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${pageContext.bgColor} mb-4`}>
-              <IconComponent className={`h-8 w-8 ${pageContext.iconColor}`} />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100">
+      <div className="flex items-center justify-center min-h-screen p-6">
+        <div className="max-w-6xl w-full">
+          {/* Enhanced Header */}
+          <div className="bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-700 text-white rounded-2xl shadow-2xl p-8 mb-8">
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-6">
+                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm mr-4`}>
+                  <IconComponent className={`h-10 w-10 text-white`} />
+                </div>
+                <div className="text-left">
+                  <h1 className="text-4xl font-bold">
+                    {assessments.length === 1 ? 'Loading Assessment' : 'Select Assessment'}
+                  </h1>
+                  <div className="flex items-center mt-2 text-blue-100">
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    <span className="text-lg">AI-Powered Assessment Platform</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                <p className="text-blue-100 text-lg leading-relaxed">
+                  {assessments.length === 1 
+                    ? `Automatically loading your assessment to access ${pageContext.name}`
+                    : `Choose an assessment to access ${pageContext.name} with comprehensive AI analysis`
+                  }
+                </p>
+              </div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {assessments.length === 1 ? 'Loading Assessment' : 'Select Assessment'}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {assessments.length === 1 
-                ? `Automatically loading your assessment to access ${pageContext.name}`
-                : `Choose an assessment to access ${pageContext.name}`
-              }
-            </p>
           </div>
+          
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
 
-          {/* Assessment Grid */}
-          {assessments.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {assessments.map((assessment) => (
-                <button
-                  key={assessment.id}
-                  onClick={() => handleAssessmentSelect(assessment.id)}
-                  className={`text-left p-6 rounded-lg border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${getStatusColor(assessment.status)}`}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 text-lg leading-tight">
-                        {assessment.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                        {assessment.description}
-                      </p>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-gray-400 ml-3 flex-shrink-0" />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <ClipboardList className="h-4 w-4 mr-1" />
-                        {assessment.applicationCount || 0} apps
+            <div className="p-8">
+              {/* Assessment Grid */}
+              {assessments.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  {assessments.map((assessment, index) => (
+                    <button
+                      key={assessment.id}
+                      onClick={() => handleAssessmentSelect(assessment.id)}
+                      className={`group text-left p-6 rounded-2xl border-2 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/50 transform hover:scale-105 hover:shadow-2xl ${getStatusColor(assessment.status)}`}
+                    >
+                      {/* Card Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center">
+                          <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${assessment.status === 'Completed' ? 'bg-green-100' : assessment.status === 'InProgress' ? 'bg-blue-100' : 'bg-gray-100'} mr-3`}>
+                            {assessment.status === 'Completed' ? (
+                              <Target className={`h-6 w-6 ${assessment.status === 'Completed' ? 'text-green-600' : assessment.status === 'InProgress' ? 'text-blue-600' : 'text-gray-600'}`} />
+                            ) : assessment.status === 'InProgress' ? (
+                              <TrendingUp className="h-6 w-6 text-blue-600" />
+                            ) : (
+                              <ClipboardList className="h-6 w-6 text-gray-600" />
+                            )}
+                          </div>
+                          <div>
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(assessment.status)} mb-2`}>
+                              {assessment.status}
+                            </span>
+                          </div>
+                        </div>
+                        <ArrowRight className="h-6 w-6 text-gray-400 group-hover:text-blue-600 transition-colors duration-200" />
                       </div>
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {new Date(assessment.createdDate).toLocaleDateString()}
+                      
+                      {/* Card Content */}
+                      <div className="flex-1 mb-4">
+                        <h3 className="font-bold text-gray-900 text-xl leading-tight mb-2 group-hover:text-blue-900 transition-colors">
+                          {assessment.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                          {assessment.description || 'Comprehensive application portfolio assessment with AI-powered analysis'}
+                        </p>
                       </div>
-                    </div>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(assessment.status)}`}>
-                      {assessment.status}
-                    </span>
+                      
+                      {/* Card Footer */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center space-x-4 text-gray-600">
+                            <div className="flex items-center">
+                              <ClipboardList className="h-4 w-4 mr-1 text-blue-500" />
+                              <span className="font-medium">{assessment.applicationCount || 0}</span>
+                              <span className="ml-1">apps</span>
+                            </div>
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 mr-1 text-purple-500" />
+                              <span>{new Date(assessment.createdDate).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Progress Indicator */}
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              assessment.status === 'Completed' ? 'bg-gradient-to-r from-green-500 to-green-600 w-full' :
+                              assessment.status === 'InProgress' ? 'bg-gradient-to-r from-blue-500 to-blue-600 w-3/4' :
+                              assessment.status === 'Analyzing' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 w-1/2' :
+                              'bg-gradient-to-r from-gray-400 to-gray-500 w-1/4'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 mb-6">
+                    <ClipboardList className="h-12 w-12 text-blue-500" />
                   </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <ClipboardList className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Assessments Available</h3>
-              <p className="text-gray-500">Use the "+ New Assessment" button in the sidebar to create your first assessment</p>
-            </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">No Assessments Available</h3>
+                  <p className="text-gray-600 text-lg mb-8 max-w-md mx-auto">Create your first AI-powered assessment to get started with comprehensive application portfolio analysis</p>
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 max-w-lg mx-auto">
+                    <div className="flex items-center justify-center text-sm text-gray-600">
+                      <Sparkles className="h-5 w-5 mr-2 text-blue-500" />
+                      <span>Use the "+ New Assessment" button to begin</span>
+                    </div>
+                  </div>
+                </div>
           )}
 
-          {/* Footer Actions */}
-          {assessments.length > 0 && (
-            <div className="border-t border-gray-200 pt-6 flex items-center justify-center">
-              <button
-                onClick={() => navigate('/app/dashboard')}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Back to Dashboard
-              </button>
+              {/* Enhanced Footer Actions */}
+              {assessments.length > 0 && (
+                <div className="border-t border-gray-200 pt-8">
+                  <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        <p className="font-medium text-gray-900">Need help choosing?</p>
+                        <p>Each assessment provides comprehensive AI-powered analysis across multiple domains.</p>
+                      </div>
+                      <button
+                        onClick={() => navigate('/app/dashboard')}
+                        className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-lg"
+                      >
+                        <ArrowRight className="h-4 w-4 mr-2 transform rotate-180" />
+                        Back to Dashboard
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
