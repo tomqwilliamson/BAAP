@@ -102,7 +102,9 @@
       "Bash(az extension:*)",
       "Bash(del test-phase2-ui.js)",
       "Bash(timeout:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "WebFetch(domain:baap-dev-api-wsnmnw.azurewebsites.net)",
+      "Bash(cat:*)"
     ],
     "additionalDirectories": [
       "C:\\c\\Users\\twilliamson\\source\\repos"
